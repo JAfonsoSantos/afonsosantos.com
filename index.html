@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Afonso Santos</title>
     <meta name="description" content="Afonso Santos — Head of Retail Media, Southern Europe & LATAM at Kevel. Adviser, mentor, angel investor. Based in Porto.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -32,12 +32,15 @@
             line-height: 1.6;
             min-height: 100vh;
             -webkit-font-smoothing: antialiased;
+            -webkit-text-size-adjust: 100%;
         }
 
         .container {
             max-width: 800px;
             margin: 0 auto;
             padding: 64px 24px 48px;
+            padding-left: max(24px, env(safe-area-inset-left));
+            padding-right: max(24px, env(safe-area-inset-right));
         }
 
         /* Header */
@@ -62,7 +65,7 @@
             letter-spacing: -0.015em; color: var(--text); margin-bottom: 20px;
         }
         .header h1 a {
-            color: var(--text); text-decoration: none;
+            color: var(--text);
             text-decoration: underline;
             text-decoration-color: var(--border);
             text-underline-offset: 3px;
@@ -79,6 +82,7 @@
             font-size: 0.8rem; color: var(--text-secondary); text-decoration: none;
             border: 1px solid var(--border); padding: 6px 16px; border-radius: 100px;
             transition: all 0.2s; display: inline-block; background: var(--bg);
+            white-space: nowrap;
         }
         .pill:hover { border-color: var(--text-secondary); color: var(--text); background: var(--surface); }
         .pill-accent {
@@ -132,14 +136,11 @@
         .card-img-content {
             padding: 24px;
         }
-        .card-img img, .card-img .card-photo {
+        .card-img img {
             width: 100%;
             height: 160px;
             object-fit: cover;
             display: block;
-        }
-        .card-img-tall img, .card-img-tall .card-photo {
-            height: 200px;
         }
         .card-logo-container {
             height: 120px;
@@ -162,6 +163,9 @@
         .span-3 { grid-column: span 3; }
 
         /* Stats */
+        .stats-grid {
+            display: flex; flex-direction: column; gap: 20px;
+        }
         .stat-num {
             font-size: 1.5rem; font-weight: 600; color: var(--text);
             line-height: 1;
@@ -182,13 +186,14 @@
         /* Resource row */
         .resource-row {
             display: flex; justify-content: space-between; align-items: center;
+            gap: 12px;
             padding: 10px 0; border-bottom: 1px solid var(--border);
             text-decoration: none; transition: all 0.15s;
         }
         .resource-row:last-child { border-bottom: none; padding-bottom: 0; }
         .resource-row:first-child { padding-top: 0; }
         .resource-title { font-size: 0.85rem; color: var(--text-secondary); transition: color 0.15s; }
-        .resource-source { font-size: 0.75rem; color: var(--text-muted); }
+        .resource-source { font-size: 0.75rem; color: var(--text-muted); white-space: nowrap; flex-shrink: 0; }
         .resource-row:hover .resource-title { color: var(--text); }
 
         /* Tags */
@@ -199,20 +204,12 @@
         }
         .tag-green { background: var(--green-dim); color: var(--green); }
 
-        /* Quota mini chart */
-        .mini-bars {
-            display: flex; align-items: flex-end; gap: 3px; height: 48px; margin-top: 12px;
-        }
-        .mini-bar {
-            flex: 1; border-radius: 3px 3px 0 0; min-height: 4px;
-            transition: all 0.3s;
-        }
-
         /* Arrow icon */
         .arrow-icon {
             position: absolute; top: 16px; right: 16px;
             width: 20px; height: 20px; color: var(--text-muted);
             opacity: 0; transition: opacity 0.2s;
+            z-index: 1;
         }
         .card-link:hover .arrow-icon { opacity: 1; }
 
@@ -222,17 +219,130 @@
             color: var(--text-muted); font-size: 0.75rem;
         }
 
-        /* Mobile */
-        @media (max-width: 640px) {
-            .container { padding: 40px 16px 32px; }
-            .header h1 { font-size: 1.3rem; }
-            .bento { grid-template-columns: 1fr; }
-            .span-2, .span-3 { grid-column: span 1; }
-            .card-img img, .card-img .card-photo { height: 180px; }
-        }
-        @media (min-width: 641px) and (max-width: 800px) {
-            .bento { grid-template-columns: repeat(2, 1fr); }
+        /* ===== TABLET: 2 columns ===== */
+        @media (max-width: 800px) {
+            .bento {
+                grid-template-columns: repeat(2, 1fr);
+            }
             .span-3 { grid-column: span 2; }
+        }
+
+        /* ===== MOBILE: 1 column ===== */
+        @media (max-width: 580px) {
+            .container {
+                padding: 32px 16px 32px;
+                padding-left: max(16px, env(safe-area-inset-left));
+                padding-right: max(16px, env(safe-area-inset-right));
+                padding-bottom: max(32px, env(safe-area-inset-bottom));
+            }
+
+            /* Header */
+            .header { margin-bottom: 32px; }
+            .header h1 {
+                font-size: 1.25rem;
+                line-height: 1.55;
+                margin-bottom: 16px;
+            }
+            .header-top { margin-bottom: 16px; }
+            .avatar { width: 48px; height: 48px; }
+
+            /* Pills: scroll horizontally on tiny screens */
+            .header-links {
+                gap: 6px;
+                flex-wrap: nowrap;
+                overflow-x: auto;
+                -webkit-overflow-scrolling: touch;
+                scrollbar-width: none;
+                padding-bottom: 4px;
+            }
+            .header-links::-webkit-scrollbar { display: none; }
+            .pill {
+                padding: 8px 16px;
+                font-size: 0.8rem;
+                flex-shrink: 0;
+            }
+
+            /* Grid: single column */
+            .bento {
+                grid-template-columns: 1fr;
+                gap: 8px;
+            }
+            .span-2, .span-3 { grid-column: span 1; }
+
+            /* Cards */
+            .card { padding: 20px; border-radius: 10px; }
+            .card-img-content { padding: 20px; }
+
+            /* Images: taller since cards are full-width */
+            .card-img img {
+                height: 200px;
+            }
+            .card-logo-container {
+                height: 100px;
+            }
+
+            /* Stats: horizontal row on mobile */
+            .stats-grid {
+                flex-direction: row;
+                gap: 0;
+                justify-content: space-between;
+            }
+            .stats-grid > div {
+                flex: 1;
+                text-align: center;
+            }
+            .stats-grid > div:not(:last-child) {
+                border-right: 1px solid var(--border);
+            }
+            .stat-num { font-size: 1.35rem; }
+
+            /* Resources: stack on narrow screens */
+            .resource-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 2px;
+                padding: 12px 0;
+            }
+
+            /* POV items */
+            .pov-item { font-size: 0.83rem; padding: 10px 0; }
+
+            /* Touch devices: always show arrows */
+            .arrow-icon { opacity: 0.4; }
+
+            /* Footer */
+            footer { margin-top: 32px; }
+        }
+
+        /* ===== SMALL MOBILE (iPhone SE, etc) ===== */
+        @media (max-width: 380px) {
+            .header h1 { font-size: 1.15rem; }
+            .stat-num { font-size: 1.2rem; }
+            .card-title { font-size: 0.9rem; }
+            .card-desc { font-size: 0.82rem; }
+            .card-img img { height: 160px; }
+        }
+
+        /* ===== LARGE DESKTOP ===== */
+        @media (min-width: 1200px) {
+            .container {
+                max-width: 900px;
+            }
+        }
+
+        /* ===== TOUCH / HOVER DETECTION ===== */
+        @media (hover: none) {
+            .arrow-icon { opacity: 0.35; }
+            .card:hover { background: var(--surface); }
+            .card:active { background: var(--surface-hover); }
+        }
+
+        /* ===== PRINT ===== */
+        @media print {
+            .header-links, .arrow-icon, footer { display: none; }
+            .card { break-inside: avoid; border: 1px solid #ddd; }
+            .bento { display: block; }
+            .card { margin-bottom: 12px; }
         }
     </style>
 </head>
@@ -270,7 +380,7 @@
             <!-- Numbers -->
             <div class="card">
                 <div class="card-label">At a glance</div>
-                <div style="display: flex; flex-direction: column; gap: 20px;">
+                <div class="stats-grid">
                     <div><div class="stat-num">6</div><div class="stat-label">Countries</div></div>
                     <div><div class="stat-num">170+</div><div class="stat-label">Clients served</div></div>
                     <div><div class="stat-num">3</div><div class="stat-label">Languages</div></div>
@@ -321,7 +431,7 @@
             <!-- Founders Founders — with photo -->
             <a href="https://www.founders-founders.com" target="_blank" class="card-link">
                 <div class="card card-img" style="position: relative;">
-                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="z-index:1;"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
                     <img src="img/founders-founders.jpg" alt="Founders Founders community space">
                     <div class="card-img-content">
                         <div class="card-label">Co-founder</div>
@@ -334,7 +444,7 @@
             <!-- Laika Ventures — with dark logo card -->
             <a href="https://www.laikaventures.co/" target="_blank" class="card-link">
                 <div class="card card-img" style="position: relative;">
-                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="z-index:1;"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
                     <div class="card-logo-container dark-bg">
                         <img src="img/laika.svg" alt="Laika Ventures logo">
                     </div>
