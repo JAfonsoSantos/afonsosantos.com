@@ -3,8 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Afonso Santos — Project Hub</title>
-    <meta name="description" content="Afonso Santos — Head of Retail Media for LATAM & Iberia at Kevel. Projects, experiments, and things I'm building.">
+    <title>Afonso Santos</title>
+    <meta name="description" content="Afonso Santos — Head of Retail Media, Southern Europe & LATAM at Kevel. Adviser, mentor, angel investor. Based in Porto.">
+    <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -12,11 +13,17 @@
             --bg: #0a0a0a;
             --surface: #141414;
             --surface-hover: #1a1a1a;
-            --border: #262626;
+            --border: #232323;
             --text: #fafafa;
             --text-secondary: #a1a1aa;
+            --text-muted: #52525b;
             --accent: #3b82f6;
             --accent-dim: rgba(59, 130, 246, 0.1);
+            --green: #10b981;
+            --green-dim: rgba(16, 185, 129, 0.1);
+            --amber: #f59e0b;
+            --amber-dim: rgba(245, 158, 11, 0.08);
+            --radius: 16px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -25,166 +32,178 @@
             color: var(--text);
             line-height: 1.6;
             min-height: 100vh;
+            -webkit-font-smoothing: antialiased;
         }
 
-        /* PASSWORD GATE */
+        /* AUTH */
         #auth-gate {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 24px;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; padding: 24px;
         }
         .auth-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 48px 40px;
-            max-width: 380px;
-            width: 100%;
-            text-align: center;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: var(--radius); padding: 48px 40px; max-width: 380px;
+            width: 100%; text-align: center;
         }
-        .auth-box h2 {
-            font-size: 1.3rem;
-            font-weight: 600;
-            margin-bottom: 8px;
-        }
-        .auth-box .subtitle {
-            color: var(--text-secondary);
-            font-size: 0.9rem;
-            margin-bottom: 28px;
-        }
+        .auth-box h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; }
+        .auth-box .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 28px; }
         .auth-input {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-family: inherit;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border-color 0.2s;
+            width: 100%; padding: 12px 16px; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 10px; color: var(--text);
+            font-family: inherit; font-size: 0.95rem; outline: none;
         }
         .auth-input:focus { border-color: var(--accent); }
         .auth-input.error { border-color: #ef4444; }
         .auth-btn {
-            width: 100%;
-            padding: 12px;
-            margin-top: 12px;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
-            transition: opacity 0.2s;
+            width: 100%; padding: 12px; margin-top: 12px; background: var(--accent);
+            color: #fff; border: none; border-radius: 10px; font-family: inherit;
+            font-size: 0.95rem; font-weight: 500; cursor: pointer;
         }
         .auth-btn:hover { opacity: 0.9; }
-        .auth-error {
-            color: #ef4444;
-            font-size: 0.82rem;
-            margin-top: 10px;
-            display: none;
-        }
+        .auth-error { color: #ef4444; font-size: 0.82rem; margin-top: 10px; display: none; }
 
-        /* MAIN CONTENT (hidden until auth) */
+        /* MAIN */
         #main-content { display: none; }
 
         .container {
-            max-width: 720px;
+            max-width: 800px;
             margin: 0 auto;
-            padding: 80px 24px 60px;
+            padding: 64px 24px 48px;
         }
-        .header { margin-bottom: 56px; }
+
+        /* Header */
+        .header { margin-bottom: 48px; }
+        .header-name {
+            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 16px;
+        }
         .header h1 {
-            font-size: 2rem;
-            font-weight: 700;
-            letter-spacing: -0.02em;
-            margin-bottom: 8px;
+            font-size: 1.75rem; font-weight: 500; line-height: 1.4;
+            letter-spacing: -0.01em; color: var(--text); margin-bottom: 16px;
         }
-        .header p {
-            color: var(--text-secondary);
-            font-size: 1.05rem;
+        .header h1 a {
+            color: var(--text-secondary); text-decoration: none;
+            border-bottom: 1px solid var(--border); transition: all 0.2s;
         }
-        .header .links {
-            margin-top: 16px;
-            display: flex;
-            gap: 16px;
-            flex-wrap: wrap;
+        .header h1 a:hover { color: var(--accent); border-color: var(--accent); }
+        .header-links {
+            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
         }
-        .header .links a {
-            color: var(--text-secondary);
-            text-decoration: none;
-            font-size: 0.9rem;
-            transition: color 0.2s;
+        .pill {
+            font-size: 0.8rem; color: var(--text-secondary); text-decoration: none;
+            border: 1px solid var(--border); padding: 6px 16px; border-radius: 100px;
+            transition: all 0.2s; display: inline-block;
         }
-        .header .links a:hover { color: var(--accent); }
-        .section-title {
-            font-size: 0.8rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.08em;
-            color: var(--text-secondary);
-            margin-bottom: 20px;
+        .pill:hover { border-color: var(--text-secondary); color: var(--text); }
+        .pill-accent {
+            color: var(--accent); background: var(--accent-dim);
+            border-color: rgba(59, 130, 246, 0.25);
         }
-        .projects {
-            display: flex;
-            flex-direction: column;
+        .pill-accent:hover { background: rgba(59, 130, 246, 0.18); }
+        .pill-logout {
+            border: none; color: var(--text-muted); font-size: 0.75rem;
+            padding: 6px 10px; cursor: pointer; margin-left: auto;
+            background: none; font-family: inherit;
+        }
+        .pill-logout:hover { color: var(--text-secondary); }
+
+        /* Bento grid */
+        .bento {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
             gap: 12px;
-            margin-bottom: 56px;
         }
-        .project-card {
+        .card {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
+            border-radius: var(--radius);
             padding: 24px;
+            transition: all 0.2s;
+        }
+        .card:hover { border-color: #333; }
+        .card-link {
+            text-decoration: none; color: inherit; display: block;
+        }
+        .card-link:hover .card { border-color: var(--accent); }
+        .card-label {
+            font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
+            letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 12px;
+        }
+        .card-title {
+            font-size: 1rem; font-weight: 500; color: var(--text);
+            margin-bottom: 6px; line-height: 1.4;
+        }
+        .card-desc {
+            font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;
+        }
+
+        /* Spans */
+        .span-2 { grid-column: span 2; }
+        .span-3 { grid-column: span 3; }
+        .span-row-2 { grid-row: span 2; }
+
+        /* Stats row */
+        .stats {
+            display: flex; gap: 32px; margin-top: 8px;
+        }
+        .stat-num {
+            font-size: 1.5rem; font-weight: 600; color: var(--text);
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.75rem; color: var(--text-muted); margin-top: 4px;
+        }
+
+        /* POV list */
+        .pov-item {
+            padding: 14px 0; border-bottom: 1px solid var(--border);
+            font-size: 0.88rem; color: #d4d4d8; line-height: 1.6;
+        }
+        .pov-item:last-child { border-bottom: none; padding-bottom: 0; }
+        .pov-item:first-child { padding-top: 0; }
+
+        /* Resource row */
+        .resource-row {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid rgba(35,35,35,0.8);
             text-decoration: none;
-            color: var(--text);
-            transition: all 0.2s ease;
-            display: block;
         }
-        .project-card:hover {
-            background: var(--surface-hover);
-            border-color: var(--accent);
-            transform: translateY(-1px);
-        }
-        .project-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
-        .project-card p { color: var(--text-secondary); font-size: 0.92rem; }
-        .project-card .meta { margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
+        .resource-row:last-child { border-bottom: none; padding-bottom: 0; }
+        .resource-row:first-child { padding-top: 0; }
+        .resource-title { font-size: 0.85rem; color: #d4d4d8; }
+        .resource-source { font-size: 0.75rem; color: var(--text-muted); }
+        .resource-row:hover .resource-title { color: var(--accent); }
+
+        /* Tags */
         .tag {
-            background: var(--accent-dim);
-            color: var(--accent);
-            font-size: 0.75rem;
-            font-weight: 500;
-            padding: 3px 10px;
-            border-radius: 100px;
+            display: inline-block; font-size: 0.7rem; font-weight: 500;
+            padding: 3px 10px; border-radius: 100px;
+            background: var(--accent-dim); color: var(--accent);
         }
-        .empty-state {
-            background: var(--surface);
-            border: 1px dashed var(--border);
-            border-radius: 12px;
-            padding: 48px 24px;
-            text-align: center;
-            color: var(--text-secondary);
-            font-size: 0.95rem;
-        }
+        .tag-green { background: var(--green-dim); color: var(--green); }
+
+        /* Footer */
         footer {
-            color: var(--text-secondary);
-            font-size: 0.8rem;
-            padding-top: 32px;
-            border-top: 1px solid var(--border);
+            margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border);
+            color: var(--text-muted); font-size: 0.75rem;
         }
-        @media (max-width: 480px) {
-            .container { padding: 48px 16px 40px; }
-            .header h1 { font-size: 1.6rem; }
+
+        /* Mobile */
+        @media (max-width: 640px) {
+            .container { padding: 40px 16px 32px; }
+            .header h1 { font-size: 1.4rem; }
+            .bento { grid-template-columns: 1fr; }
+            .span-2, .span-3 { grid-column: span 1; }
+            .stats { gap: 20px; flex-wrap: wrap; }
+        }
+        @media (min-width: 641px) and (max-width: 800px) {
+            .bento { grid-template-columns: repeat(2, 1fr); }
+            .span-3 { grid-column: span 2; }
         }
     </style>
 </head>
 <body>
-    <!-- PASSWORD GATE -->
+    <!-- AUTH -->
     <div id="auth-gate">
         <div class="auth-box">
             <h2>Afonso Santos</h2>
@@ -195,60 +214,134 @@
         </div>
     </div>
 
-    <!-- MAIN CONTENT -->
+    <!-- MAIN -->
     <div id="main-content">
         <div class="container">
+
+            <!-- Header -->
             <div class="header">
-                <h1>Afonso Santos</h1>
-                <p>Head of Retail Media, LATAM & Iberia — Kevel</p>
-                <div class="links">
-                    <a href="https://www.linkedin.com/in/jafonsosantos/" target="_blank">LinkedIn</a>
-                    <a href="https://www.kevel.com" target="_blank">Kevel</a>
-                    <a href="mailto:asantos@kevel.co">Email</a>
-                    <a href="#" onclick="sessionStorage.removeItem('authed'); location.reload(); return false;">Logout</a>
+                <div class="header-name">Afonso Santos</div>
+                <h1>Retail media is eating the ad market. I'm helping the next wave of <a href="https://www.kevel.com" target="_blank">retailers</a> and <a href="https://www.kevel.com" target="_blank">fintechs</a> get there first — and <a href="https://calendly.com/afonso-santos" target="_blank">backing the founders</a> building what comes next.</h1>
+                <div class="header-links">
+                    <a href="https://www.linkedin.com/in/afonsosantos/" target="_blank" class="pill">LinkedIn</a>
+                    <a href="https://www.kevel.com" target="_blank" class="pill">Kevel</a>
+                    <a href="mailto:asantos@kevel.co" class="pill">Email</a>
+                    <a href="https://calendly.com/afonso-santos" target="_blank" class="pill pill-accent">Book a conversation</a>
+                    <button class="pill-logout" onclick="sessionStorage.removeItem('authed'); location.reload();">Logout</button>
                 </div>
             </div>
 
-            <div class="section-title">Projects</div>
-            <div class="projects">
-                <a href="/quota/" class="project-card">
-                    <h3>Quota Tracker FY26</h3>
-                    <p>Real-time view of quota attainment, weighted pipeline, and deal health signals across LATAM &amp; Iberia.</p>
-                    <div class="meta">
-                        <span class="tag">Sales Ops</span>
-                        <span class="tag">FY26</span>
-                    </div>
-                </a>
-                <!-- <div class="empty-state">
-                    Projects coming soon — this hub is auto-deployed from Claude Cowork. -->
+            <!-- Bento grid -->
+            <div class="bento">
+
+                <!-- About -->
+                <div class="card span-2">
+                    <div class="card-label">About</div>
+                    <p class="card-desc">Born in Braga, lived in London and San Francisco, now based between Porto and Esposende. Engineering degree, but I've been building and selling since I was 16 — from web design shops to outdoor advertising marketplaces to Customer Data Platforms. Co-founded <a href="https://www.founders-founders.com" target="_blank" style="color: var(--text); border-bottom: 1px solid var(--border);">Founders Founders</a>, Portugal's first peer-mentoring community for scaleup founders. Today I run Kevel's retail media business across Southern Europe and LATAM, and advise and invest in early-stage companies on the side.</p>
                 </div>
-                <!-- 
-                TEMPLATE: Copy this block to add a new project card
-                <a href="/projects/project-name/" class="project-card">
-                    <h3>Project Title</h3>
-                    <p>Short description of what this project is about.</p>
-                    <div class="meta">
-                        <span class="tag">Tag</span>
+
+                <!-- Numbers -->
+                <div class="card">
+                    <div class="card-label">At a glance</div>
+                    <div style="display: flex; flex-direction: column; gap: 20px;">
+                        <div>
+                            <div class="stat-num">6</div>
+                            <div class="stat-label">Countries</div>
+                        </div>
+                        <div>
+                            <div class="stat-num">170+</div>
+                            <div class="stat-label">Clients served</div>
+                        </div>
+                        <div>
+                            <div class="stat-num">3</div>
+                            <div class="stat-label">Languages</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Kevel -->
+                <a href="https://www.kevel.com" target="_blank" class="card-link">
+                    <div class="card">
+                        <div class="card-label">Kevel · Day job</div>
+                        <div class="card-title">Head of Retail Media, Southern Europe & LATAM</div>
+                        <p class="card-desc">Selling and deploying ad infrastructure for retailers, super-apps, and fintech players across Spain, Portugal, Brazil, Mexico, Colombia, and Peru.</p>
                     </div>
                 </a>
-                -->
+
+                <!-- Advising -->
+                <a href="https://calendly.com/afonso-santos" target="_blank" class="card-link">
+                    <div class="card">
+                        <div class="card-label">On the side</div>
+                        <div class="card-title">Adviser, mentor & angel investor</div>
+                        <p class="card-desc">Backing early-stage founders with capital, GTM strategy, and sales playbooks. Mentor at START Esposende.</p>
+                    </div>
+                </a>
+
+                <!-- Founders Founders -->
+                <a href="https://www.founders-founders.com" target="_blank" class="card-link">
+                    <div class="card">
+                        <div class="card-label">Co-founder</div>
+                        <div class="card-title">Founders Founders</div>
+                        <p class="card-desc">Portugal's #1 peer-mentoring community for scaleup founders. Startup homes in Porto and Lisbon.</p>
+                    </div>
+                </a>
+
+                <!-- Market POV -->
+                <div class="card span-2 span-row-2">
+                    <div class="card-label">What I believe about retail media</div>
+                    <div>
+                        <div class="pov-item">On-site sponsored products are table stakes. The real growth is in off-site, in-store, and CTV — and most retailers aren't ready for it.</div>
+                        <div class="pov-item">LATAM is 3–4 years behind the US in retail media maturity, but the velocity is faster. First movers will own the market.</div>
+                        <div class="pov-item">Fintech ad networks — super-apps, neobanks, loyalty platforms — are the next wave. Same playbook, better data.</div>
+                        <div class="pov-item">Owning your ad stack isn't a nice-to-have — it's the difference between 30% margins and 80% margins on every ad dollar.</div>
+                    </div>
+                </div>
+
+                <!-- Quota tracker -->
+                <a href="/quota/" class="card-link">
+                    <div class="card" style="display: flex; flex-direction: column; height: 100%;">
+                        <div class="card-label">Project</div>
+                        <div class="card-title">Quota Tracker FY26</div>
+                        <p class="card-desc" style="flex: 1;">Real-time quota attainment, weighted pipeline, and deal health signals.</p>
+                        <div style="margin-top: 14px; display: flex; gap: 6px;">
+                            <span class="tag">Sales Ops</span>
+                            <span class="tag tag-green">Live</span>
+                        </div>
+                    </div>
+                </a>
+
+                <!-- Resources -->
+                <div class="card span-3">
+                    <div class="card-label">Resources I recommend</div>
+                    <a href="https://www.insiderintelligence.com/content/us-retail-media-ad-spending-forecast-2025" target="_blank" class="resource-row">
+                        <span class="resource-title">US Retail Media Ad Spending Forecast</span>
+                        <span class="resource-source">eMarketer →</span>
+                    </a>
+                    <a href="https://iabeurope.eu/knowledge-hub/iab-europe-guide-to-retail-media/" target="_blank" class="resource-row">
+                        <span class="resource-title">Guide to Retail Media in Europe</span>
+                        <span class="resource-source">IAB Europe →</span>
+                    </a>
+                    <a href="https://www.kevel.com/retail-media" target="_blank" class="resource-row">
+                        <span class="resource-title">Retail Media Cloud — Platform & Case Studies</span>
+                        <span class="resource-source">Kevel →</span>
+                    </a>
+                </div>
+
             </div>
 
             <footer>
-                &copy; 2026 Afonso Santos · Auto-deployed via GitHub Pages
+                &copy; 2026 Afonso Santos · Porto, Portugal
             </footer>
+
         </div>
     </div>
 
     <script>
-        // Simple hash-based auth (SHA-256)
         const HASH = 'a1d06bbb7f46018d54564d989ec2e32d7892e26a0db8328e15bdaa723dd2d746';
-
         async function sha256(str) {
             const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
             return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
         }
-
         async function checkAuth() {
             const pwd = document.getElementById('pwd').value;
             const hash = await sha256(pwd);
@@ -260,16 +353,11 @@
                 document.getElementById('auth-err').style.display = 'block';
             }
         }
-
         function showContent() {
             document.getElementById('auth-gate').style.display = 'none';
             document.getElementById('main-content').style.display = 'block';
         }
-
-        // Auto-login if already authed this session
         if (sessionStorage.getItem('authed') === '1') showContent();
-
-        // Enter key support
         document.getElementById('pwd').addEventListener('keydown', e => {
             if (e.key === 'Enter') checkAuth();
         });
