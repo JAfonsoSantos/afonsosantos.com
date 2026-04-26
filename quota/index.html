@@ -23,63 +23,36 @@
             color: var(--text);
             min-height: 100vh;
         }
-        /* AUTH GATE — same as main site */
         #auth-gate {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            padding: 24px;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; padding: 24px;
         }
         .auth-box {
-            background: var(--surface);
-            border: 1px solid var(--border);
-            border-radius: 16px;
-            padding: 48px 40px;
-            max-width: 380px;
-            width: 100%;
-            text-align: center;
+            background: var(--surface); border: 1px solid var(--border);
+            border-radius: 16px; padding: 48px 40px; max-width: 380px;
+            width: 100%; text-align: center;
         }
         .auth-box h2 { font-size: 1.3rem; font-weight: 600; margin-bottom: 8px; }
         .auth-box .subtitle { color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 28px; }
         .auth-input {
-            width: 100%;
-            padding: 12px 16px;
-            background: var(--bg);
-            border: 1px solid var(--border);
-            border-radius: 8px;
-            color: var(--text);
-            font-family: inherit;
-            font-size: 0.95rem;
-            outline: none;
-            transition: border-color 0.2s;
+            width: 100%; padding: 12px 16px; background: var(--bg);
+            border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+            font-family: inherit; font-size: 0.95rem; outline: none;
         }
         .auth-input:focus { border-color: var(--accent); }
         .auth-input.error { border-color: #ef4444; }
         .auth-btn {
-            width: 100%;
-            padding: 12px;
-            margin-top: 12px;
-            background: var(--accent);
-            color: #fff;
-            border: none;
-            border-radius: 8px;
-            font-family: inherit;
-            font-size: 0.95rem;
-            font-weight: 500;
-            cursor: pointer;
+            width: 100%; padding: 12px; margin-top: 12px; background: var(--accent);
+            color: #fff; border: none; border-radius: 8px; font-family: inherit;
+            font-size: 0.95rem; font-weight: 500; cursor: pointer;
         }
         .auth-btn:hover { opacity: 0.9; }
         .auth-error { color: #ef4444; font-size: 0.82rem; margin-top: 10px; display: none; }
         #app { display: none; }
         .loading-msg {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            color: var(--text-secondary);
-            font-family: 'JetBrains Mono', monospace;
-            font-size: 14px;
+            display: flex; align-items: center; justify-content: center;
+            min-height: 100vh; color: var(--text-secondary);
+            font-family: 'JetBrains Mono', monospace; font-size: 14px;
         }
     </style>
 </head>
@@ -118,28 +91,26 @@
         function showContent() {
             document.getElementById('auth-gate').style.display = 'none';
             document.getElementById('app').style.display = 'block';
-            loadDashboard();
         }
         if (sessionStorage.getItem('authed') === '1') showContent();
         document.getElementById('pwd').addEventListener('keydown', e => { if (e.key === 'Enter') checkAuth(); });
     </script>
 
-    <!-- React + Babel (no build step) -->
+    <!-- React via CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
     <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Shim: lucide-react UMD expects window.react (lowercase) -->
+    <script>window.react = window.React;</script>
     <script src="https://unpkg.com/lucide-react@0.383.0/dist/umd/lucide-react.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 
-    <script type="text/babel" data-type="module">
-        // Globals from UMD bundles
-        const { useState, useMemo, useEffect } = React;
-        const { TrendingUp, TrendingDown, Target, Zap, AlertTriangle, CheckCircle2, Clock, Flame, ChevronRight, Activity } = lucideReact;
+    <script type="text/babel">
+        const { useState, useMemo } = React;
+        const { AlertTriangle, CheckCircle2, Clock, Flame, Activity } = LucideReact;
 
         const QUOTA = 1_800_000;
         const quarters = ['Q1', 'Q2', 'Q3', 'Q4'];
-        const quarterLabels = {
-            Q1: 'Q1 · Feb–Apr', Q2: 'Q2 · May–Jul', Q3: 'Q3 · Aug–Oct', Q4: 'Q4 · Nov–Jan',
-        };
+        const quarterLabels = { Q1: 'Q1 · Feb–Apr', Q2: 'Q2 · May–Jul', Q3: 'Q3 · Aug–Oct', Q4: 'Q4 · Nov–Jan' };
 
         const fmtMoney = (n) => {
             if (n >= 1_000_000) return `$${(n / 1_000_000).toFixed(2)}M`;
@@ -148,10 +119,10 @@
         };
 
         const signalConfig = {
-            hot:    { label: 'HOT',    color: '#10b981', bg: 'rgba(16,185,129,0.12)', icon: Flame },
-            warm:   { label: 'WARM',   color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', icon: Activity },
-            cold:   { label: 'COLD',   color: '#64748b', bg: 'rgba(100,116,139,0.12)', icon: Clock },
-            closed: { label: 'CLOSED', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)', icon: CheckCircle2 },
+            hot:    { label: 'HOT',    color: '#10b981', bg: 'rgba(16,185,129,0.12)' },
+            warm:   { label: 'WARM',   color: '#f59e0b', bg: 'rgba(245,158,11,0.12)' },
+            cold:   { label: 'COLD',   color: '#64748b', bg: 'rgba(100,116,139,0.12)' },
+            closed: { label: 'CLOSED', color: '#a78bfa', bg: 'rgba(167,139,250,0.12)' },
         };
 
         function Stat({ label, value, sub, accent }) {
@@ -183,7 +154,7 @@
                 const open = deals.filter(d => d.status === 'open');
                 const wonAmount = won.reduce((s, d) => s + d.amount, 0);
                 const openTCV = open.reduce((s, d) => s + d.amount, 0);
-                const weightedPipeline = open.reduce((s, d) => s + d.amount * d.confidence, 0);
+                const weightedPipeline = open.reduce((s, d) => s + d.amount * (d.confidence || 0), 0);
                 const forecast = wonAmount + weightedPipeline;
                 const attainment = wonAmount / QUOTA;
                 const forecastAttainment = forecast / QUOTA;
@@ -196,7 +167,7 @@
                     const qDeals = deals.filter(d => d.quarter === q);
                     const qWon = qDeals.filter(d => d.status === 'won').reduce((s, d) => s + d.amount, 0);
                     const qOpen = qDeals.filter(d => d.status === 'open').reduce((s, d) => s + d.amount, 0);
-                    const qWeighted = qDeals.filter(d => d.status === 'open').reduce((s, d) => s + d.amount * d.confidence, 0);
+                    const qWeighted = qDeals.filter(d => d.status === 'open').reduce((s, d) => s + d.amount * (d.confidence || 0), 0);
                     const qDealCount = qDeals.filter(d => d.status === 'open').length;
                     return { quarter: q, won: qWon, open: qOpen, weighted: qWeighted, deals: qDeals, openCount: qDealCount };
                 });
@@ -205,30 +176,27 @@
             const filteredDeals = useMemo(() => {
                 let list = selectedQuarter === 'all' ? deals : deals.filter(d => d.quarter === selectedQuarter);
                 list = list.filter(d => d.status === 'open');
-                if (sortBy === 'weighted') return [...list].sort((a, b) => (b.amount * b.confidence) - (a.amount * a.confidence));
+                if (sortBy === 'weighted') return [...list].sort((a, b) => (b.amount * (b.confidence||0)) - (a.amount * (a.confidence||0)));
                 if (sortBy === 'amount') return [...list].sort((a, b) => b.amount - a.amount);
-                if (sortBy === 'confidence') return [...list].sort((a, b) => b.confidence - a.confidence);
+                if (sortBy === 'confidence') return [...list].sort((a, b) => (b.confidence||0) - (a.confidence||0));
                 return list;
             }, [selectedQuarter, sortBy, deals]);
 
-            const maxQuarterValue = Math.max(...quarterStats.map(q => q.won + q.weighted));
+            const maxQuarterValue = Math.max(...quarterStats.map(q => q.won + q.weighted), 1);
             const lastUpdated = metadata?.lastUpdated || 'unknown';
 
             return (
                 <div style={{ minHeight: '100vh', background: 'linear-gradient(180deg, #0a0e1a 0%, #0f1420 100%)', color: '#e2e8f0', fontFamily: '"JetBrains Mono", "SF Mono", Menlo, monospace', padding: '32px 24px' }}>
                     <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+
                         {/* Header */}
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '40px', paddingBottom: '24px', borderBottom: '1px solid rgba(148,163,184,0.1)' }}>
                             <div>
-                                <div style={{ fontSize: '11px', letterSpacing: '0.2em', color: '#64748b', marginBottom: '8px' }}>
-                                    AFONSO SANTOS · LATAM & IBERIA
-                                </div>
+                                <div style={{ fontSize: '11px', letterSpacing: '0.2em', color: '#64748b', marginBottom: '8px' }}>AFONSO SANTOS · LATAM & IBERIA</div>
                                 <h1 style={{ fontFamily: '"Fraunces", "Playfair Display", Georgia, serif', fontSize: '48px', fontWeight: 300, margin: 0, letterSpacing: '-0.02em', color: '#f1f5f9' }}>
                                     Quota Tracker <span style={{ color: '#10b981' }}>FY26</span>
                                 </h1>
-                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>
-                                    Feb 1, 2026 → Jan 31, 2027 · Updated {lastUpdated}
-                                </div>
+                                <div style={{ fontSize: '12px', color: '#64748b', marginTop: '8px' }}>Feb 1, 2026 → Jan 31, 2027 · Updated {lastUpdated}</div>
                             </div>
                             <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '11px', letterSpacing: '0.15em', color: '#64748b' }}>ANNUAL QUOTA</div>
@@ -238,14 +206,13 @@
                         </div>
 
                         {/* Hero stats */}
-                        <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(15,20,32,0.6) 100%)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '4px', padding: '32px', marginBottom: '24px', position: 'relative', overflow: 'hidden' }}>
+                        <div style={{ background: 'linear-gradient(135deg, rgba(16,185,129,0.06) 0%, rgba(15,20,32,0.6) 100%)', border: '1px solid rgba(16,185,129,0.2)', borderRadius: '4px', padding: '32px', marginBottom: '24px' }}>
                             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr 1fr', gap: '32px', marginBottom: '28px' }}>
                                 <Stat label="Closed Won" value={fmtMoney(stats.wonAmount)} sub={`${stats.won.length} deals`} accent="#10b981" />
                                 <Stat label="Attainment" value={`${(stats.attainment * 100).toFixed(1)}%`} sub={`Gap: ${fmtMoney(stats.gap)}`} accent="#10b981" />
                                 <Stat label="Weighted Pipeline" value={fmtMoney(stats.weightedPipeline)} sub={`from ${fmtMoney(stats.openTCV)} TCV`} accent="#f59e0b" />
                                 <Stat label="Forecast (Won + Weighted)" value={fmtMoney(stats.forecast)} sub={`${(stats.forecastAttainment * 100).toFixed(0)}% of quota`} accent={stats.forecastAttainment >= 1 ? '#10b981' : '#f59e0b'} />
                             </div>
-                            {/* Progress bar */}
                             <div>
                                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', letterSpacing: '0.15em', color: '#64748b', marginBottom: '8px' }}>
                                     <span>$0</span><span>50%</span><span>100% · ${(QUOTA / 1_000_000).toFixed(1)}M</span>
@@ -284,8 +251,8 @@
                                             <div style={{ fontSize: '24px', fontWeight: 600, color: '#f1f5f9', fontFamily: '"Fraunces", Georgia, serif' }}>{fmtMoney(total)}</div>
                                             <div style={{ fontSize: '11px', color: pctOfTarget >= 100 ? '#10b981' : '#f59e0b', marginBottom: '12px' }}>{pctOfTarget.toFixed(0)}% of {fmtMoney(targetPerQ)} target</div>
                                             <div style={{ height: '8px', background: 'rgba(148,163,184,0.08)', borderRadius: '1px', overflow: 'hidden', display: 'flex', marginBottom: '12px' }}>
-                                                <div style={{ width: `${(q.won / Math.max(maxQuarterValue, 1)) * 100}%`, background: '#10b981' }} />
-                                                <div style={{ width: `${(q.weighted / Math.max(maxQuarterValue, 1)) * 100}%`, background: 'repeating-linear-gradient(45deg, #f59e0b, #f59e0b 3px, #d97706 3px, #d97706 6px)' }} />
+                                                <div style={{ width: `${(q.won / maxQuarterValue) * 100}%`, background: '#10b981' }} />
+                                                <div style={{ width: `${(q.weighted / maxQuarterValue) * 100}%`, background: 'repeating-linear-gradient(45deg, #f59e0b, #f59e0b 3px, #d97706 3px, #d97706 6px)' }} />
                                             </div>
                                             <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '10px', color: '#94a3b8' }}>
                                                 <span>Won {fmtMoney(q.won)}</span><span>+W {fmtMoney(q.weighted)}</span>
@@ -307,7 +274,7 @@
                                     </span>
                                 </h2>
                                 <div style={{ display: 'flex', gap: '16px', fontSize: '11px' }}>
-                                    <div><span style={{ color: '#64748b' }}>Win rate · </span><span style={{ color: '#10b981', fontWeight: 600 }}>{((stats.won.length / (stats.won.length + stats.lost.length)) * 100).toFixed(0)}%</span></div>
+                                    <div><span style={{ color: '#64748b' }}>Win rate · </span><span style={{ color: '#10b981', fontWeight: 600 }}>{((stats.won.length / Math.max(stats.won.length + stats.lost.length, 1)) * 100).toFixed(0)}%</span></div>
                                     <div><span style={{ color: '#64748b' }}>Lost TCV · </span><span style={{ color: '#ef4444', fontWeight: 600 }}>{fmtMoney(stats.lost.reduce((s, d) => s + d.amount, 0))}</span></div>
                                 </div>
                             </div>
@@ -324,14 +291,16 @@
                                         <div style={{ color: '#f1f5f9', fontWeight: 500, display: 'flex', alignItems: 'center', gap: '8px' }}><span style={{ color: '#10b981', fontSize: '14px' }}>✓</span>{d.name}</div>
                                         <div style={{ color: '#94a3b8', fontSize: '11px' }}>{d.quarter}</div>
                                         <div style={{ textAlign: 'right', color: '#10b981', fontWeight: 600 }}>{fmtMoney(d.amount)}</div>
-                                        <div style={{ textAlign: 'right', color: '#94a3b8', fontSize: '11px' }}>{new Date(d.closeDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
+                                        <div style={{ textAlign: 'right', color: '#94a3b8', fontSize: '11px' }}>{new Date(d.closeDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
                                         <div style={{ fontSize: '11px', color: '#64748b' }}>{d.signalNote}</div>
                                     </div>
                                 ))}
-                                <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(16,185,129,0.04)', borderLeft: '2px solid #10b981', fontSize: '11px', color: '#cbd5e1' }}>
-                                    <strong style={{ color: '#10b981' }}>Avg deal size:</strong> {fmtMoney(stats.wonAmount / stats.won.length)} ·{' '}
-                                    <strong style={{ color: '#10b981' }}>Largest:</strong> {stats.won.reduce((max, d) => d.amount > max.amount ? d : max, stats.won[0]).name} ({fmtMoney(stats.won.reduce((max, d) => d.amount > max.amount ? d : max, stats.won[0]).amount)})
-                                </div>
+                                {stats.won.length > 0 && (
+                                    <div style={{ marginTop: '12px', padding: '12px', background: 'rgba(16,185,129,0.04)', borderLeft: '2px solid #10b981', fontSize: '11px', color: '#cbd5e1' }}>
+                                        <strong style={{ color: '#10b981' }}>Avg deal size:</strong> {fmtMoney(stats.wonAmount / stats.won.length)} ·{' '}
+                                        <strong style={{ color: '#10b981' }}>Largest:</strong> {stats.won.reduce((max, d) => d.amount > max.amount ? d : max, stats.won[0]).name} ({fmtMoney(stats.won.reduce((max, d) => d.amount > max.amount ? d : max, stats.won[0]).amount)})
+                                    </div>
+                                )}
                             </div>
                             {/* Lost */}
                             {stats.lost.length > 0 && (
@@ -344,7 +313,7 @@
                                             <div style={{ color: '#cbd5e1', textDecoration: 'line-through', textDecorationColor: 'rgba(239,68,68,0.4)' }}>{d.name}</div>
                                             <div style={{ color: '#94a3b8', fontSize: '11px' }}>{d.quarter}</div>
                                             <div style={{ textAlign: 'right', color: '#ef4444' }}>{fmtMoney(d.amount)}</div>
-                                            <div style={{ textAlign: 'right', color: '#94a3b8', fontSize: '11px' }}>{new Date(d.closeDate).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
+                                            <div style={{ textAlign: 'right', color: '#94a3b8', fontSize: '11px' }}>{new Date(d.closeDate + 'T00:00:00').toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</div>
                                             <div style={{ fontSize: '11px', color: '#64748b' }}>{d.stage}</div>
                                         </div>
                                     ))}
@@ -375,15 +344,15 @@
                                 <div>SIGNAL</div><div>DEAL</div><div>QTR</div><div style={{ textAlign: 'right' }}>AMOUNT</div><div style={{ textAlign: 'right' }}>CONF.</div><div style={{ textAlign: 'right' }}>WEIGHTED</div><div>STAGE & SIGNAL</div>
                             </div>
                             {filteredDeals.map((d, i) => {
-                                const sig = signalConfig[d.signal];
+                                const sig = signalConfig[d.signal] || signalConfig.cold;
                                 return (
                                     <div key={i} style={{ display: 'grid', gridTemplateColumns: '50px 2fr 80px 110px 100px 90px 1.6fr', gap: '16px', padding: '14px 8px', borderBottom: '1px solid rgba(148,163,184,0.06)', fontSize: '13px', alignItems: 'center' }}>
                                         <div><div style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', width: '32px', height: '20px', background: sig.bg, color: sig.color, fontSize: '9px', fontWeight: 700, letterSpacing: '0.1em', borderRadius: '2px' }}>{sig.label}</div></div>
                                         <div style={{ color: '#f1f5f9', fontWeight: 500 }}>{d.name}</div>
                                         <div style={{ color: '#94a3b8', fontSize: '11px' }}>{d.quarter}</div>
                                         <div style={{ textAlign: 'right', color: '#f1f5f9', fontWeight: 600 }}>{fmtMoney(d.amount)}</div>
-                                        <div style={{ textAlign: 'right' }}><span style={{ color: d.confidence >= 0.6 ? '#10b981' : d.confidence >= 0.3 ? '#f59e0b' : '#94a3b8', fontWeight: 600 }}>{(d.confidence * 100).toFixed(0)}%</span></div>
-                                        <div style={{ textAlign: 'right', color: '#cbd5e1' }}>{fmtMoney(d.amount * d.confidence)}</div>
+                                        <div style={{ textAlign: 'right' }}><span style={{ color: (d.confidence||0) >= 0.6 ? '#10b981' : (d.confidence||0) >= 0.3 ? '#f59e0b' : '#94a3b8', fontWeight: 600 }}>{((d.confidence||0) * 100).toFixed(0)}%</span></div>
+                                        <div style={{ textAlign: 'right', color: '#cbd5e1' }}>{fmtMoney(d.amount * (d.confidence||0))}</div>
                                         <div style={{ fontSize: '11px', color: '#94a3b8' }}>
                                             <div style={{ color: '#cbd5e1', marginBottom: '2px' }}>{d.stage}</div>
                                             <div style={{ color: '#64748b', fontSize: '10px' }}>{d.signalNote}</div>
@@ -393,7 +362,7 @@
                             })}
                         </div>
 
-                        {/* Footer */}
+                        {/* Footer notes */}
                         <div style={{ marginTop: '32px', padding: '20px', background: 'rgba(245,158,11,0.04)', border: '1px solid rgba(245,158,11,0.15)', borderRadius: '4px', fontSize: '12px', color: '#cbd5e1', lineHeight: 1.7 }}>
                             <div style={{ fontSize: '10px', letterSpacing: '0.2em', color: '#f59e0b', marginBottom: '10px', fontWeight: 600 }}>⚡ HOW TO READ THIS</div>
                             <strong style={{ color: '#f1f5f9' }}>Confidence</strong> = HubSpot stage probability adjusted by recent activity signals from Granola meetings and Slack DMs (last 60 days). HOT = active engagement, momentum confirmed. WARM = activity but stalled or competitive risk. COLD = no recent reply or stalled internally. <br/>
@@ -404,23 +373,49 @@
             );
         }
 
-        // Load data and render
-        window.loadDashboard = function() {
+        // --- INIT: fetch data and render (runs after Babel transform) ---
+        if (sessionStorage.getItem('authed') === '1') {
             fetch('/data/quota.json')
-                .then(r => r.json())
+                .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
                 .then(data => {
                     const root = ReactDOM.createRoot(document.getElementById('app'));
                     root.render(<QuotaDashboard deals={data.deals} metadata={data.metadata} />);
                 })
                 .catch(err => {
-                    document.getElementById('app').innerHTML = `<div class="loading-msg" style="color: #ef4444;">Error loading data: ${err.message}</div>`;
+                    document.getElementById('app').innerHTML = '<div class="loading-msg" style="color:#ef4444;">Error loading data: ' + err.message + '</div>';
+                });
+        }
+
+        // Expose for post-auth loading
+        window.loadDashboard = function() {
+            fetch('/data/quota.json')
+                .then(r => { if (!r.ok) throw new Error(`HTTP ${r.status}`); return r.json(); })
+                .then(data => {
+                    const root = ReactDOM.createRoot(document.getElementById('app'));
+                    root.render(<QuotaDashboard deals={data.deals} metadata={data.metadata} />);
+                })
+                .catch(err => {
+                    document.getElementById('app').innerHTML = '<div class="loading-msg" style="color:#ef4444;">Error loading data: ' + err.message + '</div>';
                 });
         };
+    </script>
 
-        // If already authed, dashboard loads immediately
-        if (sessionStorage.getItem('authed') === '1') {
-            window.loadDashboard();
-        }
+    <!-- Fallback: if auth happens after Babel has finished, call loadDashboard -->
+    <script>
+        const origShowContent = window.showContent || function(){};
+        window.showContent = function() {
+            document.getElementById('auth-gate').style.display = 'none';
+            document.getElementById('app').style.display = 'block';
+            // Wait for Babel to finish transforming + expose loadDashboard
+            function tryLoad() {
+                if (typeof window.loadDashboard === 'function') {
+                    window.loadDashboard();
+                } else {
+                    setTimeout(tryLoad, 200);
+                }
+            }
+            tryLoad();
+        };
     </script>
 </body>
 </html>
