@@ -42,10 +42,20 @@
 
         /* Header */
         .header { margin-bottom: 48px; }
+        .header-top {
+            display: flex; align-items: center; gap: 16px; margin-bottom: 20px;
+        }
+        .avatar {
+            width: 56px; height: 56px; border-radius: 50%; object-fit: cover;
+            border: 2px solid var(--border); flex-shrink: 0;
+        }
         .header-name {
             font-size: 0.8rem; font-weight: 600;
-            color: var(--text-muted); margin-bottom: 16px;
+            color: var(--text-muted);
             letter-spacing: -0.01em;
+        }
+        .header-location {
+            font-size: 0.75rem; color: var(--text-muted); font-weight: 400;
         }
         .header h1 {
             font-size: 1.65rem; font-weight: 400; line-height: 1.5;
@@ -88,6 +98,7 @@
             border-radius: var(--radius);
             padding: 24px;
             transition: all 0.2s;
+            overflow: hidden;
         }
         .card:hover { background: var(--surface-hover); }
         .card-link { text-decoration: none; color: inherit; display: block; }
@@ -112,6 +123,39 @@
             transition: text-decoration-color 0.2s;
         }
         .card-desc a:hover { text-decoration-color: var(--accent); }
+
+        /* Image cards */
+        .card-img {
+            padding: 0;
+            position: relative;
+        }
+        .card-img-content {
+            padding: 24px;
+        }
+        .card-img img, .card-img .card-photo {
+            width: 100%;
+            height: 160px;
+            object-fit: cover;
+            display: block;
+        }
+        .card-img-tall img, .card-img-tall .card-photo {
+            height: 200px;
+        }
+        .card-logo-container {
+            height: 120px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 24px;
+        }
+        .card-logo-container.dark-bg {
+            background: #1c1917;
+        }
+        .card-logo-container img {
+            max-height: 40px;
+            width: auto;
+            object-fit: contain;
+        }
 
         /* Spans */
         .span-2 { grid-column: span 2; }
@@ -155,6 +199,23 @@
         }
         .tag-green { background: var(--green-dim); color: var(--green); }
 
+        /* Quota mini chart */
+        .mini-bars {
+            display: flex; align-items: flex-end; gap: 3px; height: 48px; margin-top: 12px;
+        }
+        .mini-bar {
+            flex: 1; border-radius: 3px 3px 0 0; min-height: 4px;
+            transition: all 0.3s;
+        }
+
+        /* Arrow icon */
+        .arrow-icon {
+            position: absolute; top: 16px; right: 16px;
+            width: 20px; height: 20px; color: var(--text-muted);
+            opacity: 0; transition: opacity 0.2s;
+        }
+        .card-link:hover .arrow-icon { opacity: 1; }
+
         /* Footer */
         footer {
             margin-top: 48px; padding-top: 24px; border-top: 1px solid var(--border);
@@ -167,6 +228,7 @@
             .header h1 { font-size: 1.3rem; }
             .bento { grid-template-columns: 1fr; }
             .span-2, .span-3 { grid-column: span 1; }
+            .card-img img, .card-img .card-photo { height: 180px; }
         }
         @media (min-width: 641px) and (max-width: 800px) {
             .bento { grid-template-columns: repeat(2, 1fr); }
@@ -179,7 +241,13 @@
 
         <!-- Header -->
         <div class="header">
-            <div class="header-name">Afonso Santos</div>
+            <div class="header-top">
+                <img src="img/afonso.jpg" alt="Afonso Santos" class="avatar">
+                <div>
+                    <div class="header-name">Afonso Santos</div>
+                    <div class="header-location">Porto, Portugal</div>
+                </div>
+            </div>
             <h1>Logos don't sign contracts — people do. I sell <a href="https://www.kevel.com" target="_blank" class="a-kevel">retail media</a> to enterprise, partner with <a href="https://www.founders-founders.com" target="_blank" class="a-founders">founders</a>, and invest in people building real value.</h1>
             <div class="header-links">
                 <a href="https://www.linkedin.com/in/afonsosantos/" target="_blank" class="pill">LinkedIn</a>
@@ -209,39 +277,94 @@
                 </div>
             </div>
 
-            <!-- Kevel -->
+            <!-- Kevel — with platform image -->
             <a href="https://www.kevel.com" target="_blank" class="card-link">
-                <div class="card">
-                    <div class="card-label">Kevel · Day job</div>
-                    <div class="card-title">Head of Retail Media, Southern Europe & LATAM</div>
-                    <p class="card-desc">Selling and deploying ad infrastructure for retailers, super-apps, and fintech players across Spain, Portugal, Brazil, Mexico, Colombia, and Peru.</p>
+                <div class="card card-img span-2" style="position: relative;">
+                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                    <img src="img/kevel-platform.jpg" alt="Kevel retail media platform">
+                    <div class="card-img-content">
+                        <div class="card-label">Kevel · Day job</div>
+                        <div class="card-title">Head of Retail Media, Southern Europe & LATAM</div>
+                        <p class="card-desc">Selling and deploying ad infrastructure for retailers, super-apps, and fintech players across Spain, Portugal, Brazil, Mexico, Colombia, and Peru.</p>
+                    </div>
                 </div>
             </a>
 
             <!-- Advising -->
             <a href="https://calendly.com/afonso-santos" target="_blank" class="card-link">
-                <div class="card">
+                <div class="card" style="position: relative; display: flex; flex-direction: column; height: 100%;">
+                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
                     <div class="card-label">On the side</div>
                     <div class="card-title">Adviser, mentor & angel investor</div>
-                    <p class="card-desc">Backing early-stage founders with capital, GTM strategy, and sales playbooks. Mentor at START Esposende.</p>
+                    <p class="card-desc" style="flex: 1;">Backing early-stage founders with capital, GTM strategy, and sales playbooks. Mentor at START Esposende.</p>
+                    <div style="margin-top: 16px;">
+                        <svg width="100%" height="48" viewBox="0 0 200 48" preserveAspectRatio="none">
+                            <defs>
+                                <linearGradient id="gbar" x1="0" y1="0" x2="0" y2="1">
+                                    <stop offset="0%" stop-color="#3b82f6" stop-opacity="0.5"/>
+                                    <stop offset="100%" stop-color="#3b82f6" stop-opacity="0.1"/>
+                                </linearGradient>
+                            </defs>
+                            <rect x="0" y="20" width="22" height="28" rx="3" fill="url(#gbar)"/>
+                            <rect x="26" y="12" width="22" height="36" rx="3" fill="url(#gbar)"/>
+                            <rect x="52" y="28" width="22" height="20" rx="3" fill="url(#gbar)"/>
+                            <rect x="78" y="6" width="22" height="42" rx="3" fill="url(#gbar)"/>
+                            <rect x="104" y="16" width="22" height="32" rx="3" fill="url(#gbar)"/>
+                            <rect x="130" y="2" width="22" height="46" rx="3" fill="#3b82f6" opacity="0.6"/>
+                            <rect x="156" y="8" width="22" height="40" rx="3" fill="url(#gbar)"/>
+                            <rect x="182" y="0" width="18" height="48" rx="3" fill="#3b82f6" opacity="0.35"/>
+                        </svg>
+                    </div>
                 </div>
             </a>
 
-            <!-- Founders Founders -->
+            <!-- Founders Founders — with photo -->
             <a href="https://www.founders-founders.com" target="_blank" class="card-link">
-                <div class="card">
-                    <div class="card-label">Co-founder</div>
-                    <div class="card-title">Founders Founders</div>
-                    <p class="card-desc">Portugal's #1 peer-mentoring community for scaleup founders. Startup homes in Porto and Lisbon.</p>
+                <div class="card card-img" style="position: relative;">
+                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="z-index:1;"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                    <img src="img/founders-founders.jpg" alt="Founders Founders community space">
+                    <div class="card-img-content">
+                        <div class="card-label">Co-founder</div>
+                        <div class="card-title">Founders Founders</div>
+                        <p class="card-desc">Portugal's #1 peer-mentoring community for scaleup founders. Porto & Lisbon.</p>
+                    </div>
                 </div>
             </a>
 
-            <!-- Laika Ventures -->
+            <!-- Laika Ventures — with dark logo card -->
             <a href="https://www.laikaventures.co/" target="_blank" class="card-link">
-                <div class="card">
-                    <div class="card-label">Partner</div>
-                    <div class="card-title">Laika Ventures</div>
-                    <p class="card-desc">Venture studio that creates and funds AI companies — from zero to take-off.</p>
+                <div class="card card-img" style="position: relative;">
+                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="z-index:1;"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                    <div class="card-logo-container dark-bg">
+                        <img src="img/laika.svg" alt="Laika Ventures logo">
+                    </div>
+                    <div class="card-img-content">
+                        <div class="card-label">Partner</div>
+                        <div class="card-title">Laika Ventures</div>
+                        <p class="card-desc">Venture studio that creates and funds AI companies — from zero to take-off.</p>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Quota tracker — with mini chart -->
+            <a href="/quota/" class="card-link">
+                <div class="card" style="display: flex; flex-direction: column; height: 100%; position: relative;">
+                    <svg class="arrow-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 17L17 7M17 7H7M17 7v10"/></svg>
+                    <div class="card-label">Project</div>
+                    <div class="card-title">Quota Tracker FY26</div>
+                    <p class="card-desc" style="flex: 1;">Real-time quota attainment, weighted pipeline, and deal health signals.</p>
+                    <div style="margin-top: 14px; display: flex; gap: 6px; align-items: center;">
+                        <span class="tag">Sales Ops</span>
+                        <span class="tag tag-green">Live</span>
+                    </div>
+                    <div style="margin-top: 14px;">
+                        <svg width="100%" height="32" viewBox="0 0 200 32" preserveAspectRatio="none">
+                            <rect x="0" y="0" width="200" height="32" rx="6" fill="#e7e5e4"/>
+                            <rect x="0" y="0" width="96" height="32" rx="6" fill="#16a34a" opacity="0.7"/>
+                            <text x="48" y="21" font-size="11" font-family="Inter, sans-serif" font-weight="600" fill="white" text-anchor="middle">48%</text>
+                            <text x="150" y="21" font-size="10" font-family="Inter, sans-serif" fill="#78716c" text-anchor="middle">$1.8M target</text>
+                        </svg>
+                    </div>
                 </div>
             </a>
 
@@ -255,19 +378,6 @@
                     <div class="pov-item">Owning your ad stack isn't a nice-to-have — it's the difference between 30% margins and 80% margins on every ad dollar.</div>
                 </div>
             </div>
-
-            <!-- Quota tracker -->
-            <a href="/quota/" class="card-link">
-                <div class="card" style="display: flex; flex-direction: column; height: 100%;">
-                    <div class="card-label">Project</div>
-                    <div class="card-title">Quota Tracker FY26</div>
-                    <p class="card-desc" style="flex: 1;">Real-time quota attainment, weighted pipeline, and deal health signals.</p>
-                    <div style="margin-top: 14px; display: flex; gap: 6px;">
-                        <span class="tag">Sales Ops</span>
-                        <span class="tag tag-green">Live</span>
-                    </div>
-                </div>
-            </a>
 
             <!-- Resources -->
             <div class="card span-3">
