@@ -5,25 +5,24 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Afonso Santos</title>
     <meta name="description" content="Afonso Santos — Head of Retail Media, Southern Europe & LATAM at Kevel. Adviser, mentor, angel investor. Based in Porto.">
-    <meta name="robots" content="noindex, nofollow">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         :root {
-            --bg: #0a0a0a;
-            --surface: #141414;
-            --surface-hover: #1a1a1a;
-            --border: #232323;
-            --text: #fafafa;
-            --text-secondary: #a1a1aa;
-            --text-muted: #52525b;
+            --bg: #ffffff;
+            --surface: #fafaf9;
+            --surface-hover: #f5f5f4;
+            --border: #e7e5e4;
+            --text: #1c1917;
+            --text-secondary: #78716c;
+            --text-muted: #a8a29e;
             --accent: #3b82f6;
-            --accent-dim: rgba(59, 130, 246, 0.1);
-            --green: #10b981;
-            --green-dim: rgba(16, 185, 129, 0.1);
-            --amber: #f59e0b;
-            --amber-dim: rgba(245, 158, 11, 0.08);
-            --radius: 16px;
+            --accent-dim: rgba(59,130,246,0.08);
+            --green: #16a34a;
+            --green-dim: rgba(22,163,74,0.08);
+            --amber: #d97706;
+            --amber-dim: rgba(217,119,6,0.08);
+            --radius: 12px;
         }
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body {
@@ -35,9 +34,6 @@
             -webkit-font-smoothing: antialiased;
         }
 
-                /* MAIN */
-        #main-content { display: block; }
-
         .container {
             max-width: 800px;
             margin: 0 auto;
@@ -47,72 +43,81 @@
         /* Header */
         .header { margin-bottom: 48px; }
         .header-name {
-            font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
-            letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 16px;
+            font-size: 0.8rem; font-weight: 600;
+            color: var(--text-muted); margin-bottom: 16px;
+            letter-spacing: -0.01em;
         }
         .header h1 {
-            font-size: 1.75rem; font-weight: 500; line-height: 1.4;
-            letter-spacing: -0.01em; color: var(--text); margin-bottom: 16px;
+            font-size: 1.65rem; font-weight: 400; line-height: 1.5;
+            letter-spacing: -0.015em; color: var(--text); margin-bottom: 20px;
         }
         .header h1 a {
-            color: var(--text-secondary); text-decoration: none;
-            border-bottom: 1px solid var(--border); transition: all 0.2s;
+            color: var(--text); text-decoration: none;
+            text-decoration: underline;
+            text-decoration-color: var(--border);
+            text-underline-offset: 3px;
+            text-decoration-thickness: 1.5px;
+            transition: text-decoration-color 0.2s;
         }
-        .header h1 a:hover { color: var(--accent); border-color: var(--accent); }
+        .header h1 a:hover { text-decoration-color: var(--accent); }
+        .header h1 a.a-kevel:hover { text-decoration-color: #f59e0b; }
+        .header h1 a.a-founders:hover { text-decoration-color: #16a34a; }
         .header-links {
-            display: flex; gap: 10px; flex-wrap: wrap; align-items: center;
+            display: flex; gap: 8px; flex-wrap: wrap; align-items: center;
         }
         .pill {
             font-size: 0.8rem; color: var(--text-secondary); text-decoration: none;
             border: 1px solid var(--border); padding: 6px 16px; border-radius: 100px;
-            transition: all 0.2s; display: inline-block;
+            transition: all 0.2s; display: inline-block; background: var(--bg);
         }
-        .pill:hover { border-color: var(--text-secondary); color: var(--text); }
+        .pill:hover { border-color: var(--text-secondary); color: var(--text); background: var(--surface); }
         .pill-accent {
             color: var(--accent); background: var(--accent-dim);
-            border-color: rgba(59, 130, 246, 0.25);
+            border-color: rgba(59,130,246,0.2);
         }
-        .pill-accent:hover { background: rgba(59, 130, 246, 0.18); }
+        .pill-accent:hover { background: rgba(59,130,246,0.12); border-color: rgba(59,130,246,0.35); }
 
         /* Bento grid */
         .bento {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
-            gap: 12px;
+            gap: 8px;
         }
         .card {
             background: var(--surface);
-            border: 1px solid var(--border);
             border-radius: var(--radius);
             padding: 24px;
             transition: all 0.2s;
         }
-        .card:hover { border-color: #333; }
-        .card-link {
-            text-decoration: none; color: inherit; display: block;
-        }
-        .card-link:hover .card { border-color: var(--accent); }
+        .card:hover { background: var(--surface-hover); }
+        .card-link { text-decoration: none; color: inherit; display: block; }
+        .card-link .card { cursor: pointer; }
         .card-label {
-            font-size: 0.65rem; font-weight: 600; text-transform: uppercase;
-            letter-spacing: 0.1em; color: var(--text-muted); margin-bottom: 12px;
+            font-size: 0.7rem; font-weight: 500;
+            color: var(--text-muted); margin-bottom: 10px;
+            letter-spacing: -0.01em;
         }
         .card-title {
-            font-size: 1rem; font-weight: 500; color: var(--text);
+            font-size: 0.95rem; font-weight: 500; color: var(--text);
             margin-bottom: 6px; line-height: 1.4;
         }
         .card-desc {
-            font-size: 0.85rem; color: var(--text-secondary); line-height: 1.6;
+            font-size: 0.85rem; color: var(--text-secondary); line-height: 1.65;
         }
+        .card-desc a {
+            color: var(--text); text-decoration: underline;
+            text-decoration-color: var(--border);
+            text-underline-offset: 2px;
+            text-decoration-thickness: 1px;
+            transition: text-decoration-color 0.2s;
+        }
+        .card-desc a:hover { text-decoration-color: var(--accent); }
 
         /* Spans */
         .span-2 { grid-column: span 2; }
         .span-3 { grid-column: span 3; }
-        .span-row-2 { grid-row: span 2; }
 
-        /* Stats row */
-        .stats {
-            display: flex; gap: 32px; margin-top: 8px;
-        }
+        /* Stats */
         .stat-num {
             font-size: 1.5rem; font-weight: 600; color: var(--text);
             line-height: 1;
@@ -123,8 +128,9 @@
 
         /* POV list */
         .pov-item {
-            padding: 14px 0; border-bottom: 1px solid var(--border);
-            font-size: 0.88rem; color: #d4d4d8; line-height: 1.6;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border);
+            font-size: 0.85rem; color: var(--text-secondary); line-height: 1.65;
         }
         .pov-item:last-child { border-bottom: none; padding-bottom: 0; }
         .pov-item:first-child { padding-top: 0; }
@@ -132,14 +138,14 @@
         /* Resource row */
         .resource-row {
             display: flex; justify-content: space-between; align-items: center;
-            padding: 12px 0; border-bottom: 1px solid rgba(35,35,35,0.8);
-            text-decoration: none;
+            padding: 10px 0; border-bottom: 1px solid var(--border);
+            text-decoration: none; transition: all 0.15s;
         }
         .resource-row:last-child { border-bottom: none; padding-bottom: 0; }
         .resource-row:first-child { padding-top: 0; }
-        .resource-title { font-size: 0.85rem; color: #d4d4d8; }
+        .resource-title { font-size: 0.85rem; color: var(--text-secondary); transition: color 0.15s; }
         .resource-source { font-size: 0.75rem; color: var(--text-muted); }
-        .resource-row:hover .resource-title { color: var(--accent); }
+        .resource-row:hover .resource-title { color: var(--text); }
 
         /* Tags */
         .tag {
@@ -158,10 +164,9 @@
         /* Mobile */
         @media (max-width: 640px) {
             .container { padding: 40px 16px 32px; }
-            .header h1 { font-size: 1.4rem; }
+            .header h1 { font-size: 1.3rem; }
             .bento { grid-template-columns: 1fr; }
             .span-2, .span-3 { grid-column: span 1; }
-            .stats { gap: 20px; flex-wrap: wrap; }
         }
         @media (min-width: 641px) and (max-width: 800px) {
             .bento { grid-template-columns: repeat(2, 1fr); }
@@ -170,127 +175,111 @@
     </style>
 </head>
 <body>
-    <!-- MAIN -->
-    <div id="main-content">
-        <div class="container">
+    <div class="container">
 
-            <!-- Header -->
-            <div class="header">
-                <div class="header-name">Afonso Santos</div>
-                <h1>Retail media is eating the ad market. I'm helping the next wave of <a href="https://www.kevel.com" target="_blank">retailers</a> and <a href="https://www.kevel.com" target="_blank">fintechs</a> get there first — and <a href="https://calendly.com/afonso-santos" target="_blank">backing the founders</a> building what comes next.</h1>
-                <div class="header-links">
-                    <a href="https://www.linkedin.com/in/afonsosantos/" target="_blank" class="pill">LinkedIn</a>
-                    <a href="https://www.kevel.com" target="_blank" class="pill">Kevel</a>
-                    <a href="mailto:asantos@kevel.co" class="pill">Email</a>
-                    <a href="https://calendly.com/afonso-santos" target="_blank" class="pill pill-accent">Book a conversation</a>
+        <!-- Header -->
+        <div class="header">
+            <div class="header-name">Afonso Santos</div>
+            <h1>Retail media is eating the ad market. I'm helping the next wave of <a href="https://www.kevel.com" target="_blank" class="a-kevel">retailers</a> and <a href="https://www.kevel.com" target="_blank" class="a-kevel">fintechs</a> get there first — and <a href="https://www.founders-founders.com" target="_blank" class="a-founders">backing the founders</a> building what comes next.</h1>
+            <div class="header-links">
+                <a href="https://www.linkedin.com/in/afonsosantos/" target="_blank" class="pill">LinkedIn</a>
+                <a href="https://www.kevel.com" target="_blank" class="pill">Kevel</a>
+                <a href="mailto:asantos@kevel.co" class="pill">Email</a>
+                <a href="https://calendly.com/afonso-santos" target="_blank" class="pill pill-accent">Book a conversation</a>
+            </div>
+        </div>
+
+        <!-- Bento grid -->
+        <div class="bento">
+
+            <!-- About -->
+            <div class="card span-2">
+                <div class="card-label">About</div>
+                <p class="card-desc">Born in Braga, lived in London and San Francisco, now based between Porto and Esposende. Engineering degree, but I've been building and selling since I was 16 — from web design shops to outdoor advertising marketplaces to Customer Data Platforms. Co-founded <a href="https://www.founders-founders.com" target="_blank">Founders Founders</a>, Portugal's first peer-mentoring community for scaleup founders. Today I run <a href="https://www.kevel.com" target="_blank">Kevel</a>'s retail media business across Southern Europe and LATAM, and advise and invest in early-stage companies on the side.</p>
+            </div>
+
+            <!-- Numbers -->
+            <div class="card">
+                <div class="card-label">At a glance</div>
+                <div style="display: flex; flex-direction: column; gap: 20px;">
+                    <div><div class="stat-num">6</div><div class="stat-label">Countries</div></div>
+                    <div><div class="stat-num">170+</div><div class="stat-label">Clients served</div></div>
+                    <div><div class="stat-num">3</div><div class="stat-label">Languages</div></div>
                 </div>
             </div>
 
-            <!-- Bento grid -->
-            <div class="bento">
-
-                <!-- About -->
-                <div class="card span-2">
-                    <div class="card-label">About</div>
-                    <p class="card-desc">Born in Braga, lived in London and San Francisco, now based between Porto and Esposende. Engineering degree, but I've been building and selling since I was 16 — from web design shops to outdoor advertising marketplaces to Customer Data Platforms. Co-founded <a href="https://www.founders-founders.com" target="_blank" style="color: var(--text); border-bottom: 1px solid var(--border);">Founders Founders</a>, Portugal's first peer-mentoring community for scaleup founders. Today I run Kevel's retail media business across Southern Europe and LATAM, and advise and invest in early-stage companies on the side.</p>
-                </div>
-
-                <!-- Numbers -->
+            <!-- Kevel -->
+            <a href="https://www.kevel.com" target="_blank" class="card-link">
                 <div class="card">
-                    <div class="card-label">At a glance</div>
-                    <div style="display: flex; flex-direction: column; gap: 20px;">
-                        <div>
-                            <div class="stat-num">6</div>
-                            <div class="stat-label">Countries</div>
-                        </div>
-                        <div>
-                            <div class="stat-num">170+</div>
-                            <div class="stat-label">Clients served</div>
-                        </div>
-                        <div>
-                            <div class="stat-num">3</div>
-                            <div class="stat-label">Languages</div>
-                        </div>
-                    </div>
+                    <div class="card-label">Kevel · Day job</div>
+                    <div class="card-title">Head of Retail Media, Southern Europe & LATAM</div>
+                    <p class="card-desc">Selling and deploying ad infrastructure for retailers, super-apps, and fintech players across Spain, Portugal, Brazil, Mexico, Colombia, and Peru.</p>
                 </div>
+            </a>
 
-                <!-- Kevel -->
-                <a href="https://www.kevel.com" target="_blank" class="card-link">
-                    <div class="card">
-                        <div class="card-label">Kevel · Day job</div>
-                        <div class="card-title">Head of Retail Media, Southern Europe & LATAM</div>
-                        <p class="card-desc">Selling and deploying ad infrastructure for retailers, super-apps, and fintech players across Spain, Portugal, Brazil, Mexico, Colombia, and Peru.</p>
-                    </div>
-                </a>
-
-                <!-- Advising -->
-                <a href="https://calendly.com/afonso-santos" target="_blank" class="card-link">
-                    <div class="card">
-                        <div class="card-label">On the side</div>
-                        <div class="card-title">Adviser, mentor & angel investor</div>
-                        <p class="card-desc">Backing early-stage founders with capital, GTM strategy, and sales playbooks. Mentor at START Esposende.</p>
-                    </div>
-                </a>
-
-                <!-- Founders Founders -->
-                <a href="https://www.founders-founders.com" target="_blank" class="card-link">
-                    <div class="card">
-                        <div class="card-label">Co-founder</div>
-                        <div class="card-title">Founders Founders</div>
-                        <p class="card-desc">Portugal's #1 peer-mentoring community for scaleup founders. Startup homes in Porto and Lisbon.</p>
-                    </div>
-                </a>
-
-                <!-- Market POV -->
-                <div class="card span-2 span-row-2">
-                    <div class="card-label">What I believe about retail media</div>
-                    <div>
-                        <div class="pov-item">On-site sponsored products are table stakes. The real growth is in off-site, in-store, and CTV — and most retailers aren't ready for it.</div>
-                        <div class="pov-item">LATAM is 3–4 years behind the US in retail media maturity, but the velocity is faster. First movers will own the market.</div>
-                        <div class="pov-item">Fintech ad networks — super-apps, neobanks, loyalty platforms — are the next wave. Same playbook, better data.</div>
-                        <div class="pov-item">Owning your ad stack isn't a nice-to-have — it's the difference between 30% margins and 80% margins on every ad dollar.</div>
-                    </div>
+            <!-- Advising -->
+            <a href="https://calendly.com/afonso-santos" target="_blank" class="card-link">
+                <div class="card">
+                    <div class="card-label">On the side</div>
+                    <div class="card-title">Adviser, mentor & angel investor</div>
+                    <p class="card-desc">Backing early-stage founders with capital, GTM strategy, and sales playbooks. Mentor at START Esposende.</p>
                 </div>
+            </a>
 
-                <!-- Quota tracker -->
-                <a href="/quota/" class="card-link">
-                    <div class="card" style="display: flex; flex-direction: column; height: 100%;">
-                        <div class="card-label">Project</div>
-                        <div class="card-title">Quota Tracker FY26</div>
-                        <p class="card-desc" style="flex: 1;">Real-time quota attainment, weighted pipeline, and deal health signals.</p>
-                        <div style="margin-top: 14px; display: flex; gap: 6px;">
-                            <span class="tag">Sales Ops</span>
-                            <span class="tag tag-green">Live</span>
-                        </div>
-                    </div>
-                </a>
-
-                <!-- Resources -->
-                <div class="card span-3">
-                    <div class="card-label">Resources I recommend</div>
-                    <a href="https://www.insiderintelligence.com/content/us-retail-media-ad-spending-forecast-2025" target="_blank" class="resource-row">
-                        <span class="resource-title">US Retail Media Ad Spending Forecast</span>
-                        <span class="resource-source">eMarketer →</span>
-                    </a>
-                    <a href="https://iabeurope.eu/knowledge-hub/iab-europe-guide-to-retail-media/" target="_blank" class="resource-row">
-                        <span class="resource-title">Guide to Retail Media in Europe</span>
-                        <span class="resource-source">IAB Europe →</span>
-                    </a>
-                    <a href="https://www.kevel.com/retail-media" target="_blank" class="resource-row">
-                        <span class="resource-title">Retail Media Cloud — Platform & Case Studies</span>
-                        <span class="resource-source">Kevel →</span>
-                    </a>
+            <!-- Founders Founders -->
+            <a href="https://www.founders-founders.com" target="_blank" class="card-link">
+                <div class="card">
+                    <div class="card-label">Co-founder</div>
+                    <div class="card-title">Founders Founders</div>
+                    <p class="card-desc">Portugal's #1 peer-mentoring community for scaleup founders. Startup homes in Porto and Lisbon.</p>
                 </div>
+            </a>
 
+            <!-- Market POV -->
+            <div class="card span-2">
+                <div class="card-label">What I believe about retail media</div>
+                <div>
+                    <div class="pov-item">On-site sponsored products are table stakes. The real growth is in off-site, in-store, and CTV — and most retailers aren't ready for it.</div>
+                    <div class="pov-item">LATAM is 3–4 years behind the US in retail media maturity, but the velocity is faster. First movers will own the market.</div>
+                    <div class="pov-item">Fintech ad networks — super-apps, neobanks, loyalty platforms — are the next wave. Same playbook, better data.</div>
+                    <div class="pov-item">Owning your ad stack isn't a nice-to-have — it's the difference between 30% margins and 80% margins on every ad dollar.</div>
+                </div>
             </div>
 
-            <footer>
-                &copy; 2026 Afonso Santos · Porto, Portugal
-            </footer>
+            <!-- Quota tracker -->
+            <a href="/quota/" class="card-link">
+                <div class="card" style="display: flex; flex-direction: column; height: 100%;">
+                    <div class="card-label">Project</div>
+                    <div class="card-title">Quota Tracker FY26</div>
+                    <p class="card-desc" style="flex: 1;">Real-time quota attainment, weighted pipeline, and deal health signals.</p>
+                    <div style="margin-top: 14px; display: flex; gap: 6px;">
+                        <span class="tag">Sales Ops</span>
+                        <span class="tag tag-green">Live</span>
+                    </div>
+                </div>
+            </a>
+
+            <!-- Resources -->
+            <div class="card span-3">
+                <div class="card-label">Resources I recommend</div>
+                <a href="https://www.insiderintelligence.com/content/us-retail-media-ad-spending-forecast-2025" target="_blank" class="resource-row">
+                    <span class="resource-title">US Retail Media Ad Spending Forecast</span>
+                    <span class="resource-source">eMarketer</span>
+                </a>
+                <a href="https://iabeurope.eu/knowledge-hub/iab-europe-guide-to-retail-media/" target="_blank" class="resource-row">
+                    <span class="resource-title">Guide to Retail Media in Europe</span>
+                    <span class="resource-source">IAB Europe</span>
+                </a>
+                <a href="https://www.kevel.com/retail-media" target="_blank" class="resource-row">
+                    <span class="resource-title">Retail Media Cloud — Platform & Case Studies</span>
+                    <span class="resource-source">Kevel</span>
+                </a>
+            </div>
 
         </div>
+
+        <footer>&copy; 2026 Afonso Santos · Porto, Portugal</footer>
+
     </div>
-
-
 </body>
 </html>
