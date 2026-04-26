@@ -1,0 +1,72 @@
+{
+  "metadata": {
+    "owner": "Afonso Santos",
+    "role": "Head of Retail Media — LATAM & Iberia",
+    "fiscalYear": "FY26",
+    "fiscalYearStart": "2026-02-01",
+    "fiscalYearEnd": "2027-01-31",
+    "quotaUSD": 1800000,
+    "currency": "USD",
+    "lastUpdated": "2026-04-26",
+    "sources": ["HubSpot", "Granola", "Slack", "Gmail"],
+    "quarters": {
+      "Q1": { "label": "Q1 · Feb–Apr", "start": "2026-02-01", "end": "2026-04-30" },
+      "Q2": { "label": "Q2 · May–Jul", "start": "2026-05-01", "end": "2026-07-31" },
+      "Q3": { "label": "Q3 · Aug–Oct", "start": "2026-08-01", "end": "2026-10-31" },
+      "Q4": { "label": "Q4 · Nov–Jan", "start": "2026-11-01", "end": "2027-01-31" }
+    },
+    "schema": {
+      "amount": "Annual contract value in USD",
+      "stageProb": "HubSpot deal-stage probability (0–1)",
+      "confidence": "Adjusted probability factoring in Granola + Slack signals (0–1)",
+      "signal": "hot | warm | cold | closed",
+      "status": "won | lost | open",
+      "weighted": "amount × confidence"
+    }
+  },
+  "summary": {
+    "wonCount": 5,
+    "wonAmountUSD": 865153,
+    "lostCount": 3,
+    "lostAmountUSD": 319653,
+    "openCount": 24,
+    "openTCVUSD": 7951000,
+    "weightedPipelineUSD": 1342650,
+    "forecastUSD": 2207803,
+    "attainmentPct": 48.06,
+    "forecastAttainmentPct": 122.66,
+    "quotaGapUSD": 934847,
+    "winRatePct": 62.5
+  },
+  "deals": [
+    { "name": "Nubank — Brazil", "amount": 241071, "stage": "Closed Won", "stageProb": 1.0, "quarter": "Q1", "closeDate": "2026-03-09", "status": "won", "signal": "closed", "signalNote": "Closed Won" },
+    { "name": "[RFP] Biedronka", "amount": 624082, "stage": "Closed Won", "stageProb": 1.0, "quarter": "Q1", "closeDate": "2026-04-17", "status": "won", "signal": "closed", "signalNote": "RFP win — Order Form signed" },
+    { "name": "Biedronka — Pro Services", "amount": 139653, "stage": "Lost", "stageProb": 0, "quarter": "Q1", "closeDate": "2026-03-26", "status": "lost", "signal": "closed", "signalNote": "Lost" },
+    { "name": "CRM Bonus — Brazil", "amount": 60000, "stage": "Unqualified", "stageProb": 0, "quarter": "Q1", "closeDate": "2026-03-30", "status": "lost", "signal": "closed", "signalNote": "Unqualified" },
+    { "name": "Wells PT", "amount": 120000, "stage": "Lost", "stageProb": 0, "quarter": "Q1", "closeDate": "2026-04-20", "status": "lost", "signal": "closed", "signalNote": "Lost" },
+    { "name": "Worten", "amount": 434000, "stage": "5 (90%) Procurement & Legal", "stageProb": 0.90, "quarter": "Q2", "closeDate": "2026-04-30", "status": "open", "signal": "hot", "signalNote": "Legal red-lines dropped, signature imminent", "confidence": 0.92 },
+    { "name": "[RMC] Soriana (Shopeak Media)", "amount": 245000, "stage": "4 (75%) Commercial Alignment", "stageProb": 0.75, "quarter": "Q2", "closeDate": "2026-06-30", "status": "open", "signal": "warm", "signalNote": "Pricing negotiation w/ agency, May target", "confidence": 0.65 },
+    { "name": "Yassir.com", "amount": 180000, "stage": "3 (50%) Technical Eval", "stageProb": 0.25, "quarter": "Q2", "closeDate": "2026-06-30", "status": "open", "signal": "warm", "signalNote": "Lab testing in progress, Kawarizmi delays", "confidence": 0.30 },
+    { "name": "ITTI Digital (Peru via AWS)", "amount": 120000, "stage": "2 (25%) Demo", "stageProb": 0.15, "quarter": "Q2", "closeDate": "2026-06-30", "status": "open", "signal": "warm", "signalNote": "AWS-introduced, no follow-up since March", "confidence": 0.20 },
+    { "name": "Tipti — Ecuador", "amount": 180000, "stage": "4 (75%) Commercial Alignment", "stageProb": 0.75, "quarter": "Q2", "closeDate": "2026-06-30", "status": "open", "signal": "hot", "signalNote": "Strong demo, proposal requested", "confidence": 0.70 },
+    { "name": "bonpreu.cat — Spain", "amount": 264000, "stage": "4 (75%) Commercial Alignment", "stageProb": 0.75, "quarter": "Q2", "closeDate": "2026-07-31", "status": "open", "signal": "cold", "signalNote": "Internal hold per Josep Casquet — no Granola data", "confidence": 0.45 },
+    { "name": "Yape — Peru", "amount": 280000, "stage": "3 (50%) Technical Eval", "stageProb": 0.25, "quarter": "Q2", "closeDate": "2026-07-31", "status": "open", "signal": "hot", "signalNote": "Pilot scoping, Jun/Jul decision", "confidence": 0.55 },
+    { "name": "Coverflex — PT/ES/IT", "amount": 264000, "stage": "2 (25%) Demo", "stageProb": 0.15, "quarter": "Q2", "closeDate": "2026-07-31", "status": "open", "signal": "cold", "signalNote": "Quentin not replying, no Granola data", "confidence": 0.10 },
+    { "name": "Mevo — Brasil", "amount": 240000, "stage": "3 (50%) Technical Eval", "stageProb": 0.25, "quarter": "Q2", "closeDate": "2026-07-31", "status": "open", "signal": "cold", "signalNote": "Hugo not replying since March", "confidence": 0.15 },
+    { "name": "BEES / AB InBev", "amount": 480000, "stage": "1 (10%) Discovery", "stageProb": 0.05, "quarter": "Q3", "closeDate": "2026-09-30", "status": "open", "signal": "hot", "signalNote": "Multiple stakeholders engaged, follow-up planned", "confidence": 0.25 },
+    { "name": "PCDIGA — Retail Media", "amount": 120000, "stage": "1 (10%) Discovery", "stageProb": 0.05, "quarter": "Q3", "closeDate": "2026-10-31", "status": "open", "signal": "cold", "signalNote": "Early stage, limited signal", "confidence": 0.10 },
+    { "name": "Multiponto Mídia — Brazil", "amount": 120000, "stage": "1 (10%) Discovery", "stageProb": 0.05, "quarter": "Q3", "closeDate": "2026-10-31", "status": "open", "signal": "cold", "signalNote": "Early stage", "confidence": 0.08 },
+    { "name": "Sicoob — Brazil", "amount": 120000, "stage": "1 (10%) Discovery", "stageProb": 0.05, "quarter": "Q3", "closeDate": "2026-10-31", "status": "open", "signal": "cold", "signalNote": "Early stage", "confidence": 0.08 },
+    { "name": "Livelo — Brazil", "amount": 120000, "stage": "1 (10%) Discovery", "stageProb": 0.05, "quarter": "Q3", "closeDate": "2026-10-31", "status": "open", "signal": "cold", "signalNote": "Early stage", "confidence": 0.08 },
+    { "name": "The Home Depot México", "amount": 250000, "stage": "3 (50%) Technical Eval", "stageProb": 0.50, "quarter": "Q3", "closeDate": "2026-10-31", "status": "open", "signal": "hot", "signalNote": "Deep technical session, NDA/pricing next", "confidence": 0.55 },
+    { "name": "Farmacias del Ahorro — MX", "amount": 240000, "stage": "3 (50%) Technical Eval", "stageProb": 0.25, "quarter": "Q3", "closeDate": "2026-10-31", "status": "open", "signal": "hot", "signalNote": "Included in final RFI stage, June deadline", "confidence": 0.40 },
+    { "name": "RPE", "amount": 100000, "stage": "3 (50%) Technical Eval", "stageProb": 0.25, "quarter": "Q3", "closeDate": "2026-10-31", "status": "open", "signal": "warm", "signalNote": "Trial live, MNDA done, pricing call pending", "confidence": 0.40 },
+    { "name": "RD Saúde / Impulso", "amount": 900000, "stage": "3 (50%) Technical Eval", "stageProb": 0.25, "quarter": "Q3", "closeDate": "2026-11-30", "status": "open", "signal": "warm", "signalNote": "Algolia integration call done, TopSort competing", "confidence": 0.30 },
+    { "name": "Magalu — Brazil", "amount": 1700000, "stage": "2 (25%) Demo", "stageProb": 0.15, "quarter": "Q4", "closeDate": "2027-01-31", "status": "open", "signal": "warm", "signalNote": "Exploratory, in-person visit mid-May", "confidence": 0.20 },
+    { "name": "Bradesco — Brazil", "amount": 120000, "stage": "1 (10%) Discovery", "stageProb": 0.05, "quarter": "Q4", "closeDate": "2027-01-31", "status": "open", "signal": "cold", "signalNote": "Early stage", "confidence": 0.08 },
+    { "name": "RMC Pluxee", "amount": 240000, "stage": "3 (50%) Technical Eval", "stageProb": 0.25, "quarter": "Q4", "closeDate": "2027-01-31", "status": "open", "signal": "hot", "signalNote": "NDA in progress, commercial advancing", "confidence": 0.45 },
+    { "name": "Edenred", "amount": 150000, "stage": "1 (10%) Discovery", "stageProb": 0.05, "quarter": "Q4", "closeDate": "2027-01-31", "status": "open", "signal": "cold", "signalNote": "Stale, last update March", "confidence": 0.05 },
+    { "name": "Fenicio.io — Uruguay", "amount": 360000, "stage": "1 (10%) Discovery", "stageProb": 0.05, "quarter": "Q4", "closeDate": "2027-01-31", "status": "open", "signal": "warm", "signalNote": "New contacts, implementation discussion", "confidence": 0.15 },
+    { "name": "Entropy.tech — Mexico", "amount": 120000, "stage": "1 (10%) Discovery", "stageProb": 0.05, "quarter": "Q4", "closeDate": "2027-01-31", "status": "open", "signal": "cold", "signalNote": "Early stage", "confidence": 0.08 }
+  ]
+}
