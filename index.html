@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Afonso Santos — Project Hub</title>
+    <meta name="description" content="Afonso Santos — Head of Retail Media for LATAM & Iberia at Kevel. Projects, experiments, and things I'm building.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #0a0a0a;
+            --surface: #141414;
+            --surface-hover: #1a1a1a;
+            --border: #262626;
+            --text: #fafafa;
+            --text-secondary: #a1a1aa;
+            --accent: #3b82f6;
+            --accent-dim: rgba(59, 130, 246, 0.1);
+        }
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            min-height: 100vh;
+        }
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+            padding: 80px 24px 60px;
+        }
+        .header {
+            margin-bottom: 56px;
+        }
+        .header h1 {
+            font-size: 2rem;
+            font-weight: 700;
+            letter-spacing: -0.02em;
+            margin-bottom: 8px;
+        }
+        .header p {
+            color: var(--text-secondary);
+            font-size: 1.05rem;
+        }
+        .header .links {
+            margin-top: 16px;
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+        }
+        .header .links a {
+            color: var(--text-secondary);
+            text-decoration: none;
+            font-size: 0.9rem;
+            transition: color 0.2s;
+        }
+        .header .links a:hover { color: var(--accent); }
+
+        .section-title {
+            font-size: 0.8rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-secondary);
+            margin-bottom: 20px;
+        }
+
+        .projects {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 56px;
+        }
+        .project-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 24px;
+            text-decoration: none;
+            color: var(--text);
+            transition: all 0.2s ease;
+            display: block;
+        }
+        .project-card:hover {
+            background: var(--surface-hover);
+            border-color: var(--accent);
+            transform: translateY(-1px);
+        }
+        .project-card h3 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 6px;
+        }
+        .project-card p {
+            color: var(--text-secondary);
+            font-size: 0.92rem;
+        }
+        .project-card .meta {
+            margin-top: 12px;
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        .tag {
+            background: var(--accent-dim);
+            color: var(--accent);
+            font-size: 0.75rem;
+            font-weight: 500;
+            padding: 3px 10px;
+            border-radius: 100px;
+        }
+        .empty-state {
+            background: var(--surface);
+            border: 1px dashed var(--border);
+            border-radius: 12px;
+            padding: 48px 24px;
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+        }
+        footer {
+            color: var(--text-secondary);
+            font-size: 0.8rem;
+            padding-top: 32px;
+            border-top: 1px solid var(--border);
+        }
+        @media (max-width: 480px) {
+            .container { padding: 48px 16px 40px; }
+            .header h1 { font-size: 1.6rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>Afonso Santos</h1>
+            <p>Head of Retail Media, LATAM & Iberia — Kevel</p>
+            <div class="links">
+                <a href="https://www.linkedin.com/in/jafonsosantos/" target="_blank">LinkedIn</a>
+                <a href="https://www.kevel.com" target="_blank">Kevel</a>
+                <a href="mailto:asantos@kevel.co">Email</a>
+            </div>
+        </div>
+
+        <div class="section-title">Projects</div>
+        <div class="projects">
+            <div class="empty-state">
+                Projects coming soon — this hub is auto-deployed from Claude Cowork.
+            </div>
+            <!-- 
+            TEMPLATE: Copy this block to add a new project card
+            <a href="/projects/project-name/" class="project-card">
+                <h3>Project Title</h3>
+                <p>Short description of what this project is about.</p>
+                <div class="meta">
+                    <span class="tag">Tag</span>
+                </div>
+            </a>
+            -->
+        </div>
+
+        <footer>
+            &copy; 2026 Afonso Santos · Auto-deployed via GitHub Pages
+        </footer>
+    </div>
+</body>
+</html>
