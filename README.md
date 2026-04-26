@@ -1,0 +1,2 @@
+# afonsosantos.com
+Claude Cowork
