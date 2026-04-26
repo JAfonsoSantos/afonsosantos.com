@@ -26,14 +26,79 @@
             line-height: 1.6;
             min-height: 100vh;
         }
+
+        /* PASSWORD GATE */
+        #auth-gate {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 24px;
+        }
+        .auth-box {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 48px 40px;
+            max-width: 380px;
+            width: 100%;
+            text-align: center;
+        }
+        .auth-box h2 {
+            font-size: 1.3rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+        .auth-box .subtitle {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            margin-bottom: 28px;
+        }
+        .auth-input {
+            width: 100%;
+            padding: 12px 16px;
+            background: var(--bg);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text);
+            font-family: inherit;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+        .auth-input:focus { border-color: var(--accent); }
+        .auth-input.error { border-color: #ef4444; }
+        .auth-btn {
+            width: 100%;
+            padding: 12px;
+            margin-top: 12px;
+            background: var(--accent);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-family: inherit;
+            font-size: 0.95rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        .auth-btn:hover { opacity: 0.9; }
+        .auth-error {
+            color: #ef4444;
+            font-size: 0.82rem;
+            margin-top: 10px;
+            display: none;
+        }
+
+        /* MAIN CONTENT (hidden until auth) */
+        #main-content { display: none; }
+
         .container {
             max-width: 720px;
             margin: 0 auto;
             padding: 80px 24px 60px;
         }
-        .header {
-            margin-bottom: 56px;
-        }
+        .header { margin-bottom: 56px; }
         .header h1 {
             font-size: 2rem;
             font-weight: 700;
@@ -57,7 +122,6 @@
             transition: color 0.2s;
         }
         .header .links a:hover { color: var(--accent); }
-
         .section-title {
             font-size: 0.8rem;
             font-weight: 600;
@@ -66,7 +130,6 @@
             color: var(--text-secondary);
             margin-bottom: 20px;
         }
-
         .projects {
             display: flex;
             flex-direction: column;
@@ -88,21 +151,9 @@
             border-color: var(--accent);
             transform: translateY(-1px);
         }
-        .project-card h3 {
-            font-size: 1.1rem;
-            font-weight: 600;
-            margin-bottom: 6px;
-        }
-        .project-card p {
-            color: var(--text-secondary);
-            font-size: 0.92rem;
-        }
-        .project-card .meta {
-            margin-top: 12px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
+        .project-card h3 { font-size: 1.1rem; font-weight: 600; margin-bottom: 6px; }
+        .project-card p { color: var(--text-secondary); font-size: 0.92rem; }
+        .project-card .meta { margin-top: 12px; display: flex; gap: 12px; flex-wrap: wrap; }
         .tag {
             background: var(--accent-dim);
             color: var(--accent);
@@ -133,37 +184,86 @@
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="header">
-            <h1>Afonso Santos</h1>
-            <p>Head of Retail Media, LATAM & Iberia — Kevel</p>
-            <div class="links">
-                <a href="https://www.linkedin.com/in/jafonsosantos/" target="_blank">LinkedIn</a>
-                <a href="https://www.kevel.com" target="_blank">Kevel</a>
-                <a href="mailto:asantos@kevel.co">Email</a>
-            </div>
+    <!-- PASSWORD GATE -->
+    <div id="auth-gate">
+        <div class="auth-box">
+            <h2>Afonso Santos</h2>
+            <p class="subtitle">Enter password to continue</p>
+            <input type="password" id="pwd" class="auth-input" placeholder="Password" autofocus>
+            <button class="auth-btn" onclick="checkAuth()">Enter</button>
+            <p class="auth-error" id="auth-err">Wrong password. Try again.</p>
         </div>
-
-        <div class="section-title">Projects</div>
-        <div class="projects">
-            <div class="empty-state">
-                Projects coming soon — this hub is auto-deployed from Claude Cowork.
-            </div>
-            <!-- 
-            TEMPLATE: Copy this block to add a new project card
-            <a href="/projects/project-name/" class="project-card">
-                <h3>Project Title</h3>
-                <p>Short description of what this project is about.</p>
-                <div class="meta">
-                    <span class="tag">Tag</span>
-                </div>
-            </a>
-            -->
-        </div>
-
-        <footer>
-            &copy; 2026 Afonso Santos · Auto-deployed via GitHub Pages
-        </footer>
     </div>
+
+    <!-- MAIN CONTENT -->
+    <div id="main-content">
+        <div class="container">
+            <div class="header">
+                <h1>Afonso Santos</h1>
+                <p>Head of Retail Media, LATAM & Iberia — Kevel</p>
+                <div class="links">
+                    <a href="https://www.linkedin.com/in/jafonsosantos/" target="_blank">LinkedIn</a>
+                    <a href="https://www.kevel.com" target="_blank">Kevel</a>
+                    <a href="mailto:asantos@kevel.co">Email</a>
+                </div>
+            </div>
+
+            <div class="section-title">Projects</div>
+            <div class="projects">
+                <div class="empty-state">
+                    Projects coming soon — this hub is auto-deployed from Claude Cowork.
+                </div>
+                <!-- 
+                TEMPLATE: Copy this block to add a new project card
+                <a href="/projects/project-name/" class="project-card">
+                    <h3>Project Title</h3>
+                    <p>Short description of what this project is about.</p>
+                    <div class="meta">
+                        <span class="tag">Tag</span>
+                    </div>
+                </a>
+                -->
+            </div>
+
+            <footer>
+                &copy; 2026 Afonso Santos · Auto-deployed via GitHub Pages
+            </footer>
+        </div>
+    </div>
+
+    <script>
+        // Simple hash-based auth (SHA-256)
+        const HASH = 'a1d06bbb7f46018d54564d989ec2e32d7892e26a0db8328e15bdaa723dd2d746';
+
+        async function sha256(str) {
+            const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(str));
+            return Array.from(new Uint8Array(buf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        }
+
+        async function checkAuth() {
+            const pwd = document.getElementById('pwd').value;
+            const hash = await sha256(pwd);
+            if (hash === HASH) {
+                sessionStorage.setItem('authed', '1');
+                showContent();
+            } else {
+                document.getElementById('pwd').classList.add('error');
+                document.getElementById('auth-err').style.display = 'block';
+            }
+        }
+
+        function showContent() {
+            document.getElementById('auth-gate').style.display = 'none';
+            document.getElementById('main-content').style.display = 'block';
+        }
+
+        // Auto-login if already authed this session
+        if (sessionStorage.getItem('authed') === '1') showContent();
+
+        // Enter key support
+        document.getElementById('pwd').addEventListener('keydown', e => {
+            if (e.key === 'Enter') checkAuth();
+        });
+    </script>
 </body>
 </html>
