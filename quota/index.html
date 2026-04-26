@@ -201,7 +201,10 @@
                             <div style={{ textAlign: 'right' }}>
                                 <div style={{ fontSize: '11px', letterSpacing: '0.15em', color: '#64748b' }}>ANNUAL QUOTA</div>
                                 <div style={{ fontSize: '32px', fontWeight: 600, color: '#f1f5f9', fontFamily: '"Fraunces", Georgia, serif' }}>${(QUOTA / 1_000_000).toFixed(1)}M</div>
-                                <a href="/" style={{ fontSize: '11px', color: '#64748b', textDecoration: 'none', marginTop: '8px', display: 'inline-block' }}>← Back to Hub</a>
+                                <div style={{ display: 'flex', gap: '12px', marginTop: '8px', alignItems: 'center' }}>
+                                    <a href="/" style={{ fontSize: '11px', color: '#64748b', textDecoration: 'none' }}>← Back to Hub</a>
+                                    <button onClick={() => { sessionStorage.removeItem('authed'); window.location.reload(); }} style={{ fontSize: '11px', background: 'none', border: '1px solid rgba(148,163,184,0.2)', color: '#64748b', padding: '3px 10px', borderRadius: '3px', cursor: 'pointer', fontFamily: 'inherit' }}>Logout</button>
+                                </div>
                             </div>
                         </div>
 
