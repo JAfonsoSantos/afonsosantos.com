@@ -74,6 +74,7 @@ button.btn:hover{filter:brightness(1.12)}
   <button class="btn sec" id="routeClear" onclick="clearRoute()" style="display:none">Clear route</button>
   <span class="muted" id="quadInfo"></span>
   <span style="flex:1"></span>
+  <span class="muted" id="pilotChip" style="cursor:pointer" onclick="changePilot()" title="change pilot name"></span>
   <a href="../">← Planner</a>
 </div>
 <div id="resPanel"></div>
@@ -85,6 +86,7 @@ button.btn:hover{filter:brightness(1.12)}
 <div id="status"></div>
 <div id="modal"><div class="box" id="modalBox"></div></div>
 <div id="toast"></div>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const RESOURCE_NAMES = {"aludeposit": "Aluminum Deposit", "aluclusterunderwaternative": "Aluminum Reduction", "aluclusteraquamarine": "Aquamarine", "alutitaneclusteraugurite": "Augurite", "copperclusterazurite": "Azurite", "basaltshell": "Basalt Shell", "aluironclusterbauxite": "Bauxite Rock", "shipwreckdeco05": "Big Intake Vent", "shipwreckblackbox": "Black Box", "bluegranitshell": "Blue Granite Shell", "copperclusternativecopper": "Brassy Outcrop", "waterdeposit": "Brine Pool", "brinegeyser": "Brine Water Geyser", "uraniumvanadiumclustercarnotite": "Carnotite Cluster", "chalcedonyshell": "Chalcedony Shell", "copperclusterchalcocite": "Chalcocite", "copperironclusterchalcopyrite": "Chalcopyrite", "chondriteshell": "Chondrite", "scoriashell": "Cinder", "cinnabar": "Cinnabar", "clayshell": "Clay Shell", "carbonclustercoal": "Coal Clump", "coaldeposit": "Coal Deposit", "platinumclustercooperite": "Cooperite", "copperdeposit": "Copper Deposit", "copperclustercopperstone": "Cupric Stone", "alunuggetdeposit": "Dense Aluminum Deposit", "coppernuggetdeposit": "Dense Copper Deposit", "ironnuggetdeposit": "Dense Iron Deposit", "platnuggetdeposit": "Dense Platinum Deposit", "dres22": "Deposit", "elmeriumclusterelmeritenight": "Elmerite", "aluclusteremerald": "Emerald", "ironclusterironstone": "Ferric Stone", "ironclusternickeliron": "Ferrous Outcrop", "gabbroshell": "Gabbro Shell", "diamondcluster": "Gigantic Diamonds", "granitshell": "Granite Shell", "graphitecluster": "Graphite", "quartzgrey": "Gray Quartz", "shipwrecktitaniumbeam": "Heavy-Duty Beam", "heliumgeyser": "Helium Geyser", "elmeriumclusterelmeriteday": "Hollow Outcrop", "shipwrecksteelhullscraps": "Hull Steel Scraps", "iceshell": "Ice Shell", "shipwreckdeco04": "Intake Vent", "irondeposit": "Iron Deposit", "ironasteroidshell": "Iron Spherule", "shipwreckcoil": "Magnetic Coil", "ironclustermagnetite": "Magnetite", "copperclustermalachite": "Malachite", "mercurygeyser": "Mercury Geyser", "mercurydeposit": "Mercury Pool", "shipwreckironsheet": "Metal Sheet", "shipwreckmicrochip": "Microchip", "shipwreckmotor": "Motor", "obsidianshell": "Obsidian Shell", "opalshell": "Opal Shell", "vanadiumclusterpatronite": "Patronite", "platinumclusterplatinomagnetite": "Plagnetite", "platinumdeposit": "Platinum Deposit", "shipwreckzirconiumtube": "Pressure-tight Tube", "pumiceshell": "Pumice", "pyritedeposit": "Pyrite Deposit", "pyrite": "Pyrite Formation", "radongeyser": "Radon Geyser", "quartzred": "Red Quartz", "rockwoodroot": "Rockwood Root", "shipwreckdeco01": "Round Hatch", "ironclusterspecularite": "S-Iron Cluster", "sandstonedeposit": "Sandstone Deposit", "silicatesandstone": "Sandstone Mound", "ironcarbonclustersiderite": "Siderite", "shipwrecksolarcell": "Solar Cell", "spacewheatroot": "Spacekorn Root", "shipwreckwing01": "Spoilers", "shipwreckwing02": "Spoilers", "shipwreckplate1": "Stainless Plate", "shipwrecksteelscraps": "Steel Scraps", "shipwrecksteelbeam": "Structural Beam", "sulfurdeposit": "Sulfur Deposit", "sulfurstone": "Sulphuric Stone", "shipwrecksystemscraps": "System Scraps", "copperclustertenorite": "Tenorite", "titaneclustertitanite": "Titanite", "titaniumdeposit": "Titanium Deposit", "irontitaneclustertitanomagnetite": "Titanomagnetite", "tungstendeposit": "Tungsten Deposit", "tungstenclusterunderwaternative": "Tungsten Reduction", "aluclusterturquoise": "Turquoise Clump", "aluclusterturquoisestone": "Turquoise Stone", "uraniumclusteruraninite": "Uraninite Outcrop", "vanadiumclustervanadinite": "Vanadinite", "vanadiumdeposit": "Vanadium Deposit", "carbonclustervitrous": "Vitreous Carbon", "vitriolgeyser": "Vitriol Geyser", "vitrioldeposit": "Vitriol Pool", "volcanicshell": "Volcanic Shell", "watergeyser": "Water Geyser", "shipwreckcoppertube": "Watertight Tube", "aluclusterwhitefeldspar": "White Feldspar Mound", "quartzwhite": "White Quartz", "shipwreckwing04": "Wings", "shipwreckwire": "Wire", "irontungstenclusterwolframite": "Wolframite", "zirconiumclusterzircon": "Zircon"};
 const SYNC = { url:'https://echjwaxjgzhsqyhrlvzj.supabase.co', key:'sb_publishable_KrVSX1GtQrCSpmuHaZbEFw_VXBMNW9C', room:'vega-onyx-7731' };
@@ -127,7 +129,7 @@ function toast(t){ const e=$('#toast'); e.textContent=t; e.style.display='block'
 /* ---------- corp state ---------- */
 async function pullCorp(){
   try{
-    const r=await fetch(`${SYNC.url}/rest/v1/corp_state?room=eq.${SYNC.room}&select=data`,{headers:{apikey:SYNC.key,Authorization:'Bearer '+SYNC.key}});
+    const r=await fetch(`${SYNC.url}/rest/v1/corp_state?room=eq.${SYNC.room}&select=data`,{headers:authHeaders()});
     const rows=await r.json();
     corpState=(rows[0]&&rows[0].data)||{bases:[],planTargets:[],recipeChoice:{}};
     if(!corpState.bases) corpState.bases=[];
@@ -135,7 +137,7 @@ async function pullCorp(){
   }catch(e){ corpState=corpState||{bases:[]}; }
 }
 async function pushCorp(){
-  const r=await fetch(`${SYNC.url}/rest/v1/corp_state`,{method:'POST',headers:{apikey:SYNC.key,Authorization:'Bearer '+SYNC.key,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},body:JSON.stringify([{room:SYNC.room,data:corpState,updated_at:new Date().toISOString()}])});
+  const r=await fetch(`${SYNC.url}/rest/v1/corp_state`,{method:'POST',headers:authHeaders({Prefer:'resolution=merge-duplicates'}),body:JSON.stringify([{room:SYNC.room,data:corpState,updated_at:new Date().toISOString()}])});
   return r.ok;
 }
 
@@ -349,6 +351,9 @@ function enterSystem(id){ curSys=G.sysById[id]; mode='system'; pinned=null; hove
 function exitSystem(){ mode='galaxy'; curSys=null; pinned=null; hideCard(); $('#backBtn').style.display='none'; draw(); }
 
 /* ---------- pilot profile ---------- */
+function changePilot(){ localStorage.removeItem('corp:pilot'); ensurePilot(); }
+function pilotChip(){ const el=document.getElementById('pilotChip'); if(el) el.textContent = pilot()? '👨‍🚀 '+pilot().name : ''; }
+setInterval(pilotChip, 1500);
 function pilot(){ try{return JSON.parse(localStorage.getItem('corp:pilot'))||null;}catch(e){return null;} }
 function ensurePilot(){
   if(pilot()) return;
@@ -461,9 +466,79 @@ async function init(){
   $('#legend').innerHTML='<b>Corp Map</b> · hover = info · click = actions (view planets / make base / route)<br>scroll = zoom · drag = pan · <span class="muted">🏠 = corp base · route badges show cost (running total)</span>';
   resize();
   await loadQuad(saved);
-  pullCorp(); setInterval(pullCorp,30000); setTimeout(ensurePilot, 800);
+  window.onAuthed=()=>{ pullCorp(); pilotChip(); };
+  setInterval(pullCorp,30000); setTimeout(pilotChip, 900);
 }
 init();
 </script>
+
+<div id="authGate" style="position:fixed;inset:0;background:#0b0e14ee;z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px;width:370px">
+    <h2 style="margin:0 0 4px;color:var(--accent)">🛰️ Corp access</h2>
+    <p class="muted" style="margin:0 0 14px">Members only. Enter your email and we send you a 6-digit code.</p>
+    <div id="authStep1">
+      <input id="authEmail" type="email" placeholder="you@email.com" style="width:100%;margin-bottom:10px">
+      <button class="btn" style="width:100%" onclick="authSend()">Send code</button>
+    </div>
+    <div id="authStep2" style="display:none">
+      <input id="authCode" inputmode="numeric" placeholder="6-digit code" style="width:100%;margin-bottom:10px;letter-spacing:4px;text-align:center;font-size:18px">
+      <button class="btn" style="width:100%" onclick="authVerify()">Verify & enter</button>
+      <div class="muted" style="margin-top:8px;text-align:center;cursor:pointer" onclick="authBack()">← different email</div>
+    </div>
+    <div id="authMsg" class="muted" style="margin-top:10px;min-height:16px"></div>
+    <div id="authDenied" style="display:none;margin-top:8px">
+      <div style="color:var(--bad);font-size:12px">You're signed in but not invited to this corp yet. Ask a member to add your email in Settings → Members.</div>
+      <button class="btn sec" style="margin-top:8px" onclick="authLogout()">Sign out</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SBC = window.supabase.createClient(SYNC.url, SYNC.key);
+let TOKEN=null, USER=null, IS_MEMBER=false;
+function authHeaders(extra){ return Object.assign({apikey:SYNC.key, Authorization:'Bearer '+(TOKEN||SYNC.key), 'Content-Type':'application/json'}, extra||{}); }
+function gateShow(){ document.getElementById('authGate').style.display='flex'; }
+function gateHide(){ document.getElementById('authGate').style.display='none'; }
+function authMsg(t,bad){ const e=document.getElementById('authMsg'); e.textContent=t||''; e.style.color=bad?'var(--bad)':'var(--dim)'; }
+async function authSend(){
+  const email=document.getElementById('authEmail').value.trim();
+  if(!email) return;
+  authMsg('Sending code…');
+  const {error} = await SBC.auth.signInWithOtp({email});
+  if(error){ authMsg(error.message,true); return; }
+  document.getElementById('authStep1').style.display='none';
+  document.getElementById('authStep2').style.display='block';
+  authMsg('Code sent to '+email+' — check spam too. (Free email limit: a couple/hour, so no retries spam)');
+}
+function authBack(){ document.getElementById('authStep1').style.display='block'; document.getElementById('authStep2').style.display='none'; authMsg(''); }
+async function authVerify(){
+  const email=document.getElementById('authEmail').value.trim();
+  const code=document.getElementById('authCode').value.trim();
+  authMsg('Verifying…');
+  const {data,error} = await SBC.auth.verifyOtp({email, token:code, type:'email'});
+  if(error){ authMsg(error.message,true); return; }
+  TOKEN=data.session.access_token; USER=data.session.user;
+  await afterAuth();
+}
+async function checkMember(){
+  try{ const r=await fetch(SYNC.url+'/rest/v1/corp_members?select=email', {headers:authHeaders()}); const rows=await r.json(); return Array.isArray(rows)&&rows.length>0; }catch(e){ return false; }
+}
+async function afterAuth(){
+  IS_MEMBER = await checkMember();
+  if(!IS_MEMBER){ gateShow(); document.getElementById('authStep1').style.display='none'; document.getElementById('authStep2').style.display='none'; document.getElementById('authDenied').style.display='block'; authMsg(''); return; }
+  gateHide();
+  if(!localStorage.getItem('corp:pilot') && USER){ localStorage.setItem('corp:pilot', JSON.stringify({name:USER.email.split('@')[0], since:new Date().toISOString().slice(0,10)})); }
+  if(window.onAuthed) window.onAuthed();
+}
+async function authLogout(){ await SBC.auth.signOut(); location.reload(); }
+async function authInit(){
+  const {data:{session}} = await SBC.auth.getSession();
+  if(session){ TOKEN=session.access_token; USER=session.user; await afterAuth(); }
+  else gateShow();
+  SBC.auth.onAuthStateChange((ev,s)=>{ if(s){TOKEN=s.access_token; USER=s.user;} });
+}
+authInit();
+</script>
+
 </body>
 </html>
