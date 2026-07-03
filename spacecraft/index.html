@@ -78,6 +78,8 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 .cnode.raw{border-color:#2f6d4a}
 .cnode.cov{border-color:var(--good);box-shadow:0 0 0 1px var(--good) inset, 0 4px 14px #0006}
 .cnode.part{border-color:var(--accent2)}
+.recipe-pick .rp-label{display:block;font-size:9.5px;color:var(--accent);letter-spacing:.3px;margin-top:4px}
+.recipe-pick select{margin-top:2px;border-color:#33507d}
 .cnode select{width:100%;margin-top:5px;font-size:10.5px;padding:3px 5px}
 .cnode .cov-badge{color:var(--good);font-size:10px;margin-top:3px}
 .csum{display:flex;gap:18px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin-top:10px;font-size:12.5px}
@@ -330,9 +332,15 @@ async function deleteBaseRow(id){ await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+i
 /* ============ crafting planner ============ */
 function recipesFor(slug){ return RECIPES_BY_OUT[slug]||[]; }
 function recipeScore(r){
-  // prefer recipes fed by true raws (ores etc.); penalize ingredients that are themselves craftable
-  let raw=0; for(const i of r.ingredients){ if(!recipesFor(i.slug).length) raw++; }
-  return raw*10 - r.ingredients.length;
+  // 1) strongly prefer recipes whose inputs the corp already produces/mines (free for this corp)
+  // 2) then prefer recipes fed by raw materials (ores) over deep sub-crafts
+  // 3) then fewer ingredients
+  let corp=0, raw=0;
+  for(const i of r.ingredients){
+    try{ if(typeof corpCovers==='function' && corpCovers(i.slug).length) corp++; }catch(e){}
+    if(!recipesFor(i.slug).length) raw++;
+  }
+  return corp*100 + raw*10 - r.ingredients.length;
 }
 function chosenRecipe(slug){
   const rs = recipesFor(slug); if(!rs.length) return null;
@@ -806,7 +814,7 @@ function renderChain(){
     const x = PAD + (+c)*COLW;
     cols[c].forEach(n=>{
       const rs = recipesFor(n.slug);
-      const sel = (rs.length>1 && n.recipe) ? `<select onchange="setChainRecipe('${n.slug}', this.value)">${rs.map(r=>`<option value="${r._id}" ${n.recipe._id===r._id?'selected':''}>${esc(wsName(r.workstation))}: ${r.ingredients.map(i2=>qtyNum(i2.qty)+'× '+itemName(i2.slug)).join(', ')}</option>`).join('')}</select>` : '';
+      const sel = (rs.length>1 && n.recipe) ? `<div class="recipe-pick"><span class="rp-label">⇄ Recipe · ${rs.length} options</span><select onchange="setChainRecipe('${n.slug}', this.value)">${rs.map(r=>`<option value="${r._id}" ${n.recipe._id===r._id?'selected':''}>${esc(wsName(r.workstation))}: ${r.ingredients.map(i2=>qtyNum(i2.qty)+'× '+itemName(i2.slug)).join(', ')}</option>`).join('')}</select></div>` : '';
       const mach = n.machines? `${n.machines}× ${ico(n.ws,'sm')}${esc(wsName(n.ws||''))}` : (n.supplied?'':(n.raw?'gather / buy / trade':''));
       const cov = n.corpRate? `<div class="cov-badge">🏠 ${n.supplied?'fully supplied':fmt(n.corpRate)+'/h from corp — build '+fmt(n.net)+'/h'}${n.corpSources&&n.corpSources.length?' · '+esc(n.corpSources.slice(0,2).map(x=>x.base).join(', ')):''}</div>` : (n.covered.length? `<div class="cov-badge">🏠 available at ${esc(n.covered.slice(0,2).join(', '))}</div>`:'');
       const assign = (window.CORP && n.machines && !n.supplied) ? `<select onchange="chainAssign(this.value,'${n.slug}',${n.net||n.rate});this.value=''" title="record that a base will produce this"><option value="">→ assign to base…</option>${STATE.bases.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>` : '';
