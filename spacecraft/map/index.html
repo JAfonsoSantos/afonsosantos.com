@@ -192,7 +192,8 @@ function renderFinder(id){
   if(!id||!G.resIndex[id]){ f.style.display='none'; return; }
   const origins=[];
   if(corpState&&corpState.bases) for(const b of corpState.bases){ const sy=b.system&&G.systems.find(x=>x.name.toLowerCase()===String(b.system).toLowerCase()); if(sy&&!origins.find(o=>o.id===sy.id)) origins.push({id:sy.id,label:'🏠 '+b.name}); }
-  if(selSys&&!origins.find(o=>o.id===selSys.id)) origins.push({id:selSys.id,label:'📍 '+selSys.name});
+  const selS = (typeof pinned!=='undefined'&&pinned&&pinned.sys)?pinned.sys:null;
+  if(selS&&!origins.find(o=>o.id===selS.id)) origins.push({id:selS.id,label:'📍 '+selS.name});
   let originId = window.__fOrigin||null;
   if(!origins.find(o=>o.id===originId)) originId = origins[0]?origins[0].id:null;
   let dist=null,hops=null;
