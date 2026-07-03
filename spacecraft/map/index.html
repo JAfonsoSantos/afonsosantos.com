@@ -22,7 +22,7 @@ button.btn:hover{filter:brightness(1.12)}
 .muted{color:var(--dim);font-size:11px}
 
 /* hover / pinned card */
-#card{position:fixed;width:320px;max-height:70vh;overflow-y:auto;background:var(--card);border:1px solid #3a4763;border-radius:10px;z-index:50;display:none;box-shadow:0 10px 40px #000a;backdrop-filter:blur(4px)}
+#card{position:fixed;width:320px;max-height:82vh;overflow:hidden;display:none;background:var(--card);border:1px solid #3a4763;border-radius:10px;z-index:50;display:none;box-shadow:0 10px 40px #000a;backdrop-filter:blur(4px)}
 #card .hd{padding:10px 12px;border-bottom:1px solid var(--border)}
 #card .sect{font-size:10px;letter-spacing:1px;color:var(--dim);text-transform:uppercase}
 #card .nm{font-size:16px;font-weight:700;margin:2px 0}
@@ -59,6 +59,9 @@ button.btn:hover{filter:brightness(1.12)}
 .mineopt img{width:22px;height:22px;border-radius:4px}
 .mineopt .d{margin-left:auto;font-size:10px;color:var(--dim)}
 #toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#123524;border:1px solid #1f7a4c;color:#7ef0b2;border-radius:9px;padding:8px 16px;z-index:80;display:none;font-size:13px}
+.scrollsec{max-height:38vh;overflow-y:auto;overscroll-behavior:contain}
+.scrollsec::-webkit-scrollbar{width:8px}
+.scrollsec::-webkit-scrollbar-thumb{background:#2e3a55;border-radius:4px}
 </style>
 </head>
 <body>
@@ -139,7 +142,9 @@ async function pushCorp(){
 /* ---------- aggregation ---------- */
 function aggSys(s){
   const agg={res:{},dep:{},gey:{}};
-  for(const p of s.planets) for(const k of ['res','dep','gey']) for(const r of (p[k]||[])){ agg[k][r.id]=(agg[k][r.id]||0)+1; }
+  for(const p of s.planets) for(const k of ['res','dep','gey']) for(const r of (p[k]||[])){
+    const e=agg[k][r.id]=agg[k][r.id]||{n:0,d:0}; e.n++; e.d=Math.max(e.d, r.d||0);
+  }
   return agg;
 }
 function systemHasRes(s,id){ return s.planets.some(p=>['res','dep','gey'].some(k=>(p[k]||[]).some(r=>r.id===id))); }
@@ -312,18 +317,18 @@ function showSystemCard(s, px, py, pin){
       <button class="btn sec" onclick="setRoute('a','${s.id}')">Route A</button>
       <button class="btn sec" onclick="setRoute('b','${s.id}')">Route B</button>
     </div>`:`<div class="actions muted" style="border:none;padding:6px 12px">click system for actions</div>`;
-  const sec=(k,t)=>`<div class="grp">${t}</div>`+resRows(Object.entries(agg[k]).map(([id,n])=>[id,'x'+n]), t.toLowerCase());
+  const sec=(k,t)=>{const entries=Object.entries(agg[k]).sort((a,b)=>(b[1].d||0)-(a[1].d||0)).map(([id,v])=>[id,'x'+v.n]); return `<div class="grp">${t}</div>`+resRows(entries, t.toLowerCase());};
   $('#card').innerHTML=`<div class="hd"><span class="sect">${esc(s.sector)} [${s.level}]</span>
       <div class="nm">${esc(s.name)} <span class="muted">(${esc(s.designation||'')})</span></div>
       <div class="sub"><span class="stardot" style="background:${star}"></span>${esc(s.star||'?')} Star · ${s.planets.length} Planets</div></div>
-    ${actions}${sec('res','Resources')}${sec('dep','Deposits')}${sec('gey','Geysers')}<div style="height:8px"></div>`;
+    ${actions}<div class="scrollsec">${sec('res','Resources')}</div>${sec('dep','Deposits')}${sec('gey','Geysers')}<div style="height:8px"></div>`;
   placeCard(px,py);
 }
 function showPlanetCard(s, p, px, py, pin){
   const t=TEMPS[p.temp];
   const pname=s.name+' '+(ROMAN[p.i]||p.i+1);
   const actions=pin?`<div class="actions"><button class="btn warn" onclick="openBaseModal('${s.id}',${p.i})">🏠 Make base here</button></div>`:'';
-  const rows=(arr,title)=>`<div class="grp">${title}</div>`+resRows((arr||[]).map(r=>[r.id, r.d!=null?r.d:('x'+(r.n||1))]), title.toLowerCase());
+  const rows=(arr,title)=>`<div class="grp">${title}</div>`+resRows((arr||[]).slice().sort((a,b)=>(b.d||0)-(a.d||0)).map(r=>[r.id, r.d!=null?r.d:('x'+(r.n||1))]), title.toLowerCase());
   $('#card').innerHTML=`<div class="hd">${t?`<span class="temp" style="color:${t[1]}">${t[0]}</span>`:''}<span class="sect">${esc(s.sector)} [${s.level}]</span>
       <div class="nm">${esc(pname)}</div></div>
     ${actions}${rows(p.res,'Resources')}${rows(p.dep,'Deposits')}${rows(p.gey,'Geysers')}<div style="height:8px"></div>`;
