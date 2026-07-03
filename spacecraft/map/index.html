@@ -475,14 +475,16 @@ init();
 <div id="authGate" style="position:fixed;inset:0;background:#0b0e14ee;z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
   <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px;width:370px">
     <h2 style="margin:0 0 4px;color:var(--accent)">🛰️ Corp access</h2>
-    <p class="muted" style="margin:0 0 14px">Members only. Enter your email and we send you a 6-digit code.</p>
+    <p class="muted" style="margin:0 0 14px">Members only. Enter your email and we send you a sign-in link.</p>
     <div id="authStep1">
       <input id="authEmail" type="email" placeholder="you@email.com" style="width:100%;margin-bottom:10px">
-      <button class="btn" style="width:100%" onclick="authSend()">Send code</button>
+      <button class="btn" style="width:100%" onclick="authSend()">Send sign-in link</button>
     </div>
     <div id="authStep2" style="display:none">
-      <input id="authCode" inputmode="numeric" placeholder="6-digit code" style="width:100%;margin-bottom:10px;letter-spacing:4px;text-align:center;font-size:18px">
-      <button class="btn" style="width:100%" onclick="authVerify()">Verify & enter</button>
+      <div class="muted" style="text-align:center;margin:6px 0 10px">📬 Waiting for you to click the link in your email…</div>
+      <details style="margin-bottom:8px"><summary class="muted small">I have a code instead</summary>
+      <input id="authCode" inputmode="numeric" placeholder="code" style="width:100%;margin:8px 0;letter-spacing:4px;text-align:center;font-size:16px">
+      <button class="btn sec" style="width:100%" onclick="authVerify()">Verify code</button></details>
       <div class="muted" style="margin-top:8px;text-align:center;cursor:pointer" onclick="authBack()">← different email</div>
     </div>
     <div id="authMsg" class="muted" style="margin-top:10px;min-height:16px"></div>
@@ -504,11 +506,11 @@ async function authSend(){
   const email=document.getElementById('authEmail').value.trim();
   if(!email) return;
   authMsg('Sending code…');
-  const {error} = await SBC.auth.signInWithOtp({email});
+  const {error} = await SBC.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin+location.pathname}});
   if(error){ authMsg(error.message,true); return; }
   document.getElementById('authStep1').style.display='none';
   document.getElementById('authStep2').style.display='block';
-  authMsg('Code sent to '+email+' — check spam too. (Free email limit: a couple/hour, so no retries spam)');
+  authMsg('Email sent to '+email+' — click the sign-in link and you will land back here logged in. Check spam. (Limit: ~2 emails/hour)');
 }
 function authBack(){ document.getElementById('authStep1').style.display='block'; document.getElementById('authStep2').style.display='none'; authMsg(''); }
 async function authVerify(){
@@ -535,7 +537,7 @@ async function authInit(){
   const {data:{session}} = await SBC.auth.getSession();
   if(session){ TOKEN=session.access_token; USER=session.user; await afterAuth(); }
   else gateShow();
-  SBC.auth.onAuthStateChange((ev,s)=>{ if(s){TOKEN=s.access_token; USER=s.user;} });
+  SBC.auth.onAuthStateChange(async (ev,s)=>{ if(s){TOKEN=s.access_token; USER=s.user;} if(ev==='SIGNED_IN' && document.getElementById('authGate').style.display!=='none'){ await afterAuth(); } });
 }
 authInit();
 </script>
