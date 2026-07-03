@@ -263,7 +263,7 @@ let STATE = JSON.parse(localStorage.getItem('corpState')||'null') || structuredC
 const SYNC = { url:'https://echjwaxjgzhsqyhrlvzj.supabase.co', key:'sb_publishable_KrVSX1GtQrCSpmuHaZbEFw_VXBMNW9C' };
 let corpTimer = null;
 
-function persist(push=true){ localStorage.setItem('corpState', JSON.stringify(STATE)); if(push) pushPlan(); render(); }
+function persist(push=true){ const save=Object.assign({}, STATE); if(window.CORP) save.bases=[]; localStorage.setItem('corpState', JSON.stringify(save)); if(push) pushPlan(); render(); }
 
 /* ============ corp data layer (rows) ============ */
 function sbHeaders(extra){ return window.authHeaders ? window.authHeaders(extra) : {apikey:SYNC.key, Authorization:'Bearer '+SYNC.key, 'Content-Type':'application/json'}; }
@@ -581,6 +581,7 @@ function init(){
   render();
   window.onCorpReady = async ()=>{
     document.getElementById('landing').style.display='none';
+    STATE.bases = [];
     const el=$('#syncState'); el.textContent='['+(window.CORP.tag||'')+'] '+window.CORP.name; el.className='on'; el.onclick=null;
     document.getElementById('acctInfo').textContent='Signed in as '+(window.USER?window.USER.email:'?');
     try{ const p=JSON.parse(localStorage.getItem('corp:pilot')||'null'); if(p) document.getElementById('pilotNameSet').value=p.name; }catch(e){}
