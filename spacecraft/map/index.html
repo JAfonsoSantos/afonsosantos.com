@@ -5,34 +5,60 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Corp Map — SpaceCraft</title>
 <style>
-:root{--bg:#0b0e14;--panel:#141925;--panel2:#1b2233;--border:#2a3348;--text:#dbe4f5;--dim:#8593ad;--accent:#5eb2ff;--accent2:#ffb454;--good:#4ade80;--bad:#f87171;--chip:#233049}
+:root{--bg:#0b0e14;--panel:#161b26;--panel2:#1e2534;--border:#2a3348;--text:#dbe4f5;--dim:#8593ad;--accent:#5eb2ff;--accent2:#ffb454;--good:#4ade80;--bad:#f87171;--chip:#233049;--card:#191f2cf2}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font:13px/1.4 system-ui,Segoe UI,Roboto,sans-serif;overflow:hidden}
-#top{position:fixed;top:0;left:0;right:0;height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);z-index:20}
+#top{position:fixed;top:0;left:0;right:0;height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);z-index:40}
 #top h1{font-size:14px;color:var(--accent);margin:0;white-space:nowrap}
 #top a{color:var(--dim);text-decoration:none;font-size:12px}
 #top a:hover{color:var(--text)}
 select,input{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:5px 8px;font-size:12px;outline:none}
 canvas{display:block;cursor:grab}
 canvas.drag{cursor:grabbing}
-#side{position:fixed;top:46px;right:0;bottom:0;width:330px;background:var(--panel);border-left:1px solid var(--border);overflow-y:auto;padding:12px;z-index:15;display:none}
-#side h2{font-size:14px;margin:0 0 2px;color:var(--accent2)}
-#side h3{font-size:12px;margin:12px 0 4px;color:var(--accent)}
-.muted{color:var(--dim);font-size:11px}
-.chip{display:inline-block;background:var(--chip);border-radius:5px;padding:1px 7px;font-size:11px;margin:1px}
-.row{display:flex;justify-content:space-between;gap:6px;padding:2px 0;border-bottom:1px solid #1e2637;font-size:12px}
-.row:last-child{border:none}
 button.btn{background:var(--accent);color:#08111f;border:0;border-radius:7px;padding:5px 10px;font-weight:600;cursor:pointer;font-size:12px}
 button.btn.sec{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
-#legend{position:fixed;left:12px;bottom:12px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:11px;z-index:15;max-width:280px}
-#status{position:fixed;left:50%;top:60px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 14px;z-index:30;display:none}
-.close{float:right;cursor:pointer;color:var(--dim)}
-#resPanel{position:fixed;top:46px;left:0;bottom:0;width:250px;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:10px;z-index:15;display:none}
-.resitem{display:flex;justify-content:space-between;padding:3px 6px;border-radius:6px;cursor:pointer;font-size:12px}
+button.btn.warn{background:var(--accent2);color:#1a1200}
+button.btn:hover{filter:brightness(1.12)}
+.muted{color:var(--dim);font-size:11px}
+
+/* hover / pinned card */
+#card{position:fixed;width:320px;max-height:70vh;overflow-y:auto;background:var(--card);border:1px solid #3a4763;border-radius:10px;z-index:50;display:none;box-shadow:0 10px 40px #000a;backdrop-filter:blur(4px)}
+#card .hd{padding:10px 12px;border-bottom:1px solid var(--border)}
+#card .sect{font-size:10px;letter-spacing:1px;color:var(--dim);text-transform:uppercase}
+#card .nm{font-size:16px;font-weight:700;margin:2px 0}
+#card .sub{font-size:11px;color:var(--dim);display:flex;align-items:center;gap:6px}
+.stardot{width:9px;height:9px;border-radius:50%;display:inline-block}
+#card .actions{display:flex;gap:6px;padding:8px 12px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+#card .grp{padding:6px 12px 2px;font-size:10px;letter-spacing:1px;color:var(--dim)}
+#card .ri{display:flex;align-items:center;gap:8px;background:#141a26;border:1px solid #232d42;border-radius:7px;margin:3px 10px;padding:5px 8px}
+#card .ri img{width:26px;height:26px;border-radius:5px;flex-shrink:0}
+#card .ri .n{flex:1;font-size:12.5px}
+#card .badge{background:#1b2740;border:1px solid #2e3f63;color:#9fc3ff;border-radius:5px;font-size:11px;padding:1px 7px;font-weight:600}
+#card .none{padding:2px 14px 6px;font-size:11px;color:var(--dim);font-style:italic}
+#card .temp{float:right;font-size:10px;font-weight:700;letter-spacing:1px}
+#card .foot{padding:8px 12px}
+
+#legend{position:fixed;left:12px;bottom:12px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:11px;z-index:30;max-width:300px;opacity:.92}
+#status{position:fixed;left:50%;top:60px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 14px;z-index:60;display:none}
+#resPanel{position:fixed;top:46px;left:0;bottom:0;width:250px;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:10px;z-index:30;display:none}
+.resitem{display:flex;align-items:center;gap:6px;padding:3px 6px;border-radius:6px;cursor:pointer;font-size:12px}
+.resitem img{width:20px;height:20px;border-radius:4px}
 .resitem:hover{background:var(--panel2)}
 .resitem.on{background:#1c2c45;color:var(--accent)}
-.pill{font-size:10px;color:var(--dim)}
-#routeBox{margin-top:8px}
+.resitem .pill{margin-left:auto;font-size:10px;color:var(--dim)}
+#routeBar{position:fixed;top:52px;left:50%;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px;z-index:35;display:none;font-size:12px;max-width:70vw}
+#backBtn{position:fixed;top:56px;left:12px;z-index:35;display:none}
+/* modal */
+#modal{position:fixed;inset:0;background:#0009;z-index:70;display:none;align-items:center;justify-content:center}
+#modal .box{background:var(--panel);border:1px solid var(--border);border-radius:12px;width:420px;max-height:80vh;overflow-y:auto;padding:16px}
+#modal h3{margin:0 0 10px;color:var(--accent2);font-size:15px}
+#modal label{display:block;margin:8px 0 3px;font-size:12px;color:var(--dim)}
+#modal input[type=text]{width:100%}
+.mineopt{display:flex;align-items:center;gap:8px;padding:4px 6px;border-radius:6px}
+.mineopt:hover{background:var(--panel2)}
+.mineopt img{width:22px;height:22px;border-radius:4px}
+.mineopt .d{margin-left:auto;font-size:10px;color:var(--dim)}
+#toast{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);background:#123524;border:1px solid #1f7a4c;color:#7ef0b2;border-radius:9px;padding:8px 16px;z-index:80;display:none;font-size:13px}
 </style>
 </head>
 <body>
@@ -41,217 +67,373 @@ button.btn.sec{background:var(--panel2);color:var(--text);border:1px solid var(-
   <select id="quadSel"></select>
   <input id="sysSearch" placeholder="Find system…" list="sysList" style="width:150px">
   <datalist id="sysList"></datalist>
-  <button class="btn sec" id="resBtn" onclick="toggleRes()">Resources</button>
-  <button class="btn sec" id="routeBtn" onclick="routeMode()">Route: off</button>
+  <button class="btn sec" onclick="toggleRes()">Resources</button>
+  <button class="btn sec" id="routeClear" onclick="clearRoute()" style="display:none">Clear route</button>
   <span class="muted" id="quadInfo"></span>
   <span style="flex:1"></span>
   <a href="../">← Planner</a>
 </div>
 <div id="resPanel"></div>
+<button class="btn sec" id="backBtn" onclick="exitSystem()">← Galaxy</button>
+<div id="routeBar"></div>
 <canvas id="cv"></canvas>
-<div id="side"></div>
+<div id="card"></div>
 <div id="legend"></div>
 <div id="status"></div>
+<div id="modal"><div class="box" id="modalBox"></div></div>
+<div id="toast"></div>
 <script>
 const RESOURCE_NAMES = {"aludeposit": "Aluminum Deposit", "aluclusterunderwaternative": "Aluminum Reduction", "aluclusteraquamarine": "Aquamarine", "alutitaneclusteraugurite": "Augurite", "copperclusterazurite": "Azurite", "basaltshell": "Basalt Shell", "aluironclusterbauxite": "Bauxite Rock", "shipwreckdeco05": "Big Intake Vent", "shipwreckblackbox": "Black Box", "bluegranitshell": "Blue Granite Shell", "copperclusternativecopper": "Brassy Outcrop", "waterdeposit": "Brine Pool", "brinegeyser": "Brine Water Geyser", "uraniumvanadiumclustercarnotite": "Carnotite Cluster", "chalcedonyshell": "Chalcedony Shell", "copperclusterchalcocite": "Chalcocite", "copperironclusterchalcopyrite": "Chalcopyrite", "chondriteshell": "Chondrite", "scoriashell": "Cinder", "cinnabar": "Cinnabar", "clayshell": "Clay Shell", "carbonclustercoal": "Coal Clump", "coaldeposit": "Coal Deposit", "platinumclustercooperite": "Cooperite", "copperdeposit": "Copper Deposit", "copperclustercopperstone": "Cupric Stone", "alunuggetdeposit": "Dense Aluminum Deposit", "coppernuggetdeposit": "Dense Copper Deposit", "ironnuggetdeposit": "Dense Iron Deposit", "platnuggetdeposit": "Dense Platinum Deposit", "dres22": "Deposit", "elmeriumclusterelmeritenight": "Elmerite", "aluclusteremerald": "Emerald", "ironclusterironstone": "Ferric Stone", "ironclusternickeliron": "Ferrous Outcrop", "gabbroshell": "Gabbro Shell", "diamondcluster": "Gigantic Diamonds", "granitshell": "Granite Shell", "graphitecluster": "Graphite", "quartzgrey": "Gray Quartz", "shipwrecktitaniumbeam": "Heavy-Duty Beam", "heliumgeyser": "Helium Geyser", "elmeriumclusterelmeriteday": "Hollow Outcrop", "shipwrecksteelhullscraps": "Hull Steel Scraps", "iceshell": "Ice Shell", "shipwreckdeco04": "Intake Vent", "irondeposit": "Iron Deposit", "ironasteroidshell": "Iron Spherule", "shipwreckcoil": "Magnetic Coil", "ironclustermagnetite": "Magnetite", "copperclustermalachite": "Malachite", "mercurygeyser": "Mercury Geyser", "mercurydeposit": "Mercury Pool", "shipwreckironsheet": "Metal Sheet", "shipwreckmicrochip": "Microchip", "shipwreckmotor": "Motor", "obsidianshell": "Obsidian Shell", "opalshell": "Opal Shell", "vanadiumclusterpatronite": "Patronite", "platinumclusterplatinomagnetite": "Plagnetite", "platinumdeposit": "Platinum Deposit", "shipwreckzirconiumtube": "Pressure-tight Tube", "pumiceshell": "Pumice", "pyritedeposit": "Pyrite Deposit", "pyrite": "Pyrite Formation", "radongeyser": "Radon Geyser", "quartzred": "Red Quartz", "rockwoodroot": "Rockwood Root", "shipwreckdeco01": "Round Hatch", "ironclusterspecularite": "S-Iron Cluster", "sandstonedeposit": "Sandstone Deposit", "silicatesandstone": "Sandstone Mound", "ironcarbonclustersiderite": "Siderite", "shipwrecksolarcell": "Solar Cell", "spacewheatroot": "Spacekorn Root", "shipwreckwing01": "Spoilers", "shipwreckwing02": "Spoilers", "shipwreckplate1": "Stainless Plate", "shipwrecksteelscraps": "Steel Scraps", "shipwrecksteelbeam": "Structural Beam", "sulfurdeposit": "Sulfur Deposit", "sulfurstone": "Sulphuric Stone", "shipwrecksystemscraps": "System Scraps", "copperclustertenorite": "Tenorite", "titaneclustertitanite": "Titanite", "titaniumdeposit": "Titanium Deposit", "irontitaneclustertitanomagnetite": "Titanomagnetite", "tungstendeposit": "Tungsten Deposit", "tungstenclusterunderwaternative": "Tungsten Reduction", "aluclusterturquoise": "Turquoise Clump", "aluclusterturquoisestone": "Turquoise Stone", "uraniumclusteruraninite": "Uraninite Outcrop", "vanadiumclustervanadinite": "Vanadinite", "vanadiumdeposit": "Vanadium Deposit", "carbonclustervitrous": "Vitreous Carbon", "vitriolgeyser": "Vitriol Geyser", "vitrioldeposit": "Vitriol Pool", "volcanicshell": "Volcanic Shell", "watergeyser": "Water Geyser", "shipwreckcoppertube": "Watertight Tube", "aluclusterwhitefeldspar": "White Feldspar Mound", "quartzwhite": "White Quartz", "shipwreckwing04": "Wings", "shipwreckwire": "Wire", "irontungstenclusterwolframite": "Wolframite", "zirconiumclusterzircon": "Zircon"};
 const SYNC = { url:'https://echjwaxjgzhsqyhrlvzj.supabase.co', key:'sb_publishable_KrVSX1GtQrCSpmuHaZbEFw_VXBMNW9C', room:'vega-onyx-7731' };
+const ICON = id => 'https://cdn.pixel6.tools/spacecraft/images/icons/resources/'+id+'.webp';
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-function prettyRes(id){ return RESOURCE_NAMES[id.replace(/_/g,'').toLowerCase()] || id.replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2'); }
+const pretty = id => RESOURCE_NAMES[id.replace(/_/g,'').toLowerCase()] || id.replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2');
+const ROMAN=['I','II','III','IV','V','VI','VII','VIII','IX','X','XI','XII'];
+const TEMPS={PlanetCold2:['FROZEN','#7dd3fc'],PlanetCold1:['COLD','#a5d8ff'],PlanetHot1:['HOT','#fb923c'],PlanetHot2:['SCORCHING','#f87171']};
+const STARC={Blue:'#5aa9e6',Red:'#f87171',Yellow:'#fbbf24',White:'#e2e8f0',Orange:'#fb923c',Green:'#4ade80',Purple:'#c084fc'};
 
-let G=null, corpBases=[], view={x:0,y:0,k:1}, hoverSys=null, selSys=null, resFilter=null, route={on:false,a:null,b:null,path:null,cost:0};
-const cv = $('#cv'), ctx = cv.getContext('2d');
+let G=null, corpState=null, view={x:0,y:0,k:1}, mode='galaxy', curSys=null;
+let hoverSys=null, hoverPlanet=null, pinned=null; // pinned = {type:'system'|'planet', sys, planet}
+let resFilter=null, route={a:null,b:null,path:null,cost:0};
+const cv=$('#cv'), ctx=cv.getContext('2d');
 function resize(){ cv.width=innerWidth; cv.height=innerHeight-46; cv.style.marginTop='46px'; draw(); }
-addEventListener('resize', resize);
+addEventListener('resize',resize);
 
 /* ---------- data ---------- */
 async function loadQuad(slug){
   showStatus('Loading '+slug+'…');
-  const r = await fetch('../data/galaxy-'+slug+'.json');
-  G = await r.json();
-  G.sysById = {}; G.systems.forEach(s=>G.sysById[s.id]=s);
-  G.adj = {};
+  G = await fetch('../data/galaxy-'+slug+'.json').then(r=>r.json());
+  G.sysById={}; G.systems.forEach(s=>G.sysById[s.id]=s);
+  G.adj={};
   for(const e of G.edges){ (G.adj[e.a]=G.adj[e.a]||[]).push({to:e.b,cost:e.cost}); (G.adj[e.b]=G.adj[e.b]||[]).push({to:e.a,cost:e.cost}); }
-  // bounds → initial view
   const xs=G.systems.map(s=>s.x), ys=G.systems.map(s=>s.y);
   const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
-  const k = Math.min(cv.width/(maxx-minx+200), cv.height/(maxy-miny+200));
-  view = {k, x: cv.width/2 - (minx+maxx)/2*k, y: cv.height/2 - (miny+maxy)/2*k};
-  selSys=null; route={on:false,a:null,b:null,path:null,cost:0}; $('#routeBtn').textContent='Route: off';
-  $('#sysList').innerHTML = G.systems.map(s=>`<option value="${esc(s.name)}">`).join('');
-  $('#quadInfo').textContent = G.systems.length+' systems · '+G.edges.length+' lanes';
-  buildResourcePanel();
-  hideStatus(); draw(); renderSide();
-  localStorage.setItem('corpmap:quad', slug);
+  const k=Math.min(cv.width/(maxx-minx+200), cv.height/(maxy-miny+200));
+  view={k, x:cv.width/2-(minx+maxx)/2*k, y:cv.height/2-(miny+maxy)/2*k};
+  mode='galaxy'; curSys=null; pinned=null; clearRoute(false);
+  $('#sysList').innerHTML=G.systems.map(s=>`<option value="${esc(s.name)}">`).join('');
+  $('#quadInfo').textContent=G.systems.length+' systems · '+G.edges.length+' lanes';
+  buildResourcePanel(); hideStatus(); hideCard(); draw();
+  localStorage.setItem('corpmap:quad',slug);
 }
 function showStatus(t){ $('#status').textContent=t; $('#status').style.display='block'; }
 function hideStatus(){ $('#status').style.display='none'; }
+function toast(t){ const e=$('#toast'); e.textContent=t; e.style.display='block'; setTimeout(()=>e.style.display='none',2600); }
 
-/* ---------- corp bases ---------- */
-async function loadCorp(){
+/* ---------- corp state ---------- */
+async function pullCorp(){
   try{
-    const r = await fetch(`${SYNC.url}/rest/v1/corp_state?room=eq.${SYNC.room}&select=data`,{headers:{apikey:SYNC.key,Authorization:'Bearer '+SYNC.key}});
-    const rows = await r.json();
-    corpBases = (rows[0]&&rows[0].data&&rows[0].data.bases)||[];
+    const r=await fetch(`${SYNC.url}/rest/v1/corp_state?room=eq.${SYNC.room}&select=data`,{headers:{apikey:SYNC.key,Authorization:'Bearer '+SYNC.key}});
+    const rows=await r.json();
+    corpState=(rows[0]&&rows[0].data)||{bases:[],planTargets:[],recipeChoice:{}};
+    if(!corpState.bases) corpState.bases=[];
     draw();
-  }catch(e){}
+  }catch(e){ corpState=corpState||{bases:[]}; }
 }
+async function pushCorp(){
+  const r=await fetch(`${SYNC.url}/rest/v1/corp_state`,{method:'POST',headers:{apikey:SYNC.key,Authorization:'Bearer '+SYNC.key,'Content-Type':'application/json',Prefer:'resolution=merge-duplicates'},body:JSON.stringify([{room:SYNC.room,data:corpState,updated_at:new Date().toISOString()}])});
+  return r.ok;
+}
+
+/* ---------- aggregation ---------- */
+function aggSys(s){
+  const agg={res:{},dep:{},gey:{}};
+  for(const p of s.planets) for(const k of ['res','dep','gey']) for(const r of (p[k]||[])){ agg[k][r.id]=(agg[k][r.id]||0)+1; }
+  return agg;
+}
+function systemHasRes(s,id){ return s.planets.some(p=>['res','dep','gey'].some(k=>(p[k]||[]).some(r=>r.id===id))); }
 
 /* ---------- resource panel ---------- */
-function collectResources(){
-  const m = {};
-  for(const s of G.systems) for(const p of s.planets) for(const kind of ['res','dep','gey']) for(const r of (p[kind]||[])){
-    m[r.id] = m[r.id]||{count:0, systems:new Set()}; m[r.id].count += r.n||1; m[r.id].systems.add(s.id);
-  }
-  return m;
-}
 function buildResourcePanel(){
-  const m = collectResources();
-  const items = Object.entries(m).sort((a,b)=>prettyRes(a[0]).localeCompare(prettyRes(b[0])));
-  $('#resPanel').innerHTML = '<div class="muted" style="margin-bottom:6px">Click to highlight systems</div>' +
-    items.map(([id,v])=>`<div class="resitem ${resFilter===id?'on':''}" onclick="setResFilter('${id}')"><span>${esc(prettyRes(id))}</span><span class="pill">${v.systems.size} sys</span></div>`).join('');
+  const m={};
+  for(const s of G.systems) for(const p of s.planets) for(const k of ['res','dep','gey']) for(const r of (p[k]||[])){ m[r.id]=m[r.id]||new Set(); m[r.id].add(s.id); }
+  const items=Object.entries(m).sort((a,b)=>pretty(a[0]).localeCompare(pretty(b[0])));
+  $('#resPanel').innerHTML='<div class="muted" style="margin-bottom:6px">Click to highlight systems</div>'+
+    items.map(([id,set])=>`<div class="resitem ${resFilter===id?'on':''}" onclick="setResFilter('${id}')"><img src="${ICON(id)}" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="pill">${set.size}</span></div>`).join('');
 }
-function setResFilter(id){ resFilter = resFilter===id?null:id; buildResourcePanel(); draw(); }
-function toggleRes(){ const p=$('#resPanel'); p.style.display = p.style.display==='block'?'none':'block'; }
-function systemHasRes(s, id){ return s.planets.some(p=>['res','dep','gey'].some(k=>(p[k]||[]).some(r=>r.id===id))); }
+function setResFilter(id){ resFilter=resFilter===id?null:id; buildResourcePanel(); draw(); }
+function toggleRes(){ const p=$('#resPanel'); p.style.display=p.style.display==='block'?'none':'block'; }
 
 /* ---------- routing ---------- */
-function routeMode(){ route.on=!route.on; route.a=route.b=route.path=null; $('#routeBtn').textContent='Route: '+(route.on?'pick A':'off'); draw(); }
 function dijkstra(a,b){
-  const dist={}, prev={}, pq=[[0,a]];
-  dist[a]=0;
+  const dist={},prev={},pq=[[0,a]]; dist[a]=0;
   while(pq.length){
     pq.sort((x,y)=>x[0]-y[0]); const [d,u]=pq.shift();
-    if(u===b) break; if(d>(dist[u]??Infinity)) continue;
-    for(const e of (G.adj[u]||[])){ const nd=d+e.cost; if(nd<(dist[e.to]??Infinity)){ dist[e.to]=nd; prev[e.to]=u; pq.push([nd,e.to]); } }
+    if(u===b)break; if(d>(dist[u]??Infinity))continue;
+    for(const e of (G.adj[u]||[])){ const nd=d+e.cost; if(nd<(dist[e.to]??Infinity)){dist[e.to]=nd;prev[e.to]=u;pq.push([nd,e.to]);} }
   }
-  if(dist[b]==null) return null;
-  const path=[b]; let c=b; while(c!==a){ c=prev[c]; path.unshift(c); }
-  return {path, cost:dist[b]};
+  if(dist[b]==null)return null;
+  const path=[b]; let c=b; while(c!==a){c=prev[c];path.unshift(c);}
+  return {path,cost:dist[b]};
+}
+function setRoute(which, sysId){
+  route[which]=sysId; route.path=null;
+  if(route.a&&route.b){ const r=dijkstra(route.a,route.b); if(r){route.path=r.path;route.cost=r.cost;} }
+  renderRouteBar(); hideCard(); pinned=null; draw();
+}
+function clearRoute(redraw=true){ route={a:null,b:null,path:null,cost:0}; renderRouteBar(); if(redraw)draw(); }
+function renderRouteBar(){
+  const bar=$('#routeBar'), btn=$('#routeClear');
+  if(!route.a&&!route.b){ bar.style.display='none'; btn.style.display='none'; return; }
+  btn.style.display='';
+  const nm=id=>id?esc(G.sysById[id].name):'<i class="muted">pick…</i>';
+  let html=`<b style="color:var(--good)">Route</b> &nbsp; A: ${nm(route.a)} &nbsp;→&nbsp; B: ${nm(route.b)}`;
+  if(route.path) html+=` &nbsp;·&nbsp; <b>${route.path.length-1} jumps</b> · total FTL cost <b style="color:var(--good)">${route.cost}</b>`;
+  else if(route.a&&route.b) html+=' &nbsp;·&nbsp; <span style="color:var(--bad)">no path</span>';
+  bar.innerHTML=html; bar.style.display='block';
 }
 
-/* ---------- canvas ---------- */
+/* ---------- coordinate helpers ---------- */
 function sxy(s){ return [s.x*view.k+view.x, s.y*view.k+view.y]; }
+function planetLayout(){
+  // returns [{p, x, y, r}] for current system view, plus star pos
+  const s=curSys, out=[];
+  const pts=s.planets.filter(p=>p.pos);
+  let minx=0,maxx=1,miny=0,maxy=1;
+  if(pts.length){
+    const xs=pts.map(p=>p.pos.x), ys=pts.map(p=>p.pos.z!==undefined?p.pos.z:p.pos.y);
+    minx=Math.min(...xs,0); maxx=Math.max(...xs,0); miny=Math.min(...ys,0); maxy=Math.max(...ys,0);
+  }
+  const pad=120, k=Math.min((cv.width-2*pad)/((maxx-minx)||1), (cv.height-2*pad)/((maxy-miny)||1));
+  const ox=cv.width/2-(minx+maxx)/2*k, oy=cv.height/2-(miny+maxy)/2*k + 23;
+  s.planets.forEach((p,idx)=>{
+    let x,y;
+    if(p.pos){ x=p.pos.x*k+ox; y=(p.pos.z!==undefined?p.pos.z:p.pos.y)*k+oy; }
+    else { x=cv.width/2+(idx+1)*90; y=cv.height/2; }
+    out.push({p,x,y,r:16});
+  });
+  return {planets:out, star:{x:0*k+ox, y:0*k+oy, r:26}};
+}
+
+/* ---------- drawing ---------- */
 function draw(){
-  if(!G) return;
+  if(!G)return;
   ctx.clearRect(0,0,cv.width,cv.height);
-  // sector polygons
+  if(mode==='system'){ drawSystem(); return; }
+  // sectors
   for(const sec of G.sectors){
-    if(!sec.polygon||!sec.polygon.length) continue;
+    if(!sec.polygon||!sec.polygon.length)continue;
     ctx.beginPath();
-    sec.polygon.forEach((p,i)=>{ const x=p[0]*view.k+view.x, y=p[1]*view.k+view.y; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
-    ctx.closePath(); ctx.strokeStyle=sec.color+'88'; ctx.lineWidth=1.2; ctx.stroke();
-    if(sec.centroid && view.k>0.05){ ctx.fillStyle=sec.color+'cc'; ctx.font='bold '+Math.max(10,13*Math.min(1,view.k*8))+'px system-ui'; ctx.textAlign='center'; ctx.fillText(sec.name+' ['+sec.level+']', sec.centroid.x*view.k+view.x, sec.centroid.y*view.k+view.y); }
+    sec.polygon.forEach((p,i)=>{const x=p[0]*view.k+view.x,y=p[1]*view.k+view.y;i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.closePath(); ctx.strokeStyle=sec.color+'77'; ctx.lineWidth=1.1; ctx.stroke();
+    if(sec.centroid&&view.k>0.04){ ctx.fillStyle=sec.color+'bb'; ctx.font='bold 12px system-ui'; ctx.textAlign='center'; ctx.fillText(sec.name+' ['+sec.level+']', sec.centroid.x*view.k+view.x, sec.centroid.y*view.k+view.y); }
   }
   // edges
-  ctx.lineWidth=0.5; ctx.strokeStyle='#2a334855';
-  ctx.beginPath();
-  for(const e of G.edges){ const a=G.sysById[e.a], b=G.sysById[e.b]; if(!a||!b) continue; const [x1,y1]=sxy(a),[x2,y2]=sxy(b); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); }
+  ctx.lineWidth=0.5; ctx.strokeStyle='#2a334844'; ctx.beginPath();
+  for(const e of G.edges){ const a=G.sysById[e.a],b=G.sysById[e.b]; if(!a||!b)continue; const[x1,y1]=sxy(a),[x2,y2]=sxy(b); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); }
   ctx.stroke();
-  // route path
+  // route path with cost pills
   if(route.path){
-    ctx.lineWidth=2.5; ctx.strokeStyle='#4ade80'; ctx.beginPath();
-    route.path.forEach((id,i)=>{ const [x,y]=sxy(G.sysById[id]); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
-    ctx.stroke();
+    ctx.lineWidth=3; ctx.strokeStyle='#a78bfa'; ctx.setLineDash([7,5]); ctx.beginPath();
+    route.path.forEach((id,i)=>{const[x,y]=sxy(G.sysById[id]);i?ctx.lineTo(x,y):ctx.moveTo(x,y);});
+    ctx.stroke(); ctx.setLineDash([]);
+    let acc=0;
+    for(let i=0;i<route.path.length-1;i++){
+      const A=G.sysById[route.path[i]],B=G.sysById[route.path[i+1]];
+      const e=(G.adj[A.id]||[]).find(x=>x.to===B.id); const c=e?e.cost:0; acc+=c;
+      const[x1,y1]=sxy(A),[x2,y2]=sxy(B); const mx=(x1+x2)/2,my=(y1+y2)/2;
+      const label=c+' ('+acc+')';
+      ctx.font='bold 11px system-ui'; const w=ctx.measureText(label).width+12;
+      ctx.fillStyle='#4c1d95'; ctx.strokeStyle='#a78bfa'; ctx.lineWidth=1;
+      roundRect(mx-w/2,my-9,w,18,9); ctx.fill(); ctx.stroke();
+      ctx.fillStyle='#e9d5ff'; ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(label,mx,my); ctx.textBaseline='alphabetic';
+    }
   }
   // systems
   for(const s of G.systems){
-    const [x,y]=sxy(s);
-    if(x<-20||y<-20||x>cv.width+20||y>cv.height+20) continue;
-    const dim = resFilter && !systemHasRes(s,resFilter);
-    ctx.beginPath(); ctx.arc(x,y, s===selSys?6:(s===hoverSys?5:3.2), 0, 7);
-    ctx.fillStyle = dim ? '#33415577' : (s.color||'#8ab');
-    ctx.fill();
-    if(resFilter && !dim){ ctx.strokeStyle='#ffb454'; ctx.lineWidth=1.5; ctx.stroke(); }
-    if(s===selSys){ ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); }
+    const[x,y]=sxy(s);
+    if(x<-25||y<-25||x>cv.width+25||y>cv.height+25)continue;
+    const dim=resFilter&&!systemHasRes(s,resFilter);
+    const isEnd=route.a===s.id||route.b===s.id;
+    ctx.beginPath(); ctx.arc(x,y,(pinned&&pinned.sys===s)||s===hoverSys?5.5:3.4,0,7);
+    ctx.fillStyle=dim?'#33415566':(s.color||'#8ab'); ctx.fill();
+    if(resFilter&&!dim){ctx.strokeStyle='#ffb454';ctx.lineWidth=1.6;ctx.stroke();}
+    if(isEnd){ctx.strokeStyle='#a78bfa';ctx.lineWidth=2.2;ctx.stroke();}
+    if(view.k>0.10){ ctx.fillStyle='#c9d6ee'; ctx.font='10.5px system-ui'; ctx.textAlign='center'; ctx.fillText(s.name,x,y-8); }
   }
-  // corp bases overlay
-  for(const b of corpBases){
-    const s = b.system && G.systems.find(x=>x.name.toLowerCase()===String(b.system).toLowerCase());
-    if(!s) continue;
-    const [x,y]=sxy(s);
-    ctx.font='14px system-ui'; ctx.textAlign='center'; ctx.fillText('🏠', x, y-10);
-    ctx.fillStyle='#4ade80'; ctx.font='10px system-ui'; ctx.fillText(b.name, x, y-22);
+  // corp bases
+  drawBases(s=>sxy(s));
+  // hover label (zoomed out)
+  if(hoverSys&&view.k<=0.10){const[x,y]=sxy(hoverSys);ctx.fillStyle='#fff';ctx.font='12px system-ui';ctx.textAlign='center';ctx.fillText(hoverSys.name,x,y-9);}
+  if(route.a&&!route.b){const[x,y]=sxy(G.sysById[route.a]);ctx.fillStyle='#a78bfa';ctx.font='bold 13px system-ui';ctx.fillText('A',x+9,y-7);}
+}
+function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+function drawBases(project){
+  if(!corpState)return;
+  for(const b of corpState.bases){
+    if(mode==='galaxy'){
+      const s=b.system&&G.systems.find(x=>x.name.toLowerCase()===String(b.system).toLowerCase());
+      if(!s)continue; const[x,y]=project(s);
+      ctx.font='13px system-ui'; ctx.textAlign='center'; ctx.fillText('🏠',x,y-14);
+    }
   }
-  // hover label
-  if(hoverSys){ const [x,y]=sxy(hoverSys); ctx.fillStyle='#fff'; ctx.font='12px system-ui'; ctx.textAlign='center'; ctx.fillText(hoverSys.name, x, y-8); }
-  // route endpoints
-  if(route.a){ const [x,y]=sxy(G.sysById[route.a]); ctx.fillStyle='#4ade80'; ctx.font='bold 12px system-ui'; ctx.fillText('A', x+8, y-6); }
-  if(route.b){ const [x,y]=sxy(G.sysById[route.b]); ctx.fillStyle='#4ade80'; ctx.font='bold 12px system-ui'; ctx.fillText('B', x+8, y-6); }
 }
-function pick(mx,my){
-  let best=null, bd=12;
-  for(const s of G.systems){ const [x,y]=sxy(s); const d=Math.hypot(x-mx,y-my); if(d<bd){bd=d;best=s;} }
-  return best;
+function drawSystem(){
+  const s=curSys, lay=planetLayout();
+  // grid
+  ctx.strokeStyle='#12314030'; ctx.lineWidth=1;
+  for(let gx=0;gx<cv.width;gx+=90){ctx.beginPath();ctx.moveTo(gx,0);ctx.lineTo(gx,cv.height);ctx.stroke();}
+  for(let gy=0;gy<cv.height;gy+=90){ctx.beginPath();ctx.moveTo(0,gy);ctx.lineTo(cv.width,gy);ctx.stroke();}
+  // star
+  ctx.beginPath(); ctx.arc(lay.star.x,lay.star.y,lay.star.r,0,7);
+  ctx.fillStyle=STARC[s.star]||'#5aa9e6'; ctx.fill();
+  ctx.strokeStyle='#e2e8f0aa'; ctx.lineWidth=2; ctx.stroke();
+  ctx.fillStyle='#c9d6ee'; ctx.font='11px system-ui'; ctx.textAlign='center'; ctx.fillText((s.star||'')+' Star', lay.star.x, lay.star.y+lay.star.r+16);
+  // planets
+  for(const o of lay.planets){
+    const t=TEMPS[o.p.temp];
+    ctx.beginPath(); ctx.arc(o.x,o.y,o.r,0,7);
+    ctx.fillStyle=o.p.color||'#997357'; ctx.fill();
+    ctx.lineWidth=o.p===hoverPlanet||(pinned&&pinned.planet===o.p)?3.5:2.5;
+    ctx.strokeStyle=t?t[1]:'#4ade80'; ctx.stroke();
+    ctx.fillStyle='#fff'; ctx.font='bold 12px system-ui'; ctx.textAlign='center';
+    ctx.fillText(s.name+' '+(ROMAN[o.p.i]||o.p.i+1), o.x, o.y-o.r-8);
+    // corp base on this planet?
+    if(corpState) for(const b of corpState.bases){
+      if(b.system&&b.system.toLowerCase()===s.name.toLowerCase()&&b.planet===(s.name+' '+(ROMAN[o.p.i]||''))){ ctx.font='15px system-ui'; ctx.fillText('🏠',o.x,o.y+o.r+18); }
+    }
+  }
+  ctx.fillStyle='#8593ad'; ctx.font='12px system-ui'; ctx.textAlign='left';
+  ctx.fillText(s.name+' ('+(s.designation||'')+') — '+s.planets.length+' planets · sector '+s.sector+' ['+s.level+']', 14, 22);
 }
-/* pan/zoom/click */
-let dragging=false, moved=false, last=null;
-cv.addEventListener('mousedown',e=>{ dragging=true; moved=false; last=[e.offsetX,e.offsetY]; cv.classList.add('drag'); });
-addEventListener('mouseup',()=>{ dragging=false; cv.classList.remove('drag'); });
+
+/* ---------- cards ---------- */
+function resRows(entries, kind){
+  if(!entries.length) return `<div class="none">No ${kind} recorded.</div>`;
+  return entries.map(([id,val])=>`<div class="ri"><img src="${ICON(id)}" loading="lazy" onerror="this.style.visibility='hidden'"><span class="n">${esc(pretty(id))}</span><span class="badge">${val}</span></div>`).join('');
+}
+function showSystemCard(s, px, py, pin){
+  const agg=aggSys(s);
+  const star=STARC[s.star]||'#5aa9e6';
+  const actions = pin?`<div class="actions">
+      <button class="btn" onclick="enterSystem('${s.id}')">👁 View planets</button>
+      <button class="btn warn" onclick="openBaseModal('${s.id}',null)">🏠 Make base</button>
+      <button class="btn sec" onclick="setRoute('a','${s.id}')">Route A</button>
+      <button class="btn sec" onclick="setRoute('b','${s.id}')">Route B</button>
+    </div>`:`<div class="actions muted" style="border:none;padding:6px 12px">click system for actions</div>`;
+  const sec=(k,t)=>`<div class="grp">${t}</div>`+resRows(Object.entries(agg[k]).map(([id,n])=>[id,'x'+n]), t.toLowerCase());
+  $('#card').innerHTML=`<div class="hd"><span class="sect">${esc(s.sector)} [${s.level}]</span>
+      <div class="nm">${esc(s.name)} <span class="muted">(${esc(s.designation||'')})</span></div>
+      <div class="sub"><span class="stardot" style="background:${star}"></span>${esc(s.star||'?')} Star · ${s.planets.length} Planets</div></div>
+    ${actions}${sec('res','Resources')}${sec('dep','Deposits')}${sec('gey','Geysers')}<div style="height:8px"></div>`;
+  placeCard(px,py);
+}
+function showPlanetCard(s, p, px, py, pin){
+  const t=TEMPS[p.temp];
+  const pname=s.name+' '+(ROMAN[p.i]||p.i+1);
+  const actions=pin?`<div class="actions"><button class="btn warn" onclick="openBaseModal('${s.id}',${p.i})">🏠 Make base here</button></div>`:'';
+  const rows=(arr,title)=>`<div class="grp">${title}</div>`+resRows((arr||[]).map(r=>[r.id, r.d!=null?r.d:('x'+(r.n||1))]), title.toLowerCase());
+  $('#card').innerHTML=`<div class="hd">${t?`<span class="temp" style="color:${t[1]}">${t[0]}</span>`:''}<span class="sect">${esc(s.sector)} [${s.level}]</span>
+      <div class="nm">${esc(pname)}</div></div>
+    ${actions}${rows(p.res,'Resources')}${rows(p.dep,'Deposits')}${rows(p.gey,'Geysers')}<div style="height:8px"></div>`;
+  placeCard(px,py);
+}
+function placeCard(px,py){
+  const c=$('#card'); c.style.display='block';
+  const w=330, h=Math.min(c.scrollHeight, innerHeight*0.7);
+  let x=px+18, y=py-30;
+  if(x+w>innerWidth-8)x=px-w-18; if(x<8)x=8;
+  if(y+h>innerHeight-8)y=innerHeight-h-8; if(y<52)y=52;
+  c.style.left=x+'px'; c.style.top=y+'px';
+}
+function hideCard(){ $('#card').style.display='none'; }
+
+/* ---------- system view ---------- */
+function enterSystem(id){ curSys=G.sysById[id]; mode='system'; pinned=null; hoverPlanet=null; hideCard(); $('#backBtn').style.display='block'; draw(); }
+function exitSystem(){ mode='galaxy'; curSys=null; pinned=null; hideCard(); $('#backBtn').style.display='none'; draw(); }
+
+/* ---------- make base ---------- */
+function openBaseModal(sysId, planetIdx){
+  const s=G.sysById[sysId];
+  const pool={};
+  const src = planetIdx!=null ? [s.planets.find(p=>p.i===planetIdx)] : s.planets;
+  for(const p of src) for(const k of ['res','dep','gey']) for(const r of (p[k]||[])) pool[r.id]=Math.max(pool[r.id]||0, r.d||0);
+  const pname = planetIdx!=null ? s.name+' '+(ROMAN[planetIdx]||planetIdx+1) : '';
+  $('#modalBox').innerHTML=`<h3>🏠 New base — ${esc(pname||s.name)}</h3>
+    <label>Base name</label><input type="text" id="mbName" value="${esc((pname||s.name)+' Base')}">
+    <label>Owner</label><input type="text" id="mbOwner" placeholder="who runs it">
+    ${planetIdx==null?`<label>Planet</label><select id="mbPlanet"><option value="">— not set —</option>${s.planets.map(p=>`<option>${esc(s.name+' '+(ROMAN[p.i]||p.i+1))}</option>`).join('')}</select>`:''}
+    <label>Mining here (${Object.keys(pool).length} available)</label>
+    <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px">
+      ${Object.entries(pool).sort((a,b)=>b[1]-a[1]).map(([id,d])=>`<label class="mineopt"><input type="checkbox" value="${id}"><img src="${ICON(id)}" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="d">d${d}</span></label>`).join('')||'<div class="muted" style="padding:6px">nothing here</div>'}
+    </div>
+    <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
+      <button class="btn sec" onclick="closeModal()">Cancel</button>
+      <button class="btn" onclick="saveBase('${sysId}',${planetIdx})">Save base</button>
+    </div>`;
+  $('#modal').style.display='flex';
+}
+function closeModal(){ $('#modal').style.display='none'; }
+async function saveBase(sysId, planetIdx){
+  const s=G.sysById[sysId];
+  const mining=[...document.querySelectorAll('#modalBox input[type=checkbox]:checked')].map(c=>c.value);
+  const planet = planetIdx!=null ? s.name+' '+(ROMAN[planetIdx]||planetIdx+1) : ($('#mbPlanet')?$('#mbPlanet').value:'');
+  await pullCorp();
+  corpState.bases.push({
+    id:'b'+Date.now(), name:$('#mbName').value.trim()||s.name+' Base', owner:$('#mbOwner').value.trim(),
+    quadrant:$('#quadSel').selectedOptions[0].textContent, system:s.name, planet, coords:'', notes:'added from map',
+    deposits:[], buildings:[], mining
+  });
+  const ok=await pushCorp();
+  closeModal(); hideCard(); pinned=null; draw();
+  toast(ok?'✓ Base saved — synced to the corp':'⚠ Save failed, try again');
+}
+
+/* ---------- input ---------- */
+let dragging=false,moved=false,last=null;
+function pickSys(mx,my){ let best=null,bd=14; for(const s of G.systems){const[x,y]=sxy(s);const d=Math.hypot(x-mx,y-my);if(d<bd){bd=d;best=s;}} return best; }
+function pickPlanet(mx,my){ if(mode!=='system')return null; const lay=planetLayout(); for(const o of lay.planets){ if(Math.hypot(o.x-mx,o.y-my)<o.r+8) return o; } return null; }
+cv.addEventListener('mousedown',e=>{dragging=true;moved=false;last=[e.offsetX,e.offsetY];cv.classList.add('drag');});
+addEventListener('mouseup',()=>{dragging=false;cv.classList.remove('drag');});
 cv.addEventListener('mousemove',e=>{
-  if(dragging){ view.x+=e.offsetX-last[0]; view.y+=e.offsetY-last[1]; last=[e.offsetX,e.offsetY]; moved=true; draw(); }
-  else { const h=pick(e.offsetX,e.offsetY); if(h!==hoverSys){hoverSys=h;draw();} }
+  if(dragging&&mode==='galaxy'){view.x+=e.offsetX-last[0];view.y+=e.offsetY-last[1];last=[e.offsetX,e.offsetY];moved=true;hideCard();pinned=null;draw();return;}
+  if(pinned)return;
+  if(mode==='galaxy'){
+    const h=pickSys(e.offsetX,e.offsetY);
+    if(h!==hoverSys){hoverSys=h;draw();}
+    if(h)showSystemCard(h,e.clientX,e.clientY,false); else hideCard();
+  } else {
+    const o=pickPlanet(e.offsetX,e.offsetY);
+    const p=o?o.p:null;
+    if(p!==hoverPlanet){hoverPlanet=p;draw();}
+    if(p)showPlanetCard(curSys,p,e.clientX,e.clientY,false); else hideCard();
+  }
 });
 cv.addEventListener('wheel',e=>{
+  if(mode!=='galaxy')return;
   e.preventDefault();
-  const f = e.deltaY<0?1.15:0.87;
-  view.x = e.offsetX-(e.offsetX-view.x)*f; view.y = e.offsetY-(e.offsetY-view.y)*f; view.k*=f; draw();
+  const f=e.deltaY<0?1.15:0.87;
+  view.x=e.offsetX-(e.offsetX-view.x)*f; view.y=e.offsetY-(e.offsetY-view.y)*f; view.k*=f; hideCard(); pinned=null; draw();
 },{passive:false});
 cv.addEventListener('click',e=>{
-  if(moved) return;
-  const s = pick(e.offsetX,e.offsetY);
-  if(!s) return;
-  if(route.on){
-    if(!route.a){ route.a=s.id; $('#routeBtn').textContent='Route: pick B'; }
-    else if(!route.b){ route.b=s.id; const r=dijkstra(route.a,route.b); if(r){route.path=r.path; route.cost=r.cost;} $('#routeBtn').textContent='Route: done'; }
-    else { route.a=s.id; route.b=null; route.path=null; $('#routeBtn').textContent='Route: pick B'; }
-    draw(); renderSide(); return;
+  if(moved)return;
+  if(mode==='galaxy'){
+    const s=pickSys(e.offsetX,e.offsetY);
+    if(s){ pinned={type:'system',sys:s}; showSystemCard(s,e.clientX,e.clientY,true); }
+    else { pinned=null; hideCard(); }
+  } else {
+    const o=pickPlanet(e.offsetX,e.offsetY);
+    if(o){ pinned={type:'planet',sys:curSys,planet:o.p}; showPlanetCard(curSys,o.p,e.clientX,e.clientY,true); }
+    else { pinned=null; hideCard(); }
   }
-  selSys=s; draw(); renderSide();
+  draw();
 });
 $('#sysSearch').addEventListener('change',e=>{
-  const s = G.systems.find(x=>x.name.toLowerCase()===e.target.value.toLowerCase());
-  if(s){ selSys=s; view.x = cv.width/2 - s.x*view.k; view.y = cv.height/2 - s.y*view.k; draw(); renderSide(); }
+  const s=G.systems.find(x=>x.name.toLowerCase()===e.target.value.toLowerCase());
+  if(s){ if(mode==='system')exitSystem(); view.k=Math.max(view.k,0.35); view.x=cv.width/2-s.x*view.k; view.y=cv.height/2-s.y*view.k; pinned={type:'system',sys:s}; draw(); showSystemCard(s,cv.width/2,cv.height/2,true); }
 });
-
-/* ---------- side panel ---------- */
-function renderSide(){
-  const el = $('#side');
-  let html = '';
-  if(route.path){
-    html += `<h3>Route (cheapest)</h3><div class="muted">${route.path.length-1} jumps · total cost <b style="color:var(--good)">${route.cost}</b></div>` +
-      route.path.map(id=>`<div class="row"><span>${esc(G.sysById[id].name)}</span><span class="muted">${esc(G.sysById[id].sector)}</span></div>`).join('') + '<hr style="border-color:var(--border)">';
-  }
-  if(selSys){
-    const s = selSys;
-    const bases = corpBases.filter(b=>b.system&&b.system.toLowerCase()===s.name.toLowerCase());
-    html += `<span class="close" onclick="selSys=null;renderSide();draw()">✕</span>
-      <h2>${esc(s.name)}</h2>
-      <div class="muted">${esc(s.designation||'')} · ${esc(s.sector)} [lvl ${s.level}] · ${s.star||''} star · ${s.planets.length} planets</div>`;
-    if(bases.length) html += '<div style="margin:6px 0">'+bases.map(b=>`<span class="chip" style="color:var(--good)">🏠 ${esc(b.name)} (${esc(b.owner||'?')})</span>`).join('')+'</div>';
-    for(const p of s.planets){
-      const rows = [...(p.res||[]).map(r=>['⛏',r]), ...(p.dep||[]).map(r=>['🕳',r]), ...(p.gey||[]).map(r=>['♨',r])];
-      html += `<h3>Planet ${p.i+1} <span class="muted">${rows.length? '' : '— nothing detected'}</span></h3>`;
-      html += rows.map(([ic,r])=>`<div class="row"><span>${ic} ${esc(prettyRes(r.id))}</span><span class="muted">×${r.n??'?'} · d${r.d??'?'}</span></div>`).join('');
-    }
-    const lanes = (G.adj[s.id]||[]).map(e=>({n:G.sysById[e.to], c:e.cost})).sort((a,b)=>a.c-b.c);
-    html += '<h3>FTL lanes</h3>'+lanes.map(l=>`<div class="row"><span class="pointer" style="cursor:pointer" onclick="jumpTo('${l.n.id}')">${esc(l.n.name)}</span><span class="muted">cost ${l.c}</span></div>`).join('');
-  }
-  el.innerHTML = html;
-  el.style.display = html?'block':'none';
-}
-function jumpTo(id){ const s=G.sysById[id]; selSys=s; view.x=cv.width/2-s.x*view.k; view.y=cv.height/2-s.y*view.k; draw(); renderSide(); }
 
 /* ---------- init ---------- */
 async function init(){
-  const idx = await fetch('../data/index.json').then(r=>r.json());
-  const saved = localStorage.getItem('corpmap:quad') || 'abuxey';
-  $('#quadSel').innerHTML = idx.map(q=>`<option value="${q.slug}" ${q.slug===saved?'selected':''}>${q.name} (${q.region})</option>`).join('');
+  const idx=await fetch('../data/index.json').then(r=>r.json());
+  const saved=localStorage.getItem('corpmap:quad')||'abuxey';
+  $('#quadSel').innerHTML=idx.map(q=>`<option value="${q.slug}" ${q.slug===saved?'selected':''}>${q.name} (${q.region})</option>`).join('');
   $('#quadSel').addEventListener('change',e=>loadQuad(e.target.value));
-  $('#legend').innerHTML = '<b>Corp Map</b> · scroll = zoom, drag = pan, click = system details<br>Resources button = highlight by resource · Route = cheapest path between two systems<br><span class="muted">🏠 = corp base (set "System" on a base in the Planner to pin it)</span>';
+  $('#legend').innerHTML='<b>Corp Map</b> · hover = info · click = actions (view planets / make base / route)<br>scroll = zoom · drag = pan · <span class="muted">🏠 = corp base · route badges show cost (running total)</span>';
   resize();
   await loadQuad(saved);
-  loadCorp(); setInterval(loadCorp, 30000);
+  pullCorp(); setInterval(pullCorp,30000);
 }
 init();
 </script>
