@@ -161,6 +161,17 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
   </div>
 </section>
 
+<section class="tab" id="tab-admin">
+  <div class="card">
+    <h3>🔒 Admin — usage</h3>
+    <div id="adminKpis" class="grid cols3" style="margin-top:8px"></div>
+  </div>
+  <div class="grid cols2" style="margin-top:12px">
+    <div class="card"><h3>Corps</h3><div id="adminCorps" class="muted small" style="overflow-x:auto">…</div></div>
+    <div class="card"><h3>Recent users</h3><div id="adminUsers" class="muted small">…</div></div>
+  </div>
+</section>
+
 <section class="tab" id="tab-chain">
   <div class="card">
     <div class="row">
@@ -581,6 +592,7 @@ function init(){
   render();
   window.onCorpReady = async ()=>{
     document.getElementById('landing').style.display='none';
+    ensureAdminTab();
     STATE.bases = [];
     const el=$('#syncState'); el.textContent='['+(window.CORP.tag||'')+'] '+window.CORP.name; el.className='on'; el.onclick=null;
     document.getElementById('acctInfo').textContent='Signed in as '+(window.USER?window.USER.email:'?');
@@ -600,6 +612,24 @@ function init(){
 function landingExplore(){ localStorage.setItem('corphq:explored','1'); document.getElementById('landing').style.display='none'; }
 function showLanding(){ document.getElementById('landing').style.display='block'; window.scrollTo(0,0); }
 function landingSignIn(){ document.getElementById('landing').style.display='none'; openAuth(); }
+const ADMIN_EMAIL='joseafonsosantos@gmail.com';
+function isAdmin(){ return window.USER && (window.USER.email||'').toLowerCase()===ADMIN_EMAIL; }
+function ensureAdminTab(){
+  if(!isAdmin()) return;
+  if(document.querySelector('nav button[data-tab=admin]')) return;
+  const b=document.createElement('button'); b.dataset.tab='admin'; b.textContent='🔒 Admin'; b.onclick=()=>{App.show('admin');loadAdmin();};
+  document.getElementById('nav').appendChild(b);
+}
+async function loadAdmin(){
+  const d = await rpc('admin_stats');
+  if(!d || d.code){ document.getElementById('adminKpis').innerHTML='<div class="muted">Access denied.</div>'; return; }
+  const kpi=(l,v)=>`<div class="card"><div class="muted">${l}</div><div class="kpi">${v}</div></div>`;
+  document.getElementById('adminKpis').innerHTML = kpi('Users',d.users)+kpi('Corps',d.corps)+kpi('Members',d.members)+kpi('Bases',d.bases)+kpi('Bases producing',d.production_rows)+kpi('Plans',d.plans);
+  document.getElementById('adminCorps').innerHTML = '<table><thead><tr><th>Corp</th><th>Quad</th><th>Code</th><th class="right">Mem</th><th class="right">Bases</th><th>Created</th></tr></thead><tbody>'+
+    (d.corp_list||[]).map(c=>`<tr><td>[${esc(c.tag)}] ${esc(c.name)}</td><td class="muted">${esc(c.quadrant)}</td><td><code>${esc(c.join_code)}</code></td><td class="right">${c.members}</td><td class="right">${c.bases}</td><td class="muted">${(c.created_at||'').slice(0,10)}</td></tr>`).join('')+'</tbody></table>';
+  document.getElementById('adminUsers').innerHTML = '<table><thead><tr><th>Email</th><th>Joined</th><th>Last seen</th></tr></thead><tbody>'+
+    (d.recent_users||[]).map(u=>`<tr><td>${esc(u.email)}</td><td class="muted">${(u.created_at||'').slice(0,10)}</td><td class="muted">${(u.last_sign_in_at||'').slice(0,16).replace('T',' ')}</td></tr>`).join('')+'</tbody></table>';
+}
 function renderCorpPanel(){
   const c=window.CORP; if(!c) return;
   document.getElementById('corpPanel').innerHTML =
