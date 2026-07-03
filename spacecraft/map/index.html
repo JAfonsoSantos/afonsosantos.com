@@ -475,7 +475,7 @@ init();
 <div id="authGate" style="position:fixed;inset:0;background:#0b0e14ee;z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
   <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px;width:370px">
     <h2 style="margin:0 0 4px;color:var(--accent)">🛰️ Corp access</h2>
-    <p class="muted" style="margin:0 0 14px">Members only. Enter your email and we send you a sign-in link.</p>
+    <p class="muted" style="margin:0 0 14px">Members only. Enter your email and we send you a sign-in link. Use a <b>personal</b> email — work mailboxes often kill the link.</p>
     <div id="authStep1">
       <input id="authEmail" type="email" placeholder="you@email.com" style="width:100%;margin-bottom:10px">
       <button class="btn" style="width:100%" onclick="authSend()">Send sign-in link</button>
@@ -533,7 +533,12 @@ async function afterAuth(){
   if(window.onAuthed) window.onAuthed();
 }
 async function authLogout(){ await SBC.auth.signOut(); location.reload(); }
+function authHashError(){
+  const m=location.hash.match(/error_description=([^&]+)/);
+  if(m){ authMsg(decodeURIComponent(m[1].replace(/\+/g,' '))+' — request a new link below. Tip: corporate email scanners can burn links; use a personal email.', true); history.replaceState(null,'',location.pathname); }
+}
 async function authInit(){
+  authHashError();
   const {data:{session}} = await SBC.auth.getSession();
   if(session){ TOKEN=session.access_token; USER=session.user; await afterAuth(); }
   else gateShow();
