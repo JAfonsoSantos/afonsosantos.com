@@ -792,38 +792,51 @@ function renderChain(){
   const {nodes, edges} = buildChain(CHAIN_CUR.slug, CHAIN_CUR.rate);
   const list = Object.values(nodes);
   const maxD = Math.max(...list.map(n=>n.depth));
-  // columns: raw left → target right
   const cols = {};
   for(const n of list){ const c = maxD - n.depth; (cols[c]=cols[c]||[]).push(n); }
-  const COLW=270, ROWH=118, PAD=30;
-  let maxRows=0;
-  for(const c of Object.keys(cols)){ cols[c].sort((a,b)=>b.rate-a.rate); maxRows=Math.max(maxRows, cols[c].length); }
-  const W = PAD*2 + (maxD+1)*COLW, H = PAD*2 + maxRows*ROWH;
+  Object.keys(cols).forEach(c=>cols[c].sort((a,b)=>b.rate-a.rate));
+  const COLW=272, NODEW=216, PAD=30, GAP=18;
   const cv = document.getElementById('chainCanvas');
-  cv.style.width=W+'px'; cv.style.height=H+'px';
+  cv.querySelectorAll('.cnode').forEach(el=>el.remove());
+
+  // pass 1: build + append nodes at x, temp y=0, so we can measure real heights
   const pos={};
   let html='';
   for(const c of Object.keys(cols)){
-    const colH = cols[c].length*ROWH;
-    cols[c].forEach((n,i)=>{
-      const x = PAD + c*COLW, y = PAD + i*ROWH + (H-2*PAD-colH)/2;
-      pos[n.slug]={x,y};
+    const x = PAD + (+c)*COLW;
+    cols[c].forEach(n=>{
       const rs = recipesFor(n.slug);
       const sel = (rs.length>1 && n.recipe) ? `<select onchange="setChainRecipe('${n.slug}', this.value)">${rs.map(r=>`<option value="${r._id}" ${n.recipe._id===r._id?'selected':''}>${esc(wsName(r.workstation))}: ${r.ingredients.map(i2=>qtyNum(i2.qty)+'× '+itemName(i2.slug)).join(', ')}</option>`).join('')}</select>` : '';
       const mach = n.machines? `${n.machines}× ${ico(n.ws,'sm')}${esc(wsName(n.ws||''))}` : (n.supplied?'':(n.raw?'gather / buy / trade':''));
       const cov = n.corpRate? `<div class="cov-badge">🏠 ${n.supplied?'fully supplied':fmt(n.corpRate)+'/h from corp — build '+fmt(n.net)+'/h'}${n.corpSources&&n.corpSources.length?' · '+esc(n.corpSources.slice(0,2).map(x=>x.base).join(', ')):''}</div>` : (n.covered.length? `<div class="cov-badge">🏠 available at ${esc(n.covered.slice(0,2).join(', '))}</div>`:'');
       const assign = (window.CORP && n.machines && !n.supplied) ? `<select onchange="chainAssign(this.value,'${n.slug}',${n.net||n.rate});this.value=''" title="record that a base will produce this"><option value="">→ assign to base…</option>${STATE.bases.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>` : '';
-      html += `<div class="cnode ${n.raw?'raw':''} ${n.supplied?'cov':(n.corpRate?'part':(n.covered.length?'cov':''))}" style="left:${x}px;top:${y}px">
+      html += `<div class="cnode ${n.raw?'raw':''} ${n.supplied?'cov':(n.corpRate?'part':(n.covered.length?'cov':''))}" data-cslug="${n.slug}" style="left:${x}px;top:0px;visibility:hidden">
         <div class="nm">${ico(n.slug)}${esc(itemName(n.slug))}</div>
         <div class="meta">${fmt(n.rate)}/h${n.power?` · ${fmt(n.power)} pw`:''}</div>
         <div class="meta">${mach}</div>${cov}${sel}${assign}</div>`;
+      pos[n.slug]={x};
     });
   }
-  // edges
+  cv.insertAdjacentHTML('beforeend', html);
+
+  // pass 2: measure heights, pack each column, center columns vertically
+  const colH={};
+  for(const c of Object.keys(cols)){
+    let h=0; cols[c].forEach(n=>{ const el=cv.querySelector(`.cnode[data-cslug="${n.slug}"]`); const hh=el?el.offsetHeight:90; pos[n.slug].h=hh; h+=hh+GAP; }); colH[c]=h-GAP;
+  }
+  const H = PAD*2 + Math.max(...Object.values(colH), 100);
+  for(const c of Object.keys(cols)){
+    let y = PAD + (H-2*PAD-colH[c])/2;
+    cols[c].forEach(n=>{ const el=cv.querySelector(`.cnode[data-cslug="${n.slug}"]`); pos[n.slug].y=y; if(el){ el.style.top=y+'px'; el.style.visibility='visible'; } y += pos[n.slug].h+GAP; });
+  }
+  const W = PAD*2 + (maxD+1)*COLW;
+  cv.style.width=W+'px'; cv.style.height=H+'px';
+
+  // edges (anchor at real vertical centers)
   let svg='';
   for(const e of Object.values(edges)){
-    const a=pos[e.from], b=pos[e.to]; if(!a||!b) continue;
-    const x1=a.x+216, y1=a.y+40, x2=b.x, y2=b.y+40;
+    const a=pos[e.from], b=pos[e.to]; if(!a||!b||a.h==null||b.h==null) continue;
+    const x1=a.x+NODEW, y1=a.y+a.h/2, x2=b.x, y2=b.y+b.h/2;
     const mx=(x1+x2)/2;
     svg += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="#3b4a6b" stroke-width="1.6"/>`;
     svg += `<rect x="${mx-26}" y="${(y1+y2)/2-9}" width="52" height="16" rx="8" fill="#1b2740" stroke="#2e3f63"/><text x="${mx}" y="${(y1+y2)/2+3}" text-anchor="middle" fill="#9fc3ff" font-size="10">${fmt(e.rate)}/h</text>`;
@@ -831,8 +844,6 @@ function renderChain(){
   CHAIN_DIM={W,H};
   const sv=document.getElementById('chainSvg');
   sv.setAttribute('width',W); sv.setAttribute('height',H); sv.innerHTML=svg;
-  cv.querySelectorAll('.cnode').forEach(el=>el.remove());
-  cv.insertAdjacentHTML('beforeend', html);
   // summary
   const byWs={}; let totPower=0, totMach=0;
   for(const n of list){ if(n.machines&&n.ws){ byWs[n.ws]=(byWs[n.ws]||0)+n.machines; totMach+=n.machines; totPower+=n.power||0; } }
