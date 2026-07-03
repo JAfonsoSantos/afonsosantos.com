@@ -3,7 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>CorpHQ — SpaceCraft corp manager</title>
+<title>CorpHQ — SpaceCraft corp manager, chain planner & galaxy map</title>
+<meta name="description" content="Free SpaceCraft corp manager: shared bases, capacity-aware production chain designer, full galaxy map with resource finder and FTL routes. Run your corporation like fleet command.">
+<meta name="keywords" content="SpaceCraft, corp manager, production chain, galaxy map, resource finder, Shiro Games, base planner, crafting calculator">
+<meta property="og:title" content="CorpHQ — SpaceCraft corp manager">
+<meta property="og:description" content="Shared bases, production chains, galaxy map & resource finder for SpaceCraft corporations. Free.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://afonsosantos.com/spacecraft/">
+<meta name="twitter:card" content="summary">
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Cpolygon points=%2732,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5%27 fill=%27none%27 stroke=%27%235eb2ff%27 stroke-width=%274%27/%3E%3Ccircle cx=%2732%27 cy=%2732%27 r=%278%27 fill=%27%23a78bfa%27/%3E%3Ccircle cx=%2747%27 cy=%2723%27 r=%274%27 fill=%27%23ffb454%27/%3E%3C/svg%3E">
 <style>
 :root{
@@ -23,7 +30,13 @@ nav button:hover{color:var(--text)}
 #syncState{margin-left:auto;font-size:12px;color:var(--dim)}
 #syncState.on{color:var(--good)}
 main{padding:16px 22px;max-width:none;margin:0 auto}
-@media(max-width:900px){ main{padding:10px} header{padding:8px 10px;gap:8px} .searchbox{width:150px} nav button{padding:5px 8px} }
+@media(max-width:900px){
+  main{padding:10px} header{padding:8px 10px;gap:6px;flex-wrap:wrap} .searchbox{width:130px}
+  nav{width:100%;order:3;overflow-x:auto;flex-wrap:nowrap;-webkit-overflow-scrolling:touch} nav button{padding:6px 9px;white-space:nowrap}
+  .cols2,.cols3{grid-template-columns:1fr} header h1{font-size:14px}
+  #chainWrap{height:calc(100vh - 300px)} .row{flex-wrap:wrap}
+  table{font-size:12px} th,td{padding:5px 6px}
+}
 section.tab{display:none}
 section.tab.active{display:block}
 h2{font-size:15px;margin:18px 0 8px;color:var(--accent2)}
@@ -185,6 +198,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
       <button class="btn sec" onclick="chainZoomBy(1.25)">+</button>
       <button class="btn sec" onclick="chainZoomBy(0.8)">−</button>
       <label class="muted small" style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="chainUseCorp" checked onchange="if(CHAIN_CUR){renderChain();chainFit();}"> 🏠 Use corp supply</label>
+      <button class="btn sec" onclick="shareChain()" title="copy a link that opens this chain">🔗 Share</button>
       <span class="muted small">Generates the full production workflow — machines, rates, power. Green nodes = your corp already produces it.</span>
     </div>
   </div>
@@ -235,8 +249,10 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
     <div class="row"><select id="bBldSelect" style="flex:1"></select><input id="bBldCount" type="number" min="1" value="1" style="width:70px"><button type="button" class="btn sec" onclick="App.addBuildingRow()">Add</button></div>
     <h3 class="small" style="margin:10px 0 4px">Mining (deposits/geysers worked) <span class="muted">— add these from the Map</span></h3>
     <div id="bMining"></div>
-    <h3 class="small" style="margin:10px 0 4px">Production <span class="muted">— assign from the Chain Designer</span></h3>
+    <h3 class="small" style="margin:10px 0 4px">Production <span class="muted">— what this base outputs</span></h3>
     <div id="bProduction"></div>
+    <div class="row"><input id="bProdItem" placeholder="item this base makes…" list="itemDatalist" style="flex:1"><input id="bProdMachines" type="number" min="1" value="1" style="width:64px" title="how many machines"><button type="button" class="btn sec" onclick="App.addProdRow()">Add</button></div>
+    <div class="muted small" id="bProdHint"></div>
     <div class="row" style="margin-top:12px;justify-content:flex-end">
       <button type="button" class="btn danger" id="bDelete" onclick="App.deleteBase()">Delete</button>
       <button type="button" class="btn sec" onclick="document.getElementById('baseDialog').close()">Cancel</button>
@@ -435,7 +451,7 @@ const App = {
     $('#bDeposits').innerHTML = draftDeposits.map((d,i)=>`<span class="chip">${ico(d.slug,'sm')}${esc(RES[d.slug]?RES[d.slug].name:d.slug)} ×${d.count} <span class="pointer" onclick="App.rmDeposit(${i})">✕</span></span>`).join('')||'<span class="muted small">none yet</span>';
     $('#bBuildings').innerHTML = draftBuildings.map((d,i)=>`<span class="chip">${ico(d.slug,'sm')}${esc(BLD[d.slug]?BLD[d.slug].name:d.slug)} ×${d.count} <span class="pointer" onclick="App.rmBuilding(${i})">✕</span></span>`).join('')||'<span class="muted small">none yet</span>';
     if($('#bMining')){ const norm=id=>String(id).replace(/[-_]/g,'').toLowerCase(); $('#bMining').innerHTML = draftMining.map((m,i)=>{const mid=typeof m==='string'?m:m.id; const mn=typeof m==='string'?1:(m.n||1); const res=GAME.resources.find(r=>norm(r.slug)===norm(mid)); return `<span class="chip">${icoRes(mid,'sm')}${esc(res?res.name:mid)} ×${mn} <span class="pointer" onclick="App.rmMining(${i})">✕</span></span>`;}).join('')||'<span class="muted small">none (add from the Map → Make base)</span>'; }
-    if($('#bProduction')){ $('#bProduction').innerHTML = draftProduction.map((pr,i)=>`<span class="chip" style="color:var(--accent)">${ico(pr.slug,'sm')}${esc(itemName(pr.slug))} ${fmt(pr.rate)}/h <span class="pointer" onclick="App.rmProd(${i})">✕</span></span>`).join('')||'<span class="muted small">assign from the Chain Designer</span>'; }
+    if($('#bProduction')){ $('#bProduction').innerHTML = draftProduction.map((pr,i)=>`<span class="chip" style="color:var(--accent)">${ico(pr.slug,'sm')}${esc(itemName(pr.slug))} ${fmt(pr.rate)}/h${pr.machines?' ('+pr.machines+'×)':''} <span class="pointer" onclick="App.rmProd(${i})">✕</span></span>`).join('')||'<span class="muted small">none — add above, or assign from the Chain Designer</span>'; }
   },
   addDepositRow(){
     const name = $('#bDepSearch').value.trim(); if(!name) return;
@@ -452,6 +468,20 @@ const App = {
   rmBuilding(i){ draftBuildings.splice(i,1); App.renderDraftLists(); },
   rmMining(i){ draftMining.splice(i,1); App.renderDraftLists(); },
   rmProd(i){ draftProduction.splice(i,1); App.renderDraftLists(); },
+  addProdRow(){
+    const name=$('#bProdItem').value.trim(); if(!name) return;
+    const it = GAME.items.find(i=>i.name.toLowerCase()===name.toLowerCase()) || GAME.items.find(i=>i.name.toLowerCase().includes(name.toLowerCase()));
+    if(!it) return alert('Item not found: '+name);
+    const machines = parseInt($('#bProdMachines').value)||1;
+    const r = chosenRecipe(it.slug);
+    if(!r){ alert(itemName(it.slug)+' is a raw resource — register it under Mining instead.'); return; }
+    const perM = ratePerMachineH(r, it.slug);
+    const rate = Math.round(perM*machines*100)/100;
+    draftProduction = draftProduction.filter(p=>p.slug!==it.slug);
+    draftProduction.push({slug:it.slug, rate, machines});
+    $('#bProdItem').value=''; $('#bProdHint').textContent = `${machines}× ${wsName(r.workstation)} → ${fmt(rate)}/h of ${itemName(it.slug)}`;
+    App.renderDraftLists();
+  },
   saveBase(ev){
     ev.preventDefault();
     const b = {
@@ -609,6 +639,7 @@ function init(){
   $('#dbCat').addEventListener('change', renderDb);
   App.show('dashboard');
   render();
+  setTimeout(()=>{ if(window.tryOpenSharedChain) tryOpenSharedChain(); }, 400);
   window.onCorpReady = async ()=>{
     document.getElementById('landing').style.display='none';
     ensureAdminTab();
@@ -773,6 +804,25 @@ function buildChain(target, rateH){
   return {nodes, edges, target, rateH};
 }
 let CHAIN_CUR=null, CHAIN_DIM=null, CHAIN_SCALE=1;
+function shareChain(){
+  if(!CHAIN_CUR){ alert('Compute a chain first'); return; }
+  const rc = encodeURIComponent(JSON.stringify(STATE.recipeChoice||{}));
+  const url = location.origin+location.pathname+'#chain='+encodeURIComponent(CHAIN_CUR.slug)+'&rate='+CHAIN_CUR.rate+'&rc='+rc;
+  navigator.clipboard.writeText(url).then(()=>{ const b=event.target; const t=b.textContent; b.textContent='✓ copied!'; setTimeout(()=>b.textContent=t,1600); });
+}
+function tryOpenSharedChain(){
+  const m=location.hash.match(/chain=([^&]+)/); if(!m) return false;
+  const slug=decodeURIComponent(m[1]);
+  const it=GAME.items.find(i=>i.slug===slug); if(!it) return false;
+  const rm=location.hash.match(/rate=([0-9.]+)/); const rate=rm?parseFloat(rm[1]):60;
+  const rcm=location.hash.match(/rc=([^&]+)/); if(rcm){ try{ STATE.recipeChoice=Object.assign(STATE.recipeChoice||{}, JSON.parse(decodeURIComponent(rcm[1]))); }catch(e){} }
+  App.show('chain');
+  document.getElementById('chainItem').value=it.name;
+  document.getElementById('chainRate').value=rate;
+  computeChainUI();
+  history.replaceState(null,'',location.pathname);
+  return true;
+}
 function chainSetScale(sc){
   CHAIN_SCALE=Math.max(0.15,Math.min(2,sc));
   const cv=document.getElementById('chainCanvas');
