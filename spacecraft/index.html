@@ -65,6 +65,8 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 .tag{font-size:11px;background:var(--chip);color:var(--dim);border-radius:4px;padding:1px 5px}
 .flexwrap{display:flex;flex-wrap:wrap;gap:4px}
 code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
+img.ico{width:20px;height:20px;border-radius:4px;vertical-align:-5px;margin-right:5px}
+img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 .notice{background:#1c2536;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--dim);margin:8px 0}
 </style>
 </head>
@@ -187,6 +189,9 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s??'').replace(/[&<>"]/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 const num = v => { if(v==null) return null; const n = parseFloat(String(v).replace(/,/g,'')); return isNaN(n)?null:n; };
 const fmt = n => n==null?'—':(Math.round(n*100)/100).toLocaleString();
+const CDN='https://cdn.pixel6.tools/spacecraft/images/icons/';
+function ico(slug,sz){ const f=window.ICONS&&window.ICONS[slug]; return f? '<img class="ico'+(sz?' '+sz:'')+'" referrerpolicy="no-referrer" src="'+CDN+f+'.webp?v=2" onerror="this.style.display=\'none\'">' : ''; }
+function icoRes(id,sz){ return id? '<img class="ico'+(sz?' '+sz:'')+'" referrerpolicy="no-referrer" src="'+CDN+'resources/'+id+'.webp?v=2" onerror="this.style.display=\'none\'">' : ''; }
 
 /* index game data */
 const ITEMS = {}; GAME.items.forEach(i=>ITEMS[i.slug]=i);
@@ -278,8 +283,8 @@ function renderTreeNode(n, lvl){
       rs.map(r=>`<option value="${r._id}" ${n.recipe._id===r._id?'selected':''}>${esc(wsName(r.workstation))}: ${r.ingredients.map(i=>qtyNum(i.qty)+'× '+itemName(i.slug)).join(', ')}</option>`).join('') + '</select>';
   }
   const label = n.isRaw
-    ? `<span class="raw">${esc(itemName(n.slug))}</span> <span class="qty">×${fmt(n.qty)}</span> <span class="tag">raw</span>`
-    : `${esc(itemName(n.slug))} <span class="qty">×${fmt(n.qty)}</span> <span class="muted small">(${fmt(n.crafts)} crafts @ ${esc(wsName(n.recipe.workstation))})</span> ${sel}`;
+    ? `${ico(n.slug,'sm')}<span class="raw">${esc(itemName(n.slug))}</span> <span class="qty">×${fmt(n.qty)}</span> <span class="tag">raw</span>`
+    : `${ico(n.slug,'sm')}${esc(itemName(n.slug))} <span class="qty">×${fmt(n.qty)}</span> <span class="muted small">(${fmt(n.crafts)} crafts @ ${esc(wsName(n.recipe.workstation))})</span> ${sel}`;
   return `<div class="node lvl${lvl}">${label}${kids}</div>`;
 }
 
@@ -331,8 +336,8 @@ const App = {
     $('#baseDialog').showModal();
   },
   renderDraftLists(){
-    $('#bDeposits').innerHTML = draftDeposits.map((d,i)=>`<span class="chip">${esc(RES[d.slug]?RES[d.slug].name:d.slug)} ×${d.count} <span class="pointer" onclick="App.rmDeposit(${i})">✕</span></span>`).join('')||'<span class="muted small">none yet</span>';
-    $('#bBuildings').innerHTML = draftBuildings.map((d,i)=>`<span class="chip">${esc(BLD[d.slug]?BLD[d.slug].name:d.slug)} ×${d.count} <span class="pointer" onclick="App.rmBuilding(${i})">✕</span></span>`).join('')||'<span class="muted small">none yet</span>';
+    $('#bDeposits').innerHTML = draftDeposits.map((d,i)=>`<span class="chip">${ico(d.slug,'sm')}${esc(RES[d.slug]?RES[d.slug].name:d.slug)} ×${d.count} <span class="pointer" onclick="App.rmDeposit(${i})">✕</span></span>`).join('')||'<span class="muted small">none yet</span>';
+    $('#bBuildings').innerHTML = draftBuildings.map((d,i)=>`<span class="chip">${ico(d.slug,'sm')}${esc(BLD[d.slug]?BLD[d.slug].name:d.slug)} ×${d.count} <span class="pointer" onclick="App.rmBuilding(${i})">✕</span></span>`).join('')||'<span class="muted small">none yet</span>';
   },
   addDepositRow(){
     const name = $('#bDepSearch').value.trim(); if(!name) return;
@@ -423,23 +428,23 @@ function render(){
   $('#basesList').innerHTML = STATE.bases.map(b=>baseCard(b,false)).join('') || '<div class="muted">No bases yet — add the first one.</div>';
 
   /* planner */
-  $('#targets').innerHTML = STATE.planTargets.map((t,i)=>`<span class="chip">${esc(itemName(t.slug))} ×${t.qty} <span class="pointer" onclick="App.rmTarget(${i})">✕</span></span>`).join('') || '<span class="muted small">no targets</span>';
+  $('#targets').innerHTML = STATE.planTargets.map((t,i)=>`<span class="chip">${ico(t.slug,'sm')}${esc(itemName(t.slug))} ×${t.qty} <span class="pointer" onclick="App.rmTarget(${i})">✕</span></span>`).join('') || '<span class="muted small">no targets</span>';
   const plan = computePlan();
   $('#planTree').innerHTML = plan.trees.map(t=>renderTreeNode(t,0)).join('<hr style="border-color:var(--border)">') || '<span class="muted">No targets yet.</span>';
   const rawKeys = Object.keys(plan.raw).sort((a,b)=>plan.raw[b]-plan.raw[a]);
   $('#planRaw').innerHTML = rawKeys.length ? '<table>'+rawKeys.map(s=>{
     const price = num(ITEMS[s]&&ITEMS[s].price);
-    return `<tr><td>${esc(itemName(s))}</td><td class="right qty">×${fmt(plan.raw[s])}</td><td class="right muted">${price!=null?fmt(price*plan.raw[s])+' cr':''}</td></tr>`;
+    return `<tr><td>${ico(s)}${esc(itemName(s))}</td><td class="right qty">×${fmt(plan.raw[s])}</td><td class="right muted">${price!=null?fmt(price*plan.raw[s])+' cr':''}</td></tr>`;
   }).join('')+'</table>' : '—';
   const stepVals = Object.values(plan.steps);
   $('#planWs').innerHTML = stepVals.length ? '<table>'+stepVals.map(st=>{
     const secs = durSecs(st.recipe.duration);
     const time = secs ? fmt(Math.ceil(st.crafts)*secs/60)+' min' : '';
-    return `<tr><td>${esc(wsName(st.recipe.workstation))}</td><td class="small muted">${st.recipe.outputs.map(o=>itemName(o.slug)).join(', ')}</td><td class="right qty">${fmt(Math.ceil(st.crafts))}×</td><td class="right muted">${time}</td></tr>`;
+    return `<tr><td>${ico(st.recipe.workstation)}${esc(wsName(st.recipe.workstation))}</td><td class="small muted">${st.recipe.outputs.map(o=>itemName(o.slug)).join(', ')}</td><td class="right qty">${fmt(Math.ceil(st.crafts))}×</td><td class="right muted">${time}</td></tr>`;
   }).join('')+'</table>' : '—';
   $('#planCorp').innerHTML = rawKeys.length ? rawKeys.map(s=>{
     const srcs = corpSourcesFor(s);
-    return `<div class="row small"><span style="min-width:140px">${esc(itemName(s))}</span>` + (srcs.length
+    return `<div class="row small"><span style="min-width:150px">${ico(s,'sm')}${esc(itemName(s))}</span>` + (srcs.length
       ? srcs.map(x=>`<span class="chip ok">${esc(x.base.name)} (${esc(x.via)} ×${x.count})</span>`).join('')
       : `<span class="chip warn">no corp source — ${sourceHint(s)}</span>`) + '</div>';
   }).join('') : '—';
@@ -456,14 +461,14 @@ function sourceHint(slug){
 function baseCard(b, compact){
   const p = basePower(b);
   const loc = [b.quadrant,b.system,b.planet].filter(Boolean).join(' › ');
-  const deps = (b.deposits||[]).map(d=>`<span class="chip">${esc(RES[d.slug]?RES[d.slug].name:d.slug)} ×${d.count}</span>`).join('');
-  const blds = (b.buildings||[]).map(d=>`<span class="chip">${esc(BLD[d.slug]?BLD[d.slug].name:d.slug)} ×${d.count}</span>`).join('');
+  const deps = (b.deposits||[]).map(d=>`<span class="chip">${ico(d.slug,'sm')}${esc(RES[d.slug]?RES[d.slug].name:d.slug)} ×${d.count}</span>`).join('');
+  const blds = (b.buildings||[]).map(d=>`<span class="chip">${ico(d.slug,'sm')}${esc(BLD[d.slug]?BLD[d.slug].name:d.slug)} ×${d.count}</span>`).join('');
   return `<div class="card">
     <h3 class="pointer" onclick="App.editBase('${b.id}')">${esc(b.name)} <span class="muted small">✎</span></h3>
     <div class="muted small">${b.type?(b.type==='personal'?'⛺ personal':'🏠 corp')+' · ':''}${esc(loc||'location unknown')} ${b.owner?'· '+esc(b.owner):''}</div>
     ${b.coords?`<div class="muted small">📍 ${esc(b.coords)}</div>`:''}
     <div class="row small"><span class="muted">Power</span> <span class="${p>=0?'raw':'chip bad'}">${fmt(p)}</span></div>
-    ${(b.mining&&b.mining.length)?`<div class="flexwrap" style="margin-top:6px">${b.mining.map(m=>`<span class="chip ok">⛏ ${esc(m.replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2'))}</span>`).join('')}</div>`:''}
+    ${(b.mining&&b.mining.length)?`<div class="flexwrap" style="margin-top:6px">${b.mining.map(m=>`<span class="chip ok">${icoRes(m,'sm')}${esc(m.replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2'))}</span>`).join('')}</div>`:''}
     ${deps?`<div class="flexwrap" style="margin-top:6px">${deps}</div>`:''}
     ${!compact&&blds?`<div class="flexwrap" style="margin-top:6px">${blds}</div>`:''}
     ${!compact&&b.notes?`<div class="muted small" style="margin-top:6px">${esc(b.notes)}</div>`:''}
@@ -473,7 +478,7 @@ function renderDb(){
   const q = ($('#dbSearch').value||'').toLowerCase(), cat = $('#dbCat').value;
   const rows = GAME.items.filter(i=>(!q||i.name.toLowerCase().includes(q))&&(!cat||i.category===cat)).slice(0,300);
   $('#dbTable tbody').innerHTML = rows.map(i=>`<tr>
-    <td>${esc(i.name)}</td><td class="muted">${esc(i.category||'')}</td><td>${esc(i.level||'—')}</td><td>${esc(i.storage||'—')}</td>
+    <td>${ico(i.slug)}${esc(i.name)}</td><td class="muted">${esc(i.category||'')}</td><td>${esc(i.level||'—')}</td><td>${esc(i.storage||'—')}</td>
     <td class="right">${esc(i.price||'—')}</td>
     <td>${recipesFor(i.slug).length?'<span class="tag">'+recipesFor(i.slug).length+' recipe(s)</span>':''}</td>
     <td class="small muted">${(i.sources||[]).slice(0,2).map(r=>RES[r]?RES[r].name:r).join(', ')}</td>
@@ -483,6 +488,7 @@ function renderDb(){
 
 /* ============ init ============ */
 function init(){
+  fetch('data/icons.json').then(r=>r.json()).then(m=>{ window.ICONS=m; render(); }).catch(()=>{});
   $('#nav').innerHTML = TABS.map(([id,label])=>`<button data-tab="${id}" onclick="App.show('${id}')">${label}</button>`).join('');
   $('#verInfo').textContent = `game ${GAME.meta.gameVersion} · ${GAME.meta.counts.items} items · ${GAME.meta.counts.recipes} recipes`;
   $('#aboutVer').textContent = GAME.meta.gameVersion;
