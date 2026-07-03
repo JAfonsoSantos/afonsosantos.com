@@ -150,7 +150,7 @@ function buildResourcePanel(){
   for(const s of G.systems) for(const p of s.planets) for(const k of ['res','dep','gey']) for(const r of (p[k]||[])){ m[r.id]=m[r.id]||new Set(); m[r.id].add(s.id); }
   const items=Object.entries(m).sort((a,b)=>pretty(a[0]).localeCompare(pretty(b[0])));
   $('#resPanel').innerHTML='<div class="muted" style="margin-bottom:6px">Click to highlight systems</div>'+
-    items.map(([id,set])=>`<div class="resitem ${resFilter===id?'on':''}" onclick="setResFilter('${id}')"><img src="${ICON(id)}" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="pill">${set.size}</span></div>`).join('');
+    items.map(([id,set])=>`<div class="resitem ${resFilter===id?'on':''}" onclick="setResFilter('${id}')"><img referrerpolicy="no-referrer" src="${ICON(id)}" loading="lazy" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="pill">${set.size}</span></div>`).join('');
 }
 function setResFilter(id){ resFilter=resFilter===id?null:id; buildResourcePanel(); draw(); }
 function toggleRes(){ const p=$('#resPanel'); p.style.display=p.style.display==='block'?'none':'block'; }
@@ -301,7 +301,7 @@ function drawSystem(){
 /* ---------- cards ---------- */
 function resRows(entries, kind){
   if(!entries.length) return `<div class="none">No ${kind} recorded.</div>`;
-  return entries.map(([id,val])=>`<div class="ri"><img src="${ICON(id)}" loading="lazy" onerror="this.style.visibility='hidden'"><span class="n">${esc(pretty(id))}</span><span class="badge">${val}</span></div>`).join('');
+  return entries.map(([id,val])=>`<div class="ri"><img referrerpolicy="no-referrer" src="${ICON(id)}" loading="lazy" onerror="this.style.visibility='hidden'"><span class="n">${esc(pretty(id))}</span><span class="badge">${val}</span></div>`).join('');
 }
 function showSystemCard(s, px, py, pin){
   const agg=aggSys(s);
@@ -356,7 +356,7 @@ function openBaseModal(sysId, planetIdx){
     ${planetIdx==null?`<label>Planet</label><select id="mbPlanet"><option value="">— not set —</option>${s.planets.map(p=>`<option>${esc(s.name+' '+(ROMAN[p.i]||p.i+1))}</option>`).join('')}</select>`:''}
     <label>Mining here (${Object.keys(pool).length} available)</label>
     <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px">
-      ${Object.entries(pool).sort((a,b)=>b[1]-a[1]).map(([id,d])=>`<label class="mineopt"><input type="checkbox" value="${id}"><img src="${ICON(id)}" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="d">d${d}</span></label>`).join('')||'<div class="muted" style="padding:6px">nothing here</div>'}
+      ${Object.entries(pool).sort((a,b)=>b[1]-a[1]).map(([id,d])=>`<label class="mineopt"><input type="checkbox" value="${id}"><img referrerpolicy="no-referrer" src="${ICON(id)}" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="d">d${d}</span></label>`).join('')||'<div class="muted" style="padding:6px">nothing here</div>'}
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
       <button class="btn sec" onclick="closeModal()">Cancel</button>
