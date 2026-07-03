@@ -21,7 +21,8 @@ nav button.active{background:var(--panel2);color:var(--text);border-color:var(--
 nav button:hover{color:var(--text)}
 #syncState{margin-left:auto;font-size:12px;color:var(--dim)}
 #syncState.on{color:var(--good)}
-main{padding:18px;max-width:1780px;margin:0 auto}
+main{padding:16px 22px;max-width:none;margin:0 auto}
+@media(max-width:900px){ main{padding:10px} header{padding:8px 10px;gap:8px} .searchbox{width:150px} nav button{padding:5px 8px} }
 section.tab{display:none}
 section.tab.active{display:block}
 h2{font-size:15px;margin:18px 0 8px;color:var(--accent2)}
@@ -114,6 +115,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
       <input id="plannerSearch" class="searchbox" placeholder="Search item to build…" list="itemDatalist">
       <input id="plannerQty" type="number" min="1" value="1" style="width:80px">
       <button class="btn" onclick="App.addTarget()">Add</button>
+      <button class="btn sec" onclick="App.toChain()">⚙ Open in Chain Designer</button>
       <span class="muted">Add one or more targets, get the full crafting breakdown.</span>
     </div>
     <div id="targets" class="flexwrap"></div>
@@ -149,6 +151,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
       <button class="btn sec" onclick="chainFit()" title="fit to screen">⤢ Fit</button>
       <button class="btn sec" onclick="chainZoomBy(1.25)">+</button>
       <button class="btn sec" onclick="chainZoomBy(0.8)">−</button>
+      <label class="muted small" style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="chainUseCorp" checked onchange="if(CHAIN_CUR){renderChain();chainFit();}"> 🏠 Use corp supply</label>
       <span class="muted small">Generates the full production workflow — machines, rates, power. Green nodes = your corp already produces it.</span>
     </div>
   </div>
@@ -418,6 +421,13 @@ const App = {
     $('#plannerSearch').value=''; persist();
   },
   rmTarget(i){ STATE.planTargets.splice(i,1); persist(); },
+  toChain(slug){
+    const t = slug ? {slug} : STATE.planTargets[0];
+    if(!t) return alert('Add a target first');
+    document.getElementById('chainItem').value = itemName(t.slug);
+    App.show('chain');
+    computeChainUI();
+  },
   setRecipe(slug, rid){ STATE.recipeChoice[slug]=parseInt(rid); persist(); },
 
   async savePilot2(){
@@ -457,7 +467,7 @@ function render(){
   $('#basesList').innerHTML = STATE.bases.map(b=>baseCard(b,false)).join('') || '<div class="muted">No bases yet — add the first one.</div>';
 
   /* planner */
-  $('#targets').innerHTML = STATE.planTargets.map((t,i)=>`<span class="chip">${ico(t.slug,'sm')}${esc(itemName(t.slug))} ×${t.qty} <span class="pointer" onclick="App.rmTarget(${i})">✕</span></span>`).join('') || '<span class="muted small">no targets</span>';
+  $('#targets').innerHTML = STATE.planTargets.map((t,i)=>`<span class="chip">${ico(t.slug,'sm')}${esc(itemName(t.slug))} ×${t.qty} <span class="pointer" title="open in Chain Designer" onclick="App.toChain('${t.slug}')">⚙</span> <span class="pointer" onclick="App.rmTarget(${i})">✕</span></span>`).join('') || '<span class="muted small">no targets</span>';
   const plan = computePlan();
   $('#planTree').innerHTML = plan.trees.map(t=>renderTreeNode(t,0)).join('<hr style="border-color:var(--border)">') || '<span class="muted">No targets yet.</span>';
   const rawKeys = Object.keys(plan.raw).sort((a,b)=>plan.raw[b]-plan.raw[a]);
@@ -594,10 +604,12 @@ function corpCovers(slug){
 }
 function buildChain(target, rateH){
   const nodes={}, edges={};
+  const useCorp = !!(document.getElementById('chainUseCorp')||{}).checked;
   function need(slug, rate, depth){
     const n = nodes[slug] = nodes[slug] || {slug, rate:0, depth:0, expanding:false};
     n.rate += rate; n.depth = Math.max(n.depth, depth);
     if(n.raw || n.recipe) { if(n.recipe) cascade(n, rate, depth); return; }
+    if(useCorp && depth>0 && corpCovers(slug).length){ n.raw=true; n.supplied=true; return; }
     const r = chosenRecipe(slug);
     if(!r){ n.raw=true; return; }
     n.recipe = r;
@@ -627,7 +639,7 @@ function buildChain(target, rateH){
       n.ws = n.recipe.workstation;
       const bp = num(BLD[n.ws] && BLD[n.ws].power);
       n.power = bp ? Math.abs(bp)*n.machines : 0;
-    } else {
+    } else if(!n.supplied) {
       const ex = extractorInfo(n.slug);
       if(ex){ n.ext=ex; n.machines=Math.ceil(n.rate/ex.rate); n.ws='b-extractor'; const bp=num(BLD['b-extractor']&&BLD['b-extractor'].power); n.power=bp?Math.abs(bp)*n.machines:0; }
     }
@@ -681,7 +693,7 @@ function renderChain(){
       pos[n.slug]={x,y};
       const rs = recipesFor(n.slug);
       const sel = (rs.length>1 && n.recipe) ? `<select onchange="setChainRecipe('${n.slug}', this.value)">${rs.map(r=>`<option value="${r._id}" ${n.recipe._id===r._id?'selected':''}>${esc(wsName(r.workstation))}: ${r.ingredients.map(i2=>qtyNum(i2.qty)+'× '+itemName(i2.slug)).join(', ')}</option>`).join('')}</select>` : '';
-      const mach = n.machines? `${n.machines}× ${ico(n.ws,'sm')}${esc(wsName(n.ws||''))}` : (n.raw?'gather / buy / trade':'');
+      const mach = n.machines? `${n.machines}× ${ico(n.ws,'sm')}${esc(wsName(n.ws||''))}` : (n.supplied?'🏠 supplied by corp':(n.raw?'gather / buy / trade':''));
       const cov = n.covered.length? `<div class="cov-badge">🏠 produced at ${esc(n.covered.slice(0,2).join(', '))}</div>`:'';
       html += `<div class="cnode ${n.raw?'raw':''} ${n.covered.length?'cov':''}" style="left:${x}px;top:${y}px">
         <div class="nm">${ico(n.slug)}${esc(itemName(n.slug))}</div>
@@ -714,7 +726,7 @@ function renderChain(){
     Object.entries(byWs).map(([w,c])=>`<span>${ico(w,'sm')}${esc(wsName(w))} <b>${c}</b></span>`).join('')+
     `<span>⚡ <b>${fmt(totPower)}</b> power</span>`+
     `<span>⛏ raw: ${raws.map(r=>`${ico(r.slug,'sm')}${fmt(r.rate)}/h`).join(' ')}</span>`+
-    (covered.length?`<span style="color:var(--good)">🏠 corp covers ${covered.length} inputs</span>`:'');
+    (covered.length?`<span style="color:var(--good)">🏠 corp covers ${covered.length} inputs${list.some(n=>n.supplied)?' (supplying '+list.filter(n=>n.supplied).length+')':''}</span>`:'');
 }
 </script>
 
