@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Corp Planner — SpaceCraft</title>
+<title>CorpHQ — SpaceCraft corp manager</title>
 <style>
 :root{
   --bg:#0b0e14; --panel:#141925; --panel2:#1b2233; --border:#2a3348;
@@ -70,7 +70,7 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
 </head>
 <body>
 <header>
-  <h1>🛰️ Corp Planner</h1>
+  <h1>🛰️ CorpHQ</h1>
   <span class="ver" id="verInfo"></span>
   <nav id="nav"></nav>
   <a href="map/" style="color:var(--accent2);text-decoration:none;font-size:13px">🗺️ Map</a>
@@ -128,44 +128,20 @@ code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
 <section class="tab" id="tab-settings">
   <div class="grid cols2">
     <div class="card">
+      <h3>🛰️ Corp</h3>
+      <div id="corpPanel" class="muted small">Sign in to manage your corp.</div>
+    </div>
+    <div class="card">
       <h3>Account & Pilot</h3>
       <div id="acctInfo" class="muted small">not signed in</div>
-      <div class="row"><button class="btn sec" onclick="authLogout()">Sign out</button></div>
       <label class="small muted">Pilot name (shown on your bases)</label>
-      <div class="row"><input id="pilotNameSet" style="flex:1"><button class="btn sec" onclick="App.savePilotName()">Save</button></div>
-      <h3 style="margin-top:14px">Corp members</h3>
-      <p class="muted small">Only these emails can sign in and see corp data.</p>
-      <div id="membersList" class="flexwrap"></div>
-      <div class="row"><input id="inviteEmail" type="email" placeholder="friend@email.com" style="flex:1"><button class="btn" onclick="App.inviteMember()">Invite</button></div>
-    </div>
-    <div class="card">
-      <h3>Corp sync (Supabase)</h3>
-      <p class="muted">Free shared database so all 4 of you see the same data. One of you creates the project, everyone pastes the same values here.</p>
-      <div class="row"><input id="sbUrl" placeholder="Supabase URL (https://xxx.supabase.co)" style="flex:1"></div>
-      <div class="row"><input id="sbKey" placeholder="Supabase anon key" style="flex:1"></div>
-      <div class="row"><input id="sbRoom" placeholder="Corp room code (any shared word)" style="flex:1"></div>
-      <div class="row">
-        <button class="btn" onclick="App.saveSync()">Connect</button>
-        <button class="btn sec" onclick="App.disconnectSync()">Disconnect</button>
+      <div class="row"><input id="pilotNameSet" style="flex:1"><button class="btn sec" onclick="App.savePilot2()">Save</button></div>
+      <div class="row" style="margin-top:10px">
+        <button class="btn sec" onclick="authLogout()">Sign out</button>
+        <button class="btn sec" onclick="App.exportData()">Export data</button>
       </div>
-      <details><summary>One-time setup (project owner)</summary>
-        <ol class="small muted">
-          <li>Create a free project at supabase.com</li>
-          <li>SQL Editor → run:<br><code>create table corp_state (room text primary key, data jsonb, updated_at timestamptz default now());<br>alter table corp_state enable row level security;<br>create policy "open" on corp_state for all using (true) with check (true);</code></li>
-          <li>Project Settings → API → copy URL + anon key, share with the corp along with a room code.</li>
-        </ol>
-      </details>
-    </div>
-    <div class="card">
-      <h3>Backup / share without sync</h3>
-      <p class="muted">Export your corp data as a file and share it on Discord; others import it.</p>
-      <div class="row">
-        <button class="btn sec" onclick="App.exportData()">Export corp data</button>
-        <button class="btn sec" onclick="document.getElementById('importFile').click()">Import corp data</button>
-        <input type="file" id="importFile" accept=".json" style="display:none" onchange="App.importData(this.files[0])">
-      </div>
-      <h3 style="margin-top:16px">About</h3>
-      <p class="muted small">Game data scraped from spacecraft.tools (game <span id="aboutVer"></span>). Private corp tool — data lives in your browser (and Supabase if connected). Rebuild the database after game patches.</p>
+      <h3 style="margin-top:16px">About CorpHQ</h3>
+      <p class="muted small">Free corp manager for SpaceCraft — bases, mining, crafting plans, galaxy map. Game data from spacecraft.tools (game <span id="aboutVer"></span>).</p>
     </div>
   </div>
 </section>
@@ -227,40 +203,39 @@ function durSecs(d){ if(!d) return null; const part = d.split('/').pop().trim();
 /* ============ state ============ */
 const DEFAULT_STATE = { bases: [], planTargets: [], recipeChoice: {} };
 let STATE = JSON.parse(localStorage.getItem('corpState')||'null') || structuredClone(DEFAULT_STATE);
-const DEFAULT_SYNC = { url:'https://echjwaxjgzhsqyhrlvzj.supabase.co', key:'sb_publishable_KrVSX1GtQrCSpmuHaZbEFw_VXBMNW9C', room:'vega-onyx-7731' };
-let SYNC = JSON.parse(localStorage.getItem('corpSync')||'null') || DEFAULT_SYNC; // {url,key,room}
-let syncTimer = null, lastRemoteStamp = null, dirty = false;
+const SYNC = { url:'https://echjwaxjgzhsqyhrlvzj.supabase.co', key:'sb_publishable_KrVSX1GtQrCSpmuHaZbEFw_VXBMNW9C' };
+let corpTimer = null;
 
-function persist(push=true){ localStorage.setItem('corpState', JSON.stringify(STATE)); if(push) pushRemote(); render(); }
+function persist(push=true){ localStorage.setItem('corpState', JSON.stringify(STATE)); if(push) pushPlan(); render(); }
 
-/* ============ supabase sync (REST, no lib) ============ */
-function sbHeaders(){ return {apikey:SYNC.key, Authorization:'Bearer '+(window.TOKEN||SYNC.key), 'Content-Type':'application/json'}; }
-async function pullRemote(){
-  if(!SYNC) return;
+/* ============ corp data layer (rows) ============ */
+function sbHeaders(extra){ return window.authHeaders ? window.authHeaders(extra) : {apikey:SYNC.key, Authorization:'Bearer '+SYNC.key, 'Content-Type':'application/json'}; }
+async function fetchBases(){
+  if(!window.CORP) return;
   try{
-    const r = await fetch(`${SYNC.url}/rest/v1/corp_state?room=eq.${encodeURIComponent(SYNC.room)}&select=data,updated_at`, {headers:sbHeaders()});
-    if(!r.ok) throw new Error(r.status);
+    const r = await fetch(SYNC.url+'/rest/v1/bases?select=*&order=updated_at.desc', {headers:sbHeaders()});
     const rows = await r.json();
-    if(rows.length && rows[0].updated_at !== lastRemoteStamp){
-      lastRemoteStamp = rows[0].updated_at;
-      STATE = Object.assign(structuredClone(DEFAULT_STATE), rows[0].data);
-      localStorage.setItem('corpState', JSON.stringify(STATE));
-      render();
-    }
-    setSyncState(true);
-  }catch(e){ setSyncState(false, e.message); }
+    if(Array.isArray(rows)) STATE.bases = rows.map(x=>({id:x.id, name:x.name, type:x.btype, owner:x.owner, quadrant:x.quadrant, system:x.system, planet:x.planet, coords:x.coords, notes:x.notes, mining:x.mining||[], deposits:x.deposits||[], buildings:x.buildings||[]}));
+  }catch(e){}
 }
-async function pushRemote(){
-  if(!SYNC) return;
+async function fetchPlan(){
+  if(!window.CORP) return;
   try{
-    const stamp = new Date().toISOString();
-    const r = await fetch(`${SYNC.url}/rest/v1/corp_state`, {method:'POST', headers:Object.assign(sbHeaders(),{Prefer:'resolution=merge-duplicates'}), body:JSON.stringify([{room:SYNC.room, data:STATE, updated_at:stamp}])});
-    if(!r.ok) throw new Error(r.status);
-    lastRemoteStamp = stamp; setSyncState(true);
-  }catch(e){ setSyncState(false, e.message); }
+    const r = await fetch(SYNC.url+'/rest/v1/corp_plans?select=data', {headers:sbHeaders()});
+    const rows = await r.json();
+    if(rows&&rows[0]&&rows[0].data){ STATE.planTargets=rows[0].data.planTargets||[]; STATE.recipeChoice=rows[0].data.recipeChoice||{}; }
+  }catch(e){}
 }
-function setSyncState(ok, msg){ const el=$('#syncState'); if(!SYNC){el.textContent='local only';el.className='';return;} el.textContent = ok?('synced · '+SYNC.room):('sync error '+(msg||'')); el.className = ok?'on':''; }
-function startSync(){ if(syncTimer) clearInterval(syncTimer); if(SYNC){ pullRemote(); syncTimer=setInterval(pullRemote, 20000);} setSyncState(!!SYNC); }
+async function pushPlan(){
+  if(!window.CORP) return;
+  try{ await fetch(SYNC.url+'/rest/v1/corp_plans', {method:'POST', headers:sbHeaders({Prefer:'resolution=merge-duplicates'}), body:JSON.stringify([{corp_id:window.CORP.id, data:{planTargets:STATE.planTargets, recipeChoice:STATE.recipeChoice}, updated_at:new Date().toISOString()}])}); }catch(e){}
+}
+async function saveBaseRow(b){
+  const row={corp_id:window.CORP.id, name:b.name, btype:b.type||'corp', owner:b.owner||'', quadrant:b.quadrant||'', system:b.system||'', planet:b.planet||'', coords:b.coords||'', notes:b.notes||'', mining:b.mining||[], deposits:b.deposits||[], buildings:b.buildings||[], updated_at:new Date().toISOString()};
+  if(b.id && String(b.id).length===36){ await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+b.id, {method:'PATCH', headers:sbHeaders(), body:JSON.stringify(row)}); }
+  else { await fetch(SYNC.url+'/rest/v1/bases', {method:'POST', headers:sbHeaders(), body:JSON.stringify([row])}); }
+}
+async function deleteBaseRow(id){ await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+id, {method:'DELETE', headers:sbHeaders()}); }
 
 /* ============ crafting planner ============ */
 function recipesFor(slug){ return RECIPES_BY_OUT[slug]||[]; }
@@ -375,21 +350,29 @@ const App = {
   saveBase(ev){
     ev.preventDefault();
     const b = {
-      id: editingBaseId || 'b'+Date.now(),
+      id: editingBaseId || null,
       name: $('#bName').value.trim(), owner: $('#bOwner').value.trim(),
       quadrant: $('#bQuadrant').value.trim(), system: $('#bSystem').value.trim(),
       planet: $('#bPlanet').value.trim(), coords: $('#bCoords').value.trim(), notes: $('#bNotes').value.trim(),
       deposits: draftDeposits, buildings: draftBuildings
     };
-    const i = STATE.bases.findIndex(x=>x.id===b.id);
-    if(i>=0) STATE.bases[i]=b; else STATE.bases.push(b);
-    $('#baseDialog').close(); persist();
+    $('#baseDialog').close();
+    (async()=>{
+      if(window.CORP){ await saveBaseRow(b); await fetchBases(); }
+      else { const i=STATE.bases.findIndex(x=>x.id===b.id); if(i>=0)STATE.bases[i]=b; else STATE.bases.push(b); }
+      persist(false); render();
+    })();
   },
   deleteBase(){
     if(!editingBaseId) return;
     if(!confirm('Delete this base?')) return;
-    STATE.bases = STATE.bases.filter(x=>x.id!==editingBaseId);
-    $('#baseDialog').close(); persist();
+    const id=editingBaseId;
+    $('#baseDialog').close();
+    (async()=>{
+      if(window.CORP && String(id).length===36){ await deleteBaseRow(id); await fetchBases(); }
+      else STATE.bases = STATE.bases.filter(x=>x.id!==id);
+      persist(false); render();
+    })();
   },
 
   /* planner */
@@ -403,33 +386,13 @@ const App = {
   rmTarget(i){ STATE.planTargets.splice(i,1); persist(); },
   setRecipe(slug, rid){ STATE.recipeChoice[slug]=parseInt(rid); persist(); },
 
-  /* account */
-  savePilotName(){
+  async savePilot2(){
     const n=document.getElementById('pilotNameSet').value.trim(); if(!n) return;
-    localStorage.setItem('corp:pilot', JSON.stringify({name:n, since:new Date().toISOString().slice(0,10)}));
+    if(window.savePilotProfile) await savePilotProfile(n);
     alert('Pilot name saved: '+n);
-  },
-  async loadMembers(){
-    try{
-      const r=await fetch(SYNC.url+'/rest/v1/corp_members?select=email,added_by',{headers:sbHeaders()});
-      const rows=await r.json();
-      document.getElementById('membersList').innerHTML=(rows||[]).map(m=>`<span class="chip">${esc(m.email)}</span>`).join('')||'<span class="muted small">none</span>';
-    }catch(e){}
-  },
-  async inviteMember(){
-    const em=document.getElementById('inviteEmail').value.trim(); if(!em) return;
-    const r=await fetch(SYNC.url+'/rest/v1/corp_members',{method:'POST',headers:sbHeaders(),body:JSON.stringify([{email:em.toLowerCase(), added_by:(window.USER?window.USER.email:'')}])});
-    if(r.ok){ document.getElementById('inviteEmail').value=''; App.loadMembers(); alert('Invited '+em+' — they can now sign in with their email.'); }
-    else alert('Invite failed ('+r.status+')');
   },
 
   /* sync + data */
-  saveSync(){
-    const url=$('#sbUrl').value.trim().replace(/\/$/,''), key=$('#sbKey').value.trim(), room=$('#sbRoom').value.trim();
-    if(!url||!key||!room) return alert('Fill URL, key and room code');
-    SYNC={url,key,room}; localStorage.setItem('corpSync', JSON.stringify(SYNC)); startSync(); pushRemote();
-  },
-  disconnectSync(){ SYNC=null; localStorage.removeItem('corpSync'); if(syncTimer)clearInterval(syncTimer); setSyncState(false); },
   exportData(){
     const blob = new Blob([JSON.stringify({exported:new Date().toISOString(), state:STATE},null,2)],{type:'application/json'});
     const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='corp-data.json'; a.click();
@@ -446,7 +409,8 @@ function render(){
   /* dashboard */
   const ext = corpExtraction();
   const totalPower = STATE.bases.reduce((a,b)=>a+basePower(b),0);
-  $('#dashKpis').innerHTML = [
+  const hero = window.CORP ? '' : `<div class="card" style="grid-column:1/-1"><h3 style="font-size:18px">🛰️ CorpHQ — run your SpaceCraft corporation</h3><p class="muted">Shared base tracking, mining assignments, crafting plans and a full galaxy map — live-synced with your corp mates. Free.</p><div class="row"><button class="btn" onclick="openAuth()">Sign in · Create your corp</button><span class="muted small">or use the Crafting Planner, Database and <a href="map/" style="color:var(--accent2)">Galaxy Map</a> right now — no account needed</span></div></div>`;
+  $('#dashKpis').innerHTML = hero + [
     `<div class="card"><div class="muted">Bases</div><div class="kpi">${STATE.bases.length}</div></div>`,
     `<div class="card"><div class="muted">Deposit types worked</div><div class="kpi">${new Set(STATE.bases.flatMap(b=>(b.deposits||[]).map(d=>d.slug))).size}</div></div>`,
     `<div class="card"><div class="muted">Net power (all bases)</div><div class="kpi ${totalPower>=0?'good':'bad'}">${fmt(totalPower)}</div></div>`
@@ -532,21 +496,45 @@ function init(){
   if(SYNC){ $('#sbUrl').value=SYNC.url; $('#sbKey').value=SYNC.key; $('#sbRoom').value=SYNC.room; }
   App.show('dashboard');
   render();
-  window.onAuthed=()=>{
-    startSync();
-    App.loadMembers();
+  window.onCorpReady = async ()=>{
+    const el=$('#syncState'); el.textContent='['+(window.CORP.tag||'')+'] '+window.CORP.name; el.className='on'; el.onclick=null;
     document.getElementById('acctInfo').textContent='Signed in as '+(window.USER?window.USER.email:'?');
     try{ const p=JSON.parse(localStorage.getItem('corp:pilot')||'null'); if(p) document.getElementById('pilotNameSet').value=p.name; }catch(e){}
+    renderCorpPanel();
+    await Promise.all([fetchBases(), fetchPlan()]);
+    render();
+    if(corpTimer) clearInterval(corpTimer);
+    corpTimer=setInterval(async()=>{ await fetchBases(); await fetchPlan(); render(); }, 30000);
+  };
+  window.onGuest = ()=>{
+    const el=$('#syncState'); el.textContent='👨‍🚀 Sign in'; el.style.cursor='pointer'; el.onclick=()=>openAuth();
+    render();
   };
 }
+function renderCorpPanel(){
+  const c=window.CORP; if(!c) return;
+  document.getElementById('corpPanel').innerHTML =
+    `<div class="row"><b style="font-size:16px">[${esc(c.tag)}] ${esc(c.name)}</b><span class="chip">${esc(c.quadrant)}</span><span class="chip">${esc(window.ROLE||'member')}</span></div>
+     <div class="row"><span class="muted">Invite code:</span> <code style="font-size:15px;letter-spacing:2px">${esc(c.join_code)}</code>
+     <button class="btn sec" onclick="navigator.clipboard.writeText('${esc(c.join_code)}');this.textContent='copied!'">copy</button></div>
+     <p class="muted small">Share this code — anyone can join your corp with it at ${location.origin+location.pathname}</p>
+     <div class="grp muted" style="margin-top:8px;font-size:11px;letter-spacing:1px">MEMBERS (${window.MEMBERS.length})</div>
+     <div class="flexwrap">${window.MEMBERS.map(m=>`<span class="chip">${m.role==='owner'?'👑 ':''}${esc(m.pilot||'pilot')}</span>`).join('')}</div>
+     <div class="row" style="margin-top:10px"><button class="btn danger" onclick="App.leaveCorp()">Leave corp</button></div>`;
+}
+App.leaveCorp = async function(){
+  if(!confirm('Leave '+window.CORP.name+'? Your corp data stays with the corp.')) return;
+  await fetch(SYNC.url+'/rest/v1/memberships?user_id=eq.'+window.USER.id, {method:'DELETE', headers:sbHeaders()});
+  location.reload();
+};
 init();
 </script>
 
 <div id="authGate" style="position:fixed;inset:0;background:#0b0e14ee;z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
-  <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px;width:370px">
-    <h2 style="margin:0 0 4px;color:var(--accent)">🛰️ Corp access</h2>
-    <p class="muted" style="margin:0 0 14px">Members only. Enter your email and we send you a 6-digit code.</p>
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px;width:390px;max-height:88vh;overflow-y:auto">
+    <h2 style="margin:0 0 4px;color:var(--accent)">🛰️ CorpHQ</h2>
     <div id="authStep1">
+      <p class="muted" style="margin:0 0 14px">Sign in with your email — we send a 6-digit code. New pilots welcome, it's free.</p>
       <input id="authEmail" type="email" placeholder="you@email.com" style="width:100%;margin-bottom:10px">
       <button class="btn" style="width:100%" onclick="authSend()">Send code</button>
     </div>
@@ -555,62 +543,64 @@ init();
       <button class="btn" style="width:100%" onclick="authVerify()">Verify & enter</button>
       <div class="muted" style="margin-top:8px;text-align:center;cursor:pointer" onclick="authBack()">← different email</div>
     </div>
-    <div id="authMsg" class="muted" style="margin-top:10px;min-height:16px"></div>
-    <div id="authDenied" style="display:none;margin-top:8px">
-      <div style="color:var(--bad);font-size:12px">You're signed in but not invited to this corp yet. Ask a member to add your email in Settings → Members.</div>
-      <button class="btn sec" style="margin-top:8px" onclick="authLogout()">Sign out</button>
+    <div id="authOnboard" style="display:none">
+      <p class="muted" style="margin:0 0 10px">You're in! Set up your pilot and corp:</p>
+      <label class="muted" style="font-size:11px">Pilot name</label>
+      <input id="obPilot" style="width:100%;margin:4px 0 14px" placeholder="e.g. Corrupted">
+      <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+        <b style="color:var(--accent2)">Create a corp</b>
+        <input id="obCorpName" placeholder="Corp name" style="width:100%;margin:8px 0 6px">
+        <input id="obCorpTag" placeholder="Tag (e.g. VGX)" maxlength="5" style="width:100%;margin-bottom:6px">
+        <select id="obQuad" style="width:100%;margin-bottom:8px"></select>
+        <button class="btn" style="width:100%" onclick="obCreate()">Create corp</button>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:10px;padding:12px">
+        <b style="color:var(--accent2)">Join a corp</b>
+        <input id="obJoin" placeholder="Invite code from your corp mate" style="width:100%;margin:8px 0 6px">
+        <button class="btn sec" style="width:100%" onclick="obJoinFn()">Join with code</button>
+      </div>
     </div>
+    <div id="authMsg" class="muted" style="margin-top:10px;min-height:16px"></div>
+    <div style="text-align:center;margin-top:6px"><span class="muted" style="cursor:pointer;font-size:11px" onclick="closeAuth()">close</span></div>
   </div>
 </div>
-
 <script>
 const SBC = window.supabase.createClient(SYNC.url, SYNC.key);
-let TOKEN=null, USER=null, IS_MEMBER=false;
-function authHeaders(extra){ return Object.assign({apikey:SYNC.key, Authorization:'Bearer '+(TOKEN||SYNC.key), 'Content-Type':'application/json'}, extra||{}); }
-function gateShow(){ document.getElementById('authGate').style.display='flex'; }
-function gateHide(){ document.getElementById('authGate').style.display='none'; }
+let TOKEN=null, USER=null;
+window.CORP=null; window.ROLE=null; window.MEMBERS=[];
+window.authHeaders=function(extra){ return Object.assign({apikey:SYNC.key, Authorization:'Bearer '+(TOKEN||SYNC.key), 'Content-Type':'application/json'}, extra||{}); };
+window.rpc=async function(fn,args){ try{ const r=await fetch(SYNC.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:authHeaders(),body:JSON.stringify(args||{})}); return await r.json(); }catch(e){ return null; } };
+function openAuth(){ document.getElementById('authGate').style.display='flex'; if(USER&&!window.CORP) authShow('authOnboard'); }
+function closeAuth(){ document.getElementById('authGate').style.display='none'; }
 function authMsg(t,bad){ const e=document.getElementById('authMsg'); e.textContent=t||''; e.style.color=bad?'var(--bad)':'var(--dim)'; }
-async function authSend(){
-  const email=document.getElementById('authEmail').value.trim();
-  if(!email) return;
-  authMsg('Sending code…');
-  const {error} = await SBC.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin+location.pathname}});
-  if(error){ authMsg(error.message,true); return; }
-  document.getElementById('authStep1').style.display='none';
-  document.getElementById('authStep2').style.display='block';
-  authMsg('Code sent to '+email+' — check your inbox (and spam).');
-}
-function authBack(){ document.getElementById('authStep1').style.display='block'; document.getElementById('authStep2').style.display='none'; authMsg(''); }
-async function authVerify(){
-  const email=document.getElementById('authEmail').value.trim();
-  const code=document.getElementById('authCode').value.trim();
-  authMsg('Verifying…');
-  const {data,error} = await SBC.auth.verifyOtp({email, token:code, type:'email'});
-  if(error){ authMsg(error.message,true); return; }
-  TOKEN=data.session.access_token; USER=data.session.user; window.TOKEN=TOKEN; window.USER=USER;
-  await afterAuth();
-}
-async function checkMember(){
-  try{ const r=await fetch(SYNC.url+'/rest/v1/corp_members?select=email', {headers:authHeaders()}); const rows=await r.json(); return Array.isArray(rows)&&rows.length>0; }catch(e){ return false; }
-}
+function authShow(step){ for(const s of ['authStep1','authStep2','authOnboard']) document.getElementById(s).style.display = s===step?'block':'none'; }
+async function authSend(){ const email=document.getElementById('authEmail').value.trim(); if(!email)return; authMsg('Sending code…'); const {error}=await SBC.auth.signInWithOtp({email}); if(error){authMsg(error.message,true);return;} authShow('authStep2'); authMsg('Code sent to '+email+' — check inbox and spam.'); }
+function authBack(){ authShow('authStep1'); authMsg(''); }
+async function authVerify(){ const email=document.getElementById('authEmail').value.trim(); const code=document.getElementById('authCode').value.trim(); authMsg('Verifying…'); const {data,error}=await SBC.auth.verifyOtp({email,token:code,type:'email'}); if(error){authMsg(error.message,true);return;} TOKEN=data.session.access_token; USER=data.session.user; window.TOKEN=TOKEN; window.USER=USER; await afterAuth(); }
+async function loadCorpCtx(){ const info=await rpc('corp_info'); window.CORP=(info&&info.corp)||null; window.ROLE=(info&&info.role)||null; window.MEMBERS=(info&&info.members)||[]; }
+function pilotName(){ try{ const p=JSON.parse(localStorage.getItem('corp:pilot')||'null'); return p?p.name:''; }catch(e){ return ''; } }
+async function savePilotProfile(name){ if(!name||!USER)return; localStorage.setItem('corp:pilot', JSON.stringify({name:name})); await fetch(SYNC.url+'/rest/v1/profiles',{method:'POST',headers:authHeaders({Prefer:'resolution=merge-duplicates'}),body:JSON.stringify([{user_id:USER.id,pilot:name}])}); }
 async function afterAuth(){
-  IS_MEMBER = await checkMember();
-  if(!IS_MEMBER){ gateShow(); document.getElementById('authStep1').style.display='none'; document.getElementById('authStep2').style.display='none'; document.getElementById('authDenied').style.display='block'; authMsg(''); return; }
-  gateHide();
-  if(!localStorage.getItem('corp:pilot') && USER){ localStorage.setItem('corp:pilot', JSON.stringify({name:USER.email.split('@')[0], since:new Date().toISOString().slice(0,10)})); }
-  if(window.onAuthed) window.onAuthed();
+  await loadCorpCtx();
+  if(!window.CORP){
+    openAuth(); authShow('authOnboard'); authMsg('');
+    const p=pilotName(); if(p) document.getElementById('obPilot').value=p;
+    if(window.QUADS){ const el=document.getElementById('obQuad'); if(el) el.innerHTML=window.QUADS; }
+    return;
+  }
+  closeAuth();
+  if(window.onCorpReady) window.onCorpReady();
 }
+async function obCreate(){ const n=document.getElementById('obCorpName').value.trim(); const t=document.getElementById('obCorpTag').value.trim(); if(!n){authMsg('Corp name required',true);return;} authMsg('Creating…'); await savePilotProfile(document.getElementById('obPilot').value.trim()||'Pilot'); const q=document.getElementById('obQuad')?document.getElementById('obQuad').value:'abuxey'; const res=await rpc('create_corp',{cname:n,ctag:t||n.slice(0,3).toUpperCase(),cquad:q||'abuxey'}); if(res&&res.ok){ await afterAuth(); } else authMsg((res&&res.error)||JSON.stringify(res)||'Failed',true); }
+async function obJoinFn(){ const c=document.getElementById('obJoin').value.trim(); if(!c){authMsg('Enter an invite code',true);return;} authMsg('Joining…'); await savePilotProfile(document.getElementById('obPilot').value.trim()||'Pilot'); const res=await rpc('join_corp',{code:c}); if(res&&res.ok){ await afterAuth(); } else authMsg((res&&res.error)||'Failed',true); }
 async function authLogout(){ await SBC.auth.signOut(); location.reload(); }
-function authHashError(){
-  const m=location.hash.match(/error_description=([^&]+)/);
-  if(m){ authMsg(decodeURIComponent(m[1].replace(/\+/g,' '))+' — request a new link below. Tip: corporate email scanners can burn links; use a personal email.', true); history.replaceState(null,'',location.pathname); }
-}
 async function authInit(){
-  authHashError();
-  const {data:{session}} = await SBC.auth.getSession();
+  const m=location.hash.match(/error_description=([^&]+)/); if(m){ openAuth(); authMsg(decodeURIComponent(m[1].replace(/\+/g,' ')),true); history.replaceState(null,'',location.pathname); }
+  fetch(window.QUADS_URL||'data/index.json').then(r=>r.json()).then(idx=>{ window.QUADS = idx.map(q=>'<option value="'+q.slug+'">'+q.name+' ('+q.region+')</option>').join(''); const el=document.getElementById('obQuad'); if(el&&!el.innerHTML) el.innerHTML=window.QUADS; }).catch(()=>{});
+  const {data:{session}}=await SBC.auth.getSession();
   if(session){ TOKEN=session.access_token; USER=session.user; window.TOKEN=TOKEN; window.USER=USER; await afterAuth(); }
-  else gateShow();
-  SBC.auth.onAuthStateChange(async (ev,s)=>{ if(s){TOKEN=s.access_token; USER=s.user; window.TOKEN=TOKEN; window.USER=USER;} if(ev==='SIGNED_IN' && document.getElementById('authGate').style.display!=='none'){ await afterAuth(); } });
+  else if(window.onGuest) window.onGuest();
+  SBC.auth.onAuthStateChange((ev,s)=>{ if(s){TOKEN=s.access_token; USER=s.user; window.TOKEN=TOKEN; window.USER=USER;} });
 }
 authInit();
 </script>

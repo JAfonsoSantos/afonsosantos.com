@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Corp Map — SpaceCraft</title>
+<title>CorpHQ — SpaceCraft Galaxy Map</title>
 <style>
 :root{--bg:#0b0e14;--panel:#161b26;--panel2:#1e2534;--border:#2a3348;--text:#dbe4f5;--dim:#8593ad;--accent:#5eb2ff;--accent2:#ffb454;--good:#4ade80;--bad:#f87171;--chip:#233049;--card:#191f2cf2}
 *{box-sizing:border-box}
@@ -66,7 +66,7 @@ button.btn:hover{filter:brightness(1.12)}
 </head>
 <body>
 <div id="top">
-  <h1>🛰️ Corp Map</h1>
+  <h1>🛰️ CorpHQ Map</h1>
   <select id="quadSel"></select>
   <input id="sysSearch" placeholder="Find system…" list="sysList" style="width:150px">
   <datalist id="sysList"></datalist>
@@ -75,7 +75,7 @@ button.btn:hover{filter:brightness(1.12)}
   <span class="muted" id="quadInfo"></span>
   <span style="flex:1"></span>
   <span class="muted" id="pilotChip" style="cursor:pointer" onclick="changePilot()" title="change pilot name"></span>
-  <a href="../">← Planner</a>
+  <a href="../">← CorpHQ</a>
 </div>
 <div id="resPanel"></div>
 <button class="btn sec" id="backBtn" onclick="exitSystem()">← Galaxy</button>
@@ -89,7 +89,8 @@ button.btn:hover{filter:brightness(1.12)}
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
 const RESOURCE_NAMES = {"aludeposit": "Aluminum Deposit", "aluclusterunderwaternative": "Aluminum Reduction", "aluclusteraquamarine": "Aquamarine", "alutitaneclusteraugurite": "Augurite", "copperclusterazurite": "Azurite", "basaltshell": "Basalt Shell", "aluironclusterbauxite": "Bauxite Rock", "shipwreckdeco05": "Big Intake Vent", "shipwreckblackbox": "Black Box", "bluegranitshell": "Blue Granite Shell", "copperclusternativecopper": "Brassy Outcrop", "waterdeposit": "Brine Pool", "brinegeyser": "Brine Water Geyser", "uraniumvanadiumclustercarnotite": "Carnotite Cluster", "chalcedonyshell": "Chalcedony Shell", "copperclusterchalcocite": "Chalcocite", "copperironclusterchalcopyrite": "Chalcopyrite", "chondriteshell": "Chondrite", "scoriashell": "Cinder", "cinnabar": "Cinnabar", "clayshell": "Clay Shell", "carbonclustercoal": "Coal Clump", "coaldeposit": "Coal Deposit", "platinumclustercooperite": "Cooperite", "copperdeposit": "Copper Deposit", "copperclustercopperstone": "Cupric Stone", "alunuggetdeposit": "Dense Aluminum Deposit", "coppernuggetdeposit": "Dense Copper Deposit", "ironnuggetdeposit": "Dense Iron Deposit", "platnuggetdeposit": "Dense Platinum Deposit", "dres22": "Deposit", "elmeriumclusterelmeritenight": "Elmerite", "aluclusteremerald": "Emerald", "ironclusterironstone": "Ferric Stone", "ironclusternickeliron": "Ferrous Outcrop", "gabbroshell": "Gabbro Shell", "diamondcluster": "Gigantic Diamonds", "granitshell": "Granite Shell", "graphitecluster": "Graphite", "quartzgrey": "Gray Quartz", "shipwrecktitaniumbeam": "Heavy-Duty Beam", "heliumgeyser": "Helium Geyser", "elmeriumclusterelmeriteday": "Hollow Outcrop", "shipwrecksteelhullscraps": "Hull Steel Scraps", "iceshell": "Ice Shell", "shipwreckdeco04": "Intake Vent", "irondeposit": "Iron Deposit", "ironasteroidshell": "Iron Spherule", "shipwreckcoil": "Magnetic Coil", "ironclustermagnetite": "Magnetite", "copperclustermalachite": "Malachite", "mercurygeyser": "Mercury Geyser", "mercurydeposit": "Mercury Pool", "shipwreckironsheet": "Metal Sheet", "shipwreckmicrochip": "Microchip", "shipwreckmotor": "Motor", "obsidianshell": "Obsidian Shell", "opalshell": "Opal Shell", "vanadiumclusterpatronite": "Patronite", "platinumclusterplatinomagnetite": "Plagnetite", "platinumdeposit": "Platinum Deposit", "shipwreckzirconiumtube": "Pressure-tight Tube", "pumiceshell": "Pumice", "pyritedeposit": "Pyrite Deposit", "pyrite": "Pyrite Formation", "radongeyser": "Radon Geyser", "quartzred": "Red Quartz", "rockwoodroot": "Rockwood Root", "shipwreckdeco01": "Round Hatch", "ironclusterspecularite": "S-Iron Cluster", "sandstonedeposit": "Sandstone Deposit", "silicatesandstone": "Sandstone Mound", "ironcarbonclustersiderite": "Siderite", "shipwrecksolarcell": "Solar Cell", "spacewheatroot": "Spacekorn Root", "shipwreckwing01": "Spoilers", "shipwreckwing02": "Spoilers", "shipwreckplate1": "Stainless Plate", "shipwrecksteelscraps": "Steel Scraps", "shipwrecksteelbeam": "Structural Beam", "sulfurdeposit": "Sulfur Deposit", "sulfurstone": "Sulphuric Stone", "shipwrecksystemscraps": "System Scraps", "copperclustertenorite": "Tenorite", "titaneclustertitanite": "Titanite", "titaniumdeposit": "Titanium Deposit", "irontitaneclustertitanomagnetite": "Titanomagnetite", "tungstendeposit": "Tungsten Deposit", "tungstenclusterunderwaternative": "Tungsten Reduction", "aluclusterturquoise": "Turquoise Clump", "aluclusterturquoisestone": "Turquoise Stone", "uraniumclusteruraninite": "Uraninite Outcrop", "vanadiumclustervanadinite": "Vanadinite", "vanadiumdeposit": "Vanadium Deposit", "carbonclustervitrous": "Vitreous Carbon", "vitriolgeyser": "Vitriol Geyser", "vitrioldeposit": "Vitriol Pool", "volcanicshell": "Volcanic Shell", "watergeyser": "Water Geyser", "shipwreckcoppertube": "Watertight Tube", "aluclusterwhitefeldspar": "White Feldspar Mound", "quartzwhite": "White Quartz", "shipwreckwing04": "Wings", "shipwreckwire": "Wire", "irontungstenclusterwolframite": "Wolframite", "zirconiumclusterzircon": "Zircon"};
-const SYNC = { url:'https://echjwaxjgzhsqyhrlvzj.supabase.co', key:'sb_publishable_KrVSX1GtQrCSpmuHaZbEFw_VXBMNW9C', room:'vega-onyx-7731' };
+const SYNC = { url:'https://echjwaxjgzhsqyhrlvzj.supabase.co', key:'sb_publishable_KrVSX1GtQrCSpmuHaZbEFw_VXBMNW9C' };
+window.QUADS_URL='../data/index.json';
 const ICON = id => 'https://cdn.pixel6.tools/spacecraft/images/icons/resources/'+id+'.webp?v=2';
 const $ = s=>document.querySelector(s);
 const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
@@ -128,17 +129,13 @@ function toast(t){ const e=$('#toast'); e.textContent=t; e.style.display='block'
 
 /* ---------- corp state ---------- */
 async function pullCorp(){
+  if(!window.CORP){ corpState={bases:[]}; return; }
   try{
-    const r=await fetch(`${SYNC.url}/rest/v1/corp_state?room=eq.${SYNC.room}&select=data`,{headers:authHeaders()});
+    const r=await fetch(SYNC.url+'/rest/v1/bases?select=*',{headers:authHeaders()});
     const rows=await r.json();
-    corpState=(rows[0]&&rows[0].data)||{bases:[],planTargets:[],recipeChoice:{}};
-    if(!corpState.bases) corpState.bases=[];
+    corpState={bases: Array.isArray(rows)? rows.map(x=>({id:x.id,name:x.name,type:x.btype,owner:x.owner,quadrant:x.quadrant,system:x.system,planet:x.planet,mining:x.mining||[]})) : []};
     draw();
   }catch(e){ corpState=corpState||{bases:[]}; }
-}
-async function pushCorp(){
-  const r=await fetch(`${SYNC.url}/rest/v1/corp_state`,{method:'POST',headers:authHeaders({Prefer:'resolution=merge-duplicates'}),body:JSON.stringify([{room:SYNC.room,data:corpState,updated_at:new Date().toISOString()}])});
-  return r.ok;
 }
 
 /* ---------- aggregation ---------- */
@@ -270,6 +267,7 @@ function drawBases(project){
   if(!corpState)return;
   for(const b of corpState.bases){
     if(mode==='galaxy'){
+      if(b.quadrant && G.quadrant && b.quadrant!==G.quadrant && b.quadrant.toLowerCase().indexOf(G.name?G.name.toLowerCase():'zzz')<0) continue;
       const s=b.system&&G.systems.find(x=>x.name.toLowerCase()===String(b.system).toLowerCase());
       if(!s)continue; const[x,y]=project(s);
       ctx.font='13px system-ui'; ctx.textAlign='center'; ctx.fillText(b.type==='personal'?'⛺':'🏠',x,y-14);
@@ -351,7 +349,7 @@ function enterSystem(id){ curSys=G.sysById[id]; mode='system'; pinned=null; hove
 function exitSystem(){ mode='galaxy'; curSys=null; pinned=null; hideCard(); $('#backBtn').style.display='none'; draw(); }
 
 /* ---------- pilot profile ---------- */
-function changePilot(){ localStorage.removeItem('corp:pilot'); ensurePilot(); }
+function changePilot(){ const n=prompt('Pilot name:', pilot()?pilot().name:''); if(n&&n.trim()){ if(window.savePilotProfile) savePilotProfile(n.trim()); else localStorage.setItem('corp:pilot', JSON.stringify({name:n.trim()})); } }
 function pilotChip(){ const el=document.getElementById('pilotChip'); if(el) el.textContent = pilot()? '👨‍🚀 '+pilot().name : ''; }
 setInterval(pilotChip, 1500);
 function pilot(){ try{return JSON.parse(localStorage.getItem('corp:pilot'))||null;}catch(e){return null;} }
@@ -371,6 +369,7 @@ function savePilot(){
 
 /* ---------- make base ---------- */
 function openBaseModal(sysId, planetIdx){
+  if(!window.CORP){ openAuth(); return; }
   const s=G.sysById[sysId];
   const poolDep={}, poolGey={};
   const src = planetIdx!=null ? [s.planets.find(p=>p.i===planetIdx)] : s.planets;
@@ -398,19 +397,17 @@ function openBaseModal(sysId, planetIdx){
 }
 function closeModal(){ $('#modal').style.display='none'; }
 async function saveBase(sysId, planetIdx){
+  if(!window.CORP){ closeModal(); openAuth(); return; }
   const s=G.sysById[sysId];
   const mining=[...document.querySelectorAll('#modalBox input[type=checkbox]:checked')].map(c=>c.value);
-  const planet = planetIdx!=null ? s.name+' '+(ROMAN[planetIdx]||planetIdx+1) : ($('#mbPlanet')?$('#mbPlanet').value:'');
-  await pullCorp();
-  corpState.bases.push({
-    id:'b'+Date.now(), name:$('#mbName').value.trim()||s.name+' Base', owner:$('#mbOwner').value.trim(),
-    quadrant:$('#quadSel').selectedOptions[0].textContent, system:s.name, planet, coords:'', notes:'added from map',
-    deposits:[], buildings:[], mining,
-    type: (document.querySelector('input[name=mbType]:checked')||{}).value||'corp'
-  });
-  const ok=await pushCorp();
-  closeModal(); hideCard(); pinned=null; draw();
-  toast(ok?'✓ Base saved — synced to the corp':'⚠ Save failed, try again');
+  const planet = planetIdx!=null ? s.name+' '+(ROMAN[planetIdx]||planetIdx+1) : (document.getElementById('mbPlanet')?document.getElementById('mbPlanet').value:'');
+  const btype=(document.querySelector('input[name=mbType]:checked')||{}).value||'corp';
+  const row={corp_id:window.CORP.id, name:document.getElementById('mbName').value.trim()||s.name+' Base', btype, owner:document.getElementById('mbOwner').value.trim(),
+    quadrant:document.getElementById('quadSel').value, system:s.name, planet, coords:'', notes:'added from map', mining, deposits:[], buildings:[]};
+  const r=await fetch(SYNC.url+'/rest/v1/bases',{method:'POST',headers:authHeaders(),body:JSON.stringify([row])});
+  closeModal(); hideCard(); pinned=null;
+  await pullCorp(); draw();
+  toast(r.ok?'✓ Base saved — synced to the corp':'⚠ Save failed ('+r.status+')');
 }
 
 /* ---------- input ---------- */
@@ -466,17 +463,18 @@ async function init(){
   $('#legend').innerHTML='<b>Corp Map</b> · hover = info · click = actions (view planets / make base / route)<br>scroll = zoom · drag = pan · <span class="muted">🏠 = corp base · route badges show cost (running total)</span>';
   resize();
   await loadQuad(saved);
-  window.onAuthed=()=>{ pullCorp(); pilotChip(); };
+  window.onCorpReady=()=>{ pullCorp(); pilotChip(); };
+  window.onGuest=()=>{ const el=document.getElementById('pilotChip'); if(el){ el.textContent='👨‍🚀 Sign in'; el.onclick=()=>openAuth(); } };
   setInterval(pullCorp,30000); setTimeout(pilotChip, 900);
 }
 init();
 </script>
 
 <div id="authGate" style="position:fixed;inset:0;background:#0b0e14ee;z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
-  <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px;width:370px">
-    <h2 style="margin:0 0 4px;color:var(--accent)">🛰️ Corp access</h2>
-    <p class="muted" style="margin:0 0 14px">Members only. Enter your email and we send you a 6-digit code.</p>
+  <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px;width:390px;max-height:88vh;overflow-y:auto">
+    <h2 style="margin:0 0 4px;color:var(--accent)">🛰️ CorpHQ</h2>
     <div id="authStep1">
+      <p class="muted" style="margin:0 0 14px">Sign in with your email — we send a 6-digit code. New pilots welcome, it's free.</p>
       <input id="authEmail" type="email" placeholder="you@email.com" style="width:100%;margin-bottom:10px">
       <button class="btn" style="width:100%" onclick="authSend()">Send code</button>
     </div>
@@ -485,62 +483,64 @@ init();
       <button class="btn" style="width:100%" onclick="authVerify()">Verify & enter</button>
       <div class="muted" style="margin-top:8px;text-align:center;cursor:pointer" onclick="authBack()">← different email</div>
     </div>
-    <div id="authMsg" class="muted" style="margin-top:10px;min-height:16px"></div>
-    <div id="authDenied" style="display:none;margin-top:8px">
-      <div style="color:var(--bad);font-size:12px">You're signed in but not invited to this corp yet. Ask a member to add your email in Settings → Members.</div>
-      <button class="btn sec" style="margin-top:8px" onclick="authLogout()">Sign out</button>
+    <div id="authOnboard" style="display:none">
+      <p class="muted" style="margin:0 0 10px">You're in! Set up your pilot and corp:</p>
+      <label class="muted" style="font-size:11px">Pilot name</label>
+      <input id="obPilot" style="width:100%;margin:4px 0 14px" placeholder="e.g. Corrupted">
+      <div style="border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:10px">
+        <b style="color:var(--accent2)">Create a corp</b>
+        <input id="obCorpName" placeholder="Corp name" style="width:100%;margin:8px 0 6px">
+        <input id="obCorpTag" placeholder="Tag (e.g. VGX)" maxlength="5" style="width:100%;margin-bottom:6px">
+        <select id="obQuad" style="width:100%;margin-bottom:8px"></select>
+        <button class="btn" style="width:100%" onclick="obCreate()">Create corp</button>
+      </div>
+      <div style="border:1px solid var(--border);border-radius:10px;padding:12px">
+        <b style="color:var(--accent2)">Join a corp</b>
+        <input id="obJoin" placeholder="Invite code from your corp mate" style="width:100%;margin:8px 0 6px">
+        <button class="btn sec" style="width:100%" onclick="obJoinFn()">Join with code</button>
+      </div>
     </div>
+    <div id="authMsg" class="muted" style="margin-top:10px;min-height:16px"></div>
+    <div style="text-align:center;margin-top:6px"><span class="muted" style="cursor:pointer;font-size:11px" onclick="closeAuth()">close</span></div>
   </div>
 </div>
-
 <script>
 const SBC = window.supabase.createClient(SYNC.url, SYNC.key);
-let TOKEN=null, USER=null, IS_MEMBER=false;
-function authHeaders(extra){ return Object.assign({apikey:SYNC.key, Authorization:'Bearer '+(TOKEN||SYNC.key), 'Content-Type':'application/json'}, extra||{}); }
-function gateShow(){ document.getElementById('authGate').style.display='flex'; }
-function gateHide(){ document.getElementById('authGate').style.display='none'; }
+let TOKEN=null, USER=null;
+window.CORP=null; window.ROLE=null; window.MEMBERS=[];
+window.authHeaders=function(extra){ return Object.assign({apikey:SYNC.key, Authorization:'Bearer '+(TOKEN||SYNC.key), 'Content-Type':'application/json'}, extra||{}); };
+window.rpc=async function(fn,args){ try{ const r=await fetch(SYNC.url+'/rest/v1/rpc/'+fn,{method:'POST',headers:authHeaders(),body:JSON.stringify(args||{})}); return await r.json(); }catch(e){ return null; } };
+function openAuth(){ document.getElementById('authGate').style.display='flex'; if(USER&&!window.CORP) authShow('authOnboard'); }
+function closeAuth(){ document.getElementById('authGate').style.display='none'; }
 function authMsg(t,bad){ const e=document.getElementById('authMsg'); e.textContent=t||''; e.style.color=bad?'var(--bad)':'var(--dim)'; }
-async function authSend(){
-  const email=document.getElementById('authEmail').value.trim();
-  if(!email) return;
-  authMsg('Sending code…');
-  const {error} = await SBC.auth.signInWithOtp({email, options:{emailRedirectTo: location.origin+location.pathname}});
-  if(error){ authMsg(error.message,true); return; }
-  document.getElementById('authStep1').style.display='none';
-  document.getElementById('authStep2').style.display='block';
-  authMsg('Code sent to '+email+' — check your inbox (and spam).');
-}
-function authBack(){ document.getElementById('authStep1').style.display='block'; document.getElementById('authStep2').style.display='none'; authMsg(''); }
-async function authVerify(){
-  const email=document.getElementById('authEmail').value.trim();
-  const code=document.getElementById('authCode').value.trim();
-  authMsg('Verifying…');
-  const {data,error} = await SBC.auth.verifyOtp({email, token:code, type:'email'});
-  if(error){ authMsg(error.message,true); return; }
-  TOKEN=data.session.access_token; USER=data.session.user; window.TOKEN=TOKEN; window.USER=USER;
-  await afterAuth();
-}
-async function checkMember(){
-  try{ const r=await fetch(SYNC.url+'/rest/v1/corp_members?select=email', {headers:authHeaders()}); const rows=await r.json(); return Array.isArray(rows)&&rows.length>0; }catch(e){ return false; }
-}
+function authShow(step){ for(const s of ['authStep1','authStep2','authOnboard']) document.getElementById(s).style.display = s===step?'block':'none'; }
+async function authSend(){ const email=document.getElementById('authEmail').value.trim(); if(!email)return; authMsg('Sending code…'); const {error}=await SBC.auth.signInWithOtp({email}); if(error){authMsg(error.message,true);return;} authShow('authStep2'); authMsg('Code sent to '+email+' — check inbox and spam.'); }
+function authBack(){ authShow('authStep1'); authMsg(''); }
+async function authVerify(){ const email=document.getElementById('authEmail').value.trim(); const code=document.getElementById('authCode').value.trim(); authMsg('Verifying…'); const {data,error}=await SBC.auth.verifyOtp({email,token:code,type:'email'}); if(error){authMsg(error.message,true);return;} TOKEN=data.session.access_token; USER=data.session.user; window.TOKEN=TOKEN; window.USER=USER; await afterAuth(); }
+async function loadCorpCtx(){ const info=await rpc('corp_info'); window.CORP=(info&&info.corp)||null; window.ROLE=(info&&info.role)||null; window.MEMBERS=(info&&info.members)||[]; }
+function pilotName(){ try{ const p=JSON.parse(localStorage.getItem('corp:pilot')||'null'); return p?p.name:''; }catch(e){ return ''; } }
+async function savePilotProfile(name){ if(!name||!USER)return; localStorage.setItem('corp:pilot', JSON.stringify({name:name})); await fetch(SYNC.url+'/rest/v1/profiles',{method:'POST',headers:authHeaders({Prefer:'resolution=merge-duplicates'}),body:JSON.stringify([{user_id:USER.id,pilot:name}])}); }
 async function afterAuth(){
-  IS_MEMBER = await checkMember();
-  if(!IS_MEMBER){ gateShow(); document.getElementById('authStep1').style.display='none'; document.getElementById('authStep2').style.display='none'; document.getElementById('authDenied').style.display='block'; authMsg(''); return; }
-  gateHide();
-  if(!localStorage.getItem('corp:pilot') && USER){ localStorage.setItem('corp:pilot', JSON.stringify({name:USER.email.split('@')[0], since:new Date().toISOString().slice(0,10)})); }
-  if(window.onAuthed) window.onAuthed();
+  await loadCorpCtx();
+  if(!window.CORP){
+    openAuth(); authShow('authOnboard'); authMsg('');
+    const p=pilotName(); if(p) document.getElementById('obPilot').value=p;
+    if(window.QUADS){ const el=document.getElementById('obQuad'); if(el) el.innerHTML=window.QUADS; }
+    return;
+  }
+  closeAuth();
+  if(window.onCorpReady) window.onCorpReady();
 }
+async function obCreate(){ const n=document.getElementById('obCorpName').value.trim(); const t=document.getElementById('obCorpTag').value.trim(); if(!n){authMsg('Corp name required',true);return;} authMsg('Creating…'); await savePilotProfile(document.getElementById('obPilot').value.trim()||'Pilot'); const q=document.getElementById('obQuad')?document.getElementById('obQuad').value:'abuxey'; const res=await rpc('create_corp',{cname:n,ctag:t||n.slice(0,3).toUpperCase(),cquad:q||'abuxey'}); if(res&&res.ok){ await afterAuth(); } else authMsg((res&&res.error)||JSON.stringify(res)||'Failed',true); }
+async function obJoinFn(){ const c=document.getElementById('obJoin').value.trim(); if(!c){authMsg('Enter an invite code',true);return;} authMsg('Joining…'); await savePilotProfile(document.getElementById('obPilot').value.trim()||'Pilot'); const res=await rpc('join_corp',{code:c}); if(res&&res.ok){ await afterAuth(); } else authMsg((res&&res.error)||'Failed',true); }
 async function authLogout(){ await SBC.auth.signOut(); location.reload(); }
-function authHashError(){
-  const m=location.hash.match(/error_description=([^&]+)/);
-  if(m){ authMsg(decodeURIComponent(m[1].replace(/\+/g,' '))+' — request a new link below. Tip: corporate email scanners can burn links; use a personal email.', true); history.replaceState(null,'',location.pathname); }
-}
 async function authInit(){
-  authHashError();
-  const {data:{session}} = await SBC.auth.getSession();
+  const m=location.hash.match(/error_description=([^&]+)/); if(m){ openAuth(); authMsg(decodeURIComponent(m[1].replace(/\+/g,' ')),true); history.replaceState(null,'',location.pathname); }
+  fetch(window.QUADS_URL||'data/index.json').then(r=>r.json()).then(idx=>{ window.QUADS = idx.map(q=>'<option value="'+q.slug+'">'+q.name+' ('+q.region+')</option>').join(''); const el=document.getElementById('obQuad'); if(el&&!el.innerHTML) el.innerHTML=window.QUADS; }).catch(()=>{});
+  const {data:{session}}=await SBC.auth.getSession();
   if(session){ TOKEN=session.access_token; USER=session.user; window.TOKEN=TOKEN; window.USER=USER; await afterAuth(); }
-  else gateShow();
-  SBC.auth.onAuthStateChange(async (ev,s)=>{ if(s){TOKEN=s.access_token; USER=s.user; window.TOKEN=TOKEN; window.USER=USER;} if(ev==='SIGNED_IN' && document.getElementById('authGate').style.display!=='none'){ await afterAuth(); } });
+  else if(window.onGuest) window.onGuest();
+  SBC.auth.onAuthStateChange((ev,s)=>{ if(s){TOKEN=s.access_token; USER=s.user; window.TOKEN=TOKEN; window.USER=USER;} });
 }
 authInit();
 </script>
