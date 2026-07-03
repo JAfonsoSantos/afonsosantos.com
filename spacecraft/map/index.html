@@ -517,7 +517,7 @@ async function authVerify(){
   authMsg('Verifying…');
   const {data,error} = await SBC.auth.verifyOtp({email, token:code, type:'email'});
   if(error){ authMsg(error.message,true); return; }
-  TOKEN=data.session.access_token; USER=data.session.user;
+  TOKEN=data.session.access_token; USER=data.session.user; window.TOKEN=TOKEN; window.USER=USER;
   await afterAuth();
 }
 async function checkMember(){
@@ -538,9 +538,9 @@ function authHashError(){
 async function authInit(){
   authHashError();
   const {data:{session}} = await SBC.auth.getSession();
-  if(session){ TOKEN=session.access_token; USER=session.user; await afterAuth(); }
+  if(session){ TOKEN=session.access_token; USER=session.user; window.TOKEN=TOKEN; window.USER=USER; await afterAuth(); }
   else gateShow();
-  SBC.auth.onAuthStateChange(async (ev,s)=>{ if(s){TOKEN=s.access_token; USER=s.user;} if(ev==='SIGNED_IN' && document.getElementById('authGate').style.display!=='none'){ await afterAuth(); } });
+  SBC.auth.onAuthStateChange(async (ev,s)=>{ if(s){TOKEN=s.access_token; USER=s.user; window.TOKEN=TOKEN; window.USER=USER;} if(ev==='SIGNED_IN' && document.getElementById('authGate').style.display!=='none'){ await afterAuth(); } });
 }
 authInit();
 </script>
