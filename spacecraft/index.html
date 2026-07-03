@@ -105,7 +105,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 </head>
 <body>
 <header>
-  <h1 style="display:flex;align-items:center;gap:8px"><svg class="chq-logo" width="26" height="26" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="chqg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eb2ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><polygon points="32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5" fill="none" stroke="url(#chqg)" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="32" cy="32" rx="18" ry="7.5" fill="none" stroke="#5eb2ff" stroke-opacity="0.55" stroke-width="2" transform="rotate(-24 32 32)"/><circle cx="32" cy="32" r="7" fill="url(#chqg)"/><circle cx="47.5" cy="23" r="3.2" fill="#ffb454"/><circle cx="17" cy="42" r="2.2" fill="#4ade80"/></svg>CorpHQ</h1>
+  <h1 style="display:flex;align-items:center;gap:8px;cursor:pointer" onclick="showLanding()" title="Home"><svg class="chq-logo" width="26" height="26" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="chqg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eb2ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><polygon points="32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5" fill="none" stroke="url(#chqg)" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="32" cy="32" rx="18" ry="7.5" fill="none" stroke="#5eb2ff" stroke-opacity="0.55" stroke-width="2" transform="rotate(-24 32 32)"/><circle cx="32" cy="32" r="7" fill="url(#chqg)"/><circle cx="47.5" cy="23" r="3.2" fill="#ffb454"/><circle cx="17" cy="42" r="2.2" fill="#4ade80"/></svg>CorpHQ</h1>
   <span class="ver" id="verInfo"></span>
   <nav id="nav"></nav>
   <a href="map/" style="color:var(--accent2);text-decoration:none;font-size:13px">🗺️ Map</a>
@@ -598,6 +598,7 @@ function init(){
   };
 }
 function landingExplore(){ localStorage.setItem('corphq:explored','1'); document.getElementById('landing').style.display='none'; }
+function showLanding(){ document.getElementById('landing').style.display='block'; window.scrollTo(0,0); }
 function landingSignIn(){ document.getElementById('landing').style.display='none'; openAuth(); }
 function renderCorpPanel(){
   const c=window.CORP; if(!c) return;
