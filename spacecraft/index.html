@@ -464,9 +464,10 @@ function baseCard(b, compact){
   const blds = (b.buildings||[]).map(d=>`<span class="chip">${esc(BLD[d.slug]?BLD[d.slug].name:d.slug)} ×${d.count}</span>`).join('');
   return `<div class="card">
     <h3 class="pointer" onclick="App.editBase('${b.id}')">${esc(b.name)} <span class="muted small">✎</span></h3>
-    <div class="muted small">${esc(loc||'location unknown')} ${b.owner?'· '+esc(b.owner):''}</div>
+    <div class="muted small">${b.type?(b.type==='personal'?'⛺ personal':'🏠 corp')+' · ':''}${esc(loc||'location unknown')} ${b.owner?'· '+esc(b.owner):''}</div>
     ${b.coords?`<div class="muted small">📍 ${esc(b.coords)}</div>`:''}
     <div class="row small"><span class="muted">Power</span> <span class="${p>=0?'raw':'chip bad'}">${fmt(p)}</span></div>
+    ${(b.mining&&b.mining.length)?`<div class="flexwrap" style="margin-top:6px">${b.mining.map(m=>`<span class="chip ok">⛏ ${esc(m.replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2'))}</span>`).join('')}</div>`:''}
     ${deps?`<div class="flexwrap" style="margin-top:6px">${deps}</div>`:''}
     ${!compact&&blds?`<div class="flexwrap" style="margin-top:6px">${blds}</div>`:''}
     ${!compact&&b.notes?`<div class="muted small" style="margin-top:6px">${esc(b.notes)}</div>`:''}
