@@ -493,7 +493,6 @@ function init(){
   $('#dbCat').innerHTML = '<option value="">All categories</option>'+cats.map(c=>`<option>${c}</option>`).join('');
   $('#dbSearch').addEventListener('input', renderDb);
   $('#dbCat').addEventListener('change', renderDb);
-  if(SYNC){ $('#sbUrl').value=SYNC.url; $('#sbKey').value=SYNC.key; $('#sbRoom').value=SYNC.room; }
   App.show('dashboard');
   render();
   window.onCorpReady = async ()=>{
