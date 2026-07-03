@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>CorpHQ — SpaceCraft corp manager</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 64 64%27%3E%3Cpolygon points=%2732,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5%27 fill=%27none%27 stroke=%27%235eb2ff%27 stroke-width=%274%27/%3E%3Ccircle cx=%2732%27 cy=%2732%27 r=%278%27 fill=%27%23a78bfa%27/%3E%3Ccircle cx=%2747%27 cy=%2723%27 r=%274%27 fill=%27%23ffb454%27/%3E%3C/svg%3E">
 <style>
 :root{
   --bg:#0b0e14; --panel:#141925; --panel2:#1b2233; --border:#2a3348;
@@ -82,11 +83,29 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 .csum{display:flex;gap:18px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin-top:10px;font-size:12.5px}
 .csum b{color:var(--accent2)}
 .notice{background:#1c2536;border:1px solid var(--border);border-radius:8px;padding:8px 12px;font-size:12px;color:var(--dim);margin:8px 0}
+
+/* landing */
+#landing{position:fixed;inset:0;z-index:150;display:none;overflow-y:auto;background:radial-gradient(1100px 500px at 75% -5%, #17325a66, transparent), radial-gradient(800px 500px at 10% 110%, #3b1d6b44, transparent), #06090f}
+#landing .stars{position:absolute;inset:0;pointer-events:none;background-image:radial-gradient(1.5px 1.5px at 20% 30%, #ffffffcc, transparent 60%),radial-gradient(1px 1px at 70% 20%, #ffffff99, transparent 60%),radial-gradient(1.2px 1.2px at 40% 70%, #ffffffaa, transparent 60%),radial-gradient(1px 1px at 85% 60%, #ffffff88, transparent 60%),radial-gradient(1.4px 1.4px at 55% 45%, #ffffffbb, transparent 60%),radial-gradient(1px 1px at 10% 80%, #ffffff77, transparent 60%),radial-gradient(1.2px 1.2px at 92% 85%, #ffffff99, transparent 60%),radial-gradient(1px 1px at 30% 10%, #ffffff88, transparent 60%);animation:twinkle 5s ease-in-out infinite alternate}
+@keyframes twinkle{from{opacity:.5}to{opacity:1}}
+#landing .wrap{position:relative;max-width:1100px;margin:0 auto;padding:26px 22px 60px}
+#landing .topbar{display:flex;align-items:center;gap:10px}
+#landing .topbar b{font-size:18px;letter-spacing:1px}
+#landing .hero{text-align:center;margin:72px 0 46px}
+#landing h1.big{font-size:44px;line-height:1.12;margin:0 0 14px;background:linear-gradient(120deg,#dbe4f5,#5eb2ff 55%,#a78bfa);-webkit-background-clip:text;background-clip:text;color:transparent}
+#landing .sub{color:var(--dim);font-size:17px;max-width:640px;margin:0 auto 26px}
+#landing .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+#landing .cta .btn{font-size:15px;padding:11px 22px;border-radius:10px}
+#landing .feats{display:grid;grid-template-columns:repeat(auto-fit,minmax(280px,1fr));gap:14px;margin-top:56px}
+#landing .feat{background:#10151fdd;border:1px solid var(--border);border-radius:14px;padding:18px}
+#landing .feat h3{margin:0 0 6px;font-size:15px;color:var(--accent2)}
+#landing .feat p{margin:0;color:var(--dim);font-size:13px}
+#landing .foot{text-align:center;color:#5a6a85;font-size:12px;margin-top:60px}
 </style>
 </head>
 <body>
 <header>
-  <h1>🛰️ CorpHQ</h1>
+  <h1 style="display:flex;align-items:center;gap:8px"><svg class="chq-logo" width="26" height="26" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="chqg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eb2ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><polygon points="32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5" fill="none" stroke="url(#chqg)" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="32" cy="32" rx="18" ry="7.5" fill="none" stroke="#5eb2ff" stroke-opacity="0.55" stroke-width="2" transform="rotate(-24 32 32)"/><circle cx="32" cy="32" r="7" fill="url(#chqg)"/><circle cx="47.5" cy="23" r="3.2" fill="#ffb454"/><circle cx="17" cy="42" r="2.2" fill="#4ade80"/></svg>CorpHQ</h1>
   <span class="ver" id="verInfo"></span>
   <nav id="nav"></nav>
   <a href="map/" style="color:var(--accent2);text-decoration:none;font-size:13px">🗺️ Map</a>
@@ -253,7 +272,7 @@ async function fetchBases(){
   try{
     const r = await fetch(SYNC.url+'/rest/v1/bases?select=*&order=updated_at.desc', {headers:sbHeaders()});
     const rows = await r.json();
-    if(Array.isArray(rows)) STATE.bases = rows.map(x=>({id:x.id, name:x.name, type:x.btype, owner:x.owner, quadrant:x.quadrant, system:x.system, planet:x.planet, coords:x.coords, notes:x.notes, mining:x.mining||[], deposits:x.deposits||[], buildings:x.buildings||[]}));
+    if(Array.isArray(rows)) STATE.bases = rows.map(x=>({id:x.id, name:x.name, type:x.btype, owner:x.owner, quadrant:x.quadrant, system:x.system, planet:x.planet, coords:x.coords, notes:x.notes, mining:x.mining||[], deposits:x.deposits||[], buildings:x.buildings||[], production:x.production||[]}));
   }catch(e){}
 }
 async function fetchPlan(){
@@ -273,6 +292,24 @@ async function saveBaseRow(b){
   if(b.id && String(b.id).length===36){ await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+b.id, {method:'PATCH', headers:sbHeaders(), body:JSON.stringify(row)}); }
   else { await fetch(SYNC.url+'/rest/v1/bases', {method:'POST', headers:sbHeaders(), body:JSON.stringify([row])}); }
 }
+async function assignProduction(baseId, slug, rate){
+  const b = STATE.bases.find(x=>x.id===baseId); if(!b || !window.CORP) return;
+  const prod = (b.production||[]).filter(x=>x.slug!==slug);
+  prod.push({slug, rate: Math.round(rate*100)/100});
+  await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+baseId, {method:'PATCH', headers:sbHeaders(), body:JSON.stringify({production:prod, updated_at:new Date().toISOString()})});
+  await fetchBases();
+}
+async function unassignProduction(baseId, slug){
+  const b = STATE.bases.find(x=>x.id===baseId); if(!b || !window.CORP) return;
+  const prod = (b.production||[]).filter(x=>x.slug!==slug);
+  await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+baseId, {method:'PATCH', headers:sbHeaders(), body:JSON.stringify({production:prod, updated_at:new Date().toISOString()})});
+  await fetchBases(); render();
+}
+window.chainAssign = async function(baseId, slug, rate){
+  if(!baseId) return;
+  await assignProduction(baseId, slug, rate);
+  renderChain();
+};
 async function deleteBaseRow(id){ await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+id, {method:'DELETE', headers:sbHeaders()}); }
 
 /* ============ crafting planner ============ */
@@ -508,6 +545,7 @@ function baseCard(b, compact){
     <div class="muted small">${b.type?(b.type==='personal'?'⛺ personal':'🏠 corp')+' · ':''}${esc(loc||'location unknown')} ${b.owner?'· '+esc(b.owner):''}</div>
     ${b.coords?`<div class="muted small">📍 ${esc(b.coords)}</div>`:''}
     <div class="row small"><span class="muted">Power</span> <span class="${p>=0?'raw':'chip bad'}">${fmt(p)}</span></div>
+    ${(b.production&&b.production.length)?`<div class="flexwrap" style="margin-top:6px">${b.production.map(pr=>`<span class="chip" style="color:var(--accent)">${ico(pr.slug,'sm')}${esc(itemName(pr.slug))} ${fmt(pr.rate)}/h <span class="pointer" title="remove" onclick="event.stopPropagation();unassignProduction('${b.id}','${pr.slug}')">✕</span></span>`).join('')}</div>`:''}
     ${(b.mining&&b.mining.length)?`<div class="flexwrap" style="margin-top:6px">${b.mining.map(m=>{const mid=typeof m==='string'?m:m.id; const mn=typeof m==='string'?1:(m.n||1); return `<span class="chip ok">${icoRes(mid,'sm')}${esc(String(mid).replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2'))}${mn>1?' ×'+mn:''}</span>`;}).join('')}</div>`:''}
     ${deps?`<div class="flexwrap" style="margin-top:6px">${deps}</div>`:''}
     ${!compact&&blds?`<div class="flexwrap" style="margin-top:6px">${blds}</div>`:''}
@@ -542,6 +580,7 @@ function init(){
   App.show('dashboard');
   render();
   window.onCorpReady = async ()=>{
+    document.getElementById('landing').style.display='none';
     const el=$('#syncState'); el.textContent='['+(window.CORP.tag||'')+'] '+window.CORP.name; el.className='on'; el.onclick=null;
     document.getElementById('acctInfo').textContent='Signed in as '+(window.USER?window.USER.email:'?');
     try{ const p=JSON.parse(localStorage.getItem('corp:pilot')||'null'); if(p) document.getElementById('pilotNameSet').value=p.name; }catch(e){}
@@ -553,9 +592,12 @@ function init(){
   };
   window.onGuest = ()=>{
     const el=$('#syncState'); el.textContent='👨‍🚀 Sign in'; el.style.cursor='pointer'; el.onclick=()=>openAuth();
+    if(!localStorage.getItem('corphq:explored')) document.getElementById('landing').style.display='block';
     render();
   };
 }
+function landingExplore(){ localStorage.setItem('corphq:explored','1'); document.getElementById('landing').style.display='none'; }
+function landingSignIn(){ document.getElementById('landing').style.display='none'; openAuth(); }
 function renderCorpPanel(){
   const c=window.CORP; if(!c) return;
   document.getElementById('corpPanel').innerHTML =
@@ -605,6 +647,7 @@ function corpCapacity(slug){
     } else { // fallback: registered deposits
       for(const d of (b.deposits||[])){ const res=RES[d.slug]; if(!res) continue; const drop=(res.drops||[]).find(x=>x.slug===slug&&x.rate&&String(x.rate).includes('/h')); if(drop) r += (d.count||1)*parseFloat(drop.rate); }
     }
+    for(const pr of (b.production||[])){ if(pr.slug===slug && pr.rate>0) r += pr.rate; }
     if(r>0){ srcs.push({base:b.name, rate:r}); tot+=r; }
   }
   return {rate:tot, sources:srcs};
@@ -613,6 +656,7 @@ function corpCovers(slug){
   const out = corpSourcesFor(slug).map(x=>x.base.name);
   // also via mining selections on bases (resource ids like CopperDeposit)
   const norm = id => String(id).replace(/[-_]/g,'').toLowerCase();
+  for(const b of STATE.bases) for(const pr of (b.production||[])){ if(pr.slug===slug && !out.includes(b.name)) out.push(b.name); }
   for(const b of STATE.bases) for(const me of miningEntries(b)){
     const res = GAME.resources.find(r=>norm(r.slug)===norm(me.id));
     if(res && (res.drops||[]).some(d=>d.slug===slug) && !out.includes(b.name)) out.push(b.name);
@@ -725,10 +769,11 @@ function renderChain(){
       const sel = (rs.length>1 && n.recipe) ? `<select onchange="setChainRecipe('${n.slug}', this.value)">${rs.map(r=>`<option value="${r._id}" ${n.recipe._id===r._id?'selected':''}>${esc(wsName(r.workstation))}: ${r.ingredients.map(i2=>qtyNum(i2.qty)+'× '+itemName(i2.slug)).join(', ')}</option>`).join('')}</select>` : '';
       const mach = n.machines? `${n.machines}× ${ico(n.ws,'sm')}${esc(wsName(n.ws||''))}` : (n.supplied?'':(n.raw?'gather / buy / trade':''));
       const cov = n.corpRate? `<div class="cov-badge">🏠 ${n.supplied?'fully supplied':fmt(n.corpRate)+'/h from corp — build '+fmt(n.net)+'/h'}${n.corpSources&&n.corpSources.length?' · '+esc(n.corpSources.slice(0,2).map(x=>x.base).join(', ')):''}</div>` : (n.covered.length? `<div class="cov-badge">🏠 available at ${esc(n.covered.slice(0,2).join(', '))}</div>`:'');
+      const assign = (window.CORP && n.machines && !n.supplied) ? `<select onchange="chainAssign(this.value,'${n.slug}',${n.net||n.rate});this.value=''" title="record that a base will produce this"><option value="">→ assign to base…</option>${STATE.bases.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>` : '';
       html += `<div class="cnode ${n.raw?'raw':''} ${n.supplied?'cov':(n.corpRate?'part':(n.covered.length?'cov':''))}" style="left:${x}px;top:${y}px">
         <div class="nm">${ico(n.slug)}${esc(itemName(n.slug))}</div>
         <div class="meta">${fmt(n.rate)}/h${n.power?` · ${fmt(n.power)} pw`:''}</div>
-        <div class="meta">${mach}</div>${cov}${sel}</div>`;
+        <div class="meta">${mach}</div>${cov}${sel}${assign}</div>`;
     });
   }
   // edges
@@ -760,6 +805,32 @@ function renderChain(){
 }
 </script>
 
+<div id="landing">
+  <div class="stars"></div>
+  <div class="wrap">
+    <div class="topbar"><svg class="chq-logo" width="34" height="34" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg"><defs><linearGradient id="chqg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#5eb2ff"/><stop offset="1" stop-color="#a78bfa"/></linearGradient></defs><polygon points="32,5 55,18.5 55,45.5 32,59 9,45.5 9,18.5" fill="none" stroke="url(#chqg)" stroke-width="3.5" stroke-linejoin="round"/><ellipse cx="32" cy="32" rx="18" ry="7.5" fill="none" stroke="#5eb2ff" stroke-opacity="0.55" stroke-width="2" transform="rotate(-24 32 32)"/><circle cx="32" cy="32" r="7" fill="url(#chqg)"/><circle cx="47.5" cy="23" r="3.2" fill="#ffb454"/><circle cx="17" cy="42" r="2.2" fill="#4ade80"/></svg><b>CorpHQ</b><span style="flex:1"></span>
+      <button class="btn sec" onclick="landingExplore()">Explore tools</button>
+      <button class="btn" onclick="landingSignIn()">Sign in</button>
+    </div>
+    <div class="hero">
+      <h1 class="big">Run your SpaceCraft corporation<br>like a fleet command.</h1>
+      <p class="sub">Shared bases, mining assignments, capacity-aware production chains and a full galaxy map — live-synced with your corp mates. Free, forever-ish.</p>
+      <div class="cta">
+        <button class="btn" onclick="landingSignIn()">🛰️ Create your corp — free</button>
+        <button class="btn sec" onclick="landingExplore()">Explore without an account →</button>
+      </div>
+    </div>
+    <div class="feats">
+      <div class="feat"><h3>⚙ Chain Designer</h3><p>Pick any item and rate — get the full production graph: machines, extractors, power. It nets out what your corp already produces and shows only what's left to build.</p></div>
+      <div class="feat"><h3>🗺 Galaxy Map</h3><p>Every system, planet, deposit and FTL lane in all 47 quadrants. Route planner with real jump costs. Plant bases straight from the map.</p></div>
+      <div class="feat"><h3>⛏ Resource Finder</h3><p>Where's the best copper? Ranked planets by density and node count, with jumps and FTL cost from your home base.</p></div>
+      <div class="feat"><h3>🏠 Corp bases</h3><p>Register bases, deposits, extractors and production. Everyone in the corp sees the same live picture.</p></div>
+      <div class="feat"><h3>🧪 Crafting planner</h3><p>Full recipe trees with costs, workstations and corp coverage — down to the last ore.</p></div>
+      <div class="feat"><h3>🔑 One invite code</h3><p>Email code sign-in, no passwords. Share your corp code and your crew is in — one corp per pilot, EVE-style.</p></div>
+    </div>
+    <div class="foot">Fan project for SpaceCraft (Shiro Games). Game data via spacecraft.tools. Built by pilots, for pilots.</div>
+  </div>
+</div>
 <div id="authGate" style="position:fixed;inset:0;background:#0b0e14ee;z-index:200;display:none;align-items:center;justify-content:center;backdrop-filter:blur(3px)">
   <div style="background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:26px;width:390px;max-height:88vh;overflow-y:auto">
     <h2 style="margin:0 0 4px;color:var(--accent)">🛰️ CorpHQ</h2>
