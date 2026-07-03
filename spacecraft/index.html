@@ -231,6 +231,10 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
     <h3 class="small" style="margin:10px 0 4px">Buildings at this base</h3>
     <div id="bBuildings"></div>
     <div class="row"><select id="bBldSelect" style="flex:1"></select><input id="bBldCount" type="number" min="1" value="1" style="width:70px"><button type="button" class="btn sec" onclick="App.addBuildingRow()">Add</button></div>
+    <h3 class="small" style="margin:10px 0 4px">Mining (deposits/geysers worked) <span class="muted">— add these from the Map</span></h3>
+    <div id="bMining"></div>
+    <h3 class="small" style="margin:10px 0 4px">Production <span class="muted">— assign from the Chain Designer</span></h3>
+    <div id="bProduction"></div>
     <div class="row" style="margin-top:12px;justify-content:flex-end">
       <button type="button" class="btn danger" id="bDelete" onclick="App.deleteBase()">Delete</button>
       <button type="button" class="btn sec" onclick="document.getElementById('baseDialog').close()">Cancel</button>
@@ -299,7 +303,7 @@ async function pushPlan(){
   try{ await fetch(SYNC.url+'/rest/v1/corp_plans', {method:'POST', headers:sbHeaders({Prefer:'resolution=merge-duplicates'}), body:JSON.stringify([{corp_id:window.CORP.id, data:{planTargets:STATE.planTargets, recipeChoice:STATE.recipeChoice}, updated_at:new Date().toISOString()}])}); }catch(e){}
 }
 async function saveBaseRow(b){
-  const row={corp_id:window.CORP.id, name:b.name, btype:b.type||'corp', owner:b.owner||'', quadrant:b.quadrant||'', system:b.system||'', planet:b.planet||'', coords:b.coords||'', notes:b.notes||'', mining:b.mining||[], deposits:b.deposits||[], buildings:b.buildings||[], updated_at:new Date().toISOString()};
+  const row={corp_id:window.CORP.id, name:b.name, btype:b.type||'corp', owner:b.owner||'', quadrant:b.quadrant||'', system:b.system||'', planet:b.planet||'', coords:b.coords||'', notes:b.notes||'', mining:b.mining||[], deposits:b.deposits||[], buildings:b.buildings||[], production:b.production||[], updated_at:new Date().toISOString()};
   if(b.id && String(b.id).length===36){ await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+b.id, {method:'PATCH', headers:sbHeaders(), body:JSON.stringify(row)}); }
   else { await fetch(SYNC.url+'/rest/v1/bases', {method:'POST', headers:sbHeaders(), body:JSON.stringify([row])}); }
 }
@@ -382,12 +386,14 @@ function corpSourcesFor(slug){
 }
 /* extraction per hour across corp */
 function corpExtraction(){
-  const tot = {};
-  for(const b of STATE.bases) for(const d of (b.deposits||[])){
-    const res = RES[d.slug]; if(!res) continue;
-    for(const drop of (res.drops||[])){
-      const rate = drop.rate && drop.rate.includes('/h') ? num(drop.rate) : null;
-      if(rate) tot[drop.slug] = (tot[drop.slug]||0) + rate*(d.count||1);
+  const tot = {}; const norm=id=>String(id).replace(/[-_]/g,'').toLowerCase();
+  for(const b of STATE.bases){
+    for(const d of (b.deposits||[])){
+      const res = RES[d.slug]; if(!res) continue;
+      for(const drop of (res.drops||[])){ const rate = drop.rate&&String(drop.rate).includes('/h')?num(drop.rate):null; if(rate) tot[drop.slug]=(tot[drop.slug]||0)+rate*(d.count||1); }
+    }
+    for(const m of (b.mining||[])){ const mid=typeof m==='string'?m:m.id; const mn=typeof m==='string'?1:(m.n||1); const res=GAME.resources.find(r=>norm(r.slug)===norm(mid)); if(!res) continue;
+      for(const drop of (res.drops||[])){ const rate = drop.rate&&String(drop.rate).includes('/h')?num(drop.rate):null; if(rate) tot[drop.slug]=(tot[drop.slug]||0)+rate*mn; }
     }
   }
   return tot;
@@ -399,7 +405,7 @@ function basePower(b){
 /* ============ UI ============ */
 const TABS = [['dashboard','Dashboard'],['bases','Bases'],['planner','Crafting Planner'],['chain','Chain Designer'],['database','Database'],['settings','Settings']];
 let activeTab = 'dashboard';
-let editingBaseId = null, draftDeposits = [], draftBuildings = [];
+let editingBaseId = null, draftDeposits = [], draftBuildings = [], draftMining = [], draftProduction = [];
 
 const App = {
   show(tab){ activeTab=tab; document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active', s.id==='tab-'+tab)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab)); },
@@ -412,6 +418,7 @@ const App = {
     $('#bName').value=b.name||''; $('#bOwner').value=b.owner||''; $('#bQuadrant').value=b.quadrant||'';
     $('#bSystem').value=b.system||''; $('#bPlanet').value=b.planet||''; $('#bCoords').value=b.coords||''; $('#bNotes').value=b.notes||'';
     draftDeposits = structuredClone(b.deposits||[]); draftBuildings = structuredClone(b.buildings||[]);
+    draftMining = structuredClone(b.mining||[]); draftProduction = structuredClone(b.production||[]);
     $('#bDelete').style.display = id?'':'none';
     App.renderDraftLists();
     $('#baseDialog').showModal();
@@ -419,6 +426,8 @@ const App = {
   renderDraftLists(){
     $('#bDeposits').innerHTML = draftDeposits.map((d,i)=>`<span class="chip">${ico(d.slug,'sm')}${esc(RES[d.slug]?RES[d.slug].name:d.slug)} ×${d.count} <span class="pointer" onclick="App.rmDeposit(${i})">✕</span></span>`).join('')||'<span class="muted small">none yet</span>';
     $('#bBuildings').innerHTML = draftBuildings.map((d,i)=>`<span class="chip">${ico(d.slug,'sm')}${esc(BLD[d.slug]?BLD[d.slug].name:d.slug)} ×${d.count} <span class="pointer" onclick="App.rmBuilding(${i})">✕</span></span>`).join('')||'<span class="muted small">none yet</span>';
+    if($('#bMining')){ const norm=id=>String(id).replace(/[-_]/g,'').toLowerCase(); $('#bMining').innerHTML = draftMining.map((m,i)=>{const mid=typeof m==='string'?m:m.id; const mn=typeof m==='string'?1:(m.n||1); const res=GAME.resources.find(r=>norm(r.slug)===norm(mid)); return `<span class="chip">${icoRes(mid,'sm')}${esc(res?res.name:mid)} ×${mn} <span class="pointer" onclick="App.rmMining(${i})">✕</span></span>`;}).join('')||'<span class="muted small">none (add from the Map → Make base)</span>'; }
+    if($('#bProduction')){ $('#bProduction').innerHTML = draftProduction.map((pr,i)=>`<span class="chip" style="color:var(--accent)">${ico(pr.slug,'sm')}${esc(itemName(pr.slug))} ${fmt(pr.rate)}/h <span class="pointer" onclick="App.rmProd(${i})">✕</span></span>`).join('')||'<span class="muted small">assign from the Chain Designer</span>'; }
   },
   addDepositRow(){
     const name = $('#bDepSearch').value.trim(); if(!name) return;
@@ -433,6 +442,8 @@ const App = {
     draftBuildings.push({slug, count:parseInt($('#bBldCount').value)||1}); App.renderDraftLists();
   },
   rmBuilding(i){ draftBuildings.splice(i,1); App.renderDraftLists(); },
+  rmMining(i){ draftMining.splice(i,1); App.renderDraftLists(); },
+  rmProd(i){ draftProduction.splice(i,1); App.renderDraftLists(); },
   saveBase(ev){
     ev.preventDefault();
     const b = {
@@ -440,7 +451,7 @@ const App = {
       name: $('#bName').value.trim(), owner: $('#bOwner').value.trim(),
       quadrant: $('#bQuadrant').value.trim(), system: $('#bSystem').value.trim(),
       planet: $('#bPlanet').value.trim(), coords: $('#bCoords').value.trim(), notes: $('#bNotes').value.trim(),
-      deposits: draftDeposits, buildings: draftBuildings
+      deposits: draftDeposits, buildings: draftBuildings, mining: draftMining, production: draftProduction
     };
     $('#baseDialog').close();
     (async()=>{
