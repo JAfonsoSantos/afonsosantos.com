@@ -425,7 +425,7 @@ function openBaseModal(sysId, planetIdx){
     ${planetIdx==null?`<label>Planet</label><select id="mbPlanet"><option value="">— not set —</option>${s.planets.map(p=>`<option>${esc(s.name+' '+(ROMAN[p.i]||p.i+1))}</option>`).join('')}</select>`:''}
     <label>Extractable here (${total} available — deposits & geysers only)</label>
     <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px">
-      ${[['Deposits — Extractor',poolDep],['Geysers — Liquid Extractor',poolGey]].map(([title,pool])=>Object.keys(pool).length?`<div class="grp" style="padding:4px 6px">${title}</div>`+Object.entries(pool).sort((a,b)=>b[1]-a[1]).map(([id,d])=>`<label class="mineopt"><input type="checkbox" value="${id}"><img referrerpolicy="no-referrer" src="${ICON(id)}" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="d">d${d}</span></label>`).join(''):'').join('')||'<div class="muted" style="padding:6px">no deposits or geysers on this planet</div>'}
+      ${[['Deposits — Extractor',poolDep],['Geysers — Liquid Extractor',poolGey]].map(([title,pool])=>Object.keys(pool).length?`<div class="grp" style="padding:4px 6px">${title}</div>`+Object.entries(pool).sort((a,b)=>b[1]-a[1]).map(([id,d])=>`<label class="mineopt"><input type="checkbox" value="${id}"><img referrerpolicy="no-referrer" src="${ICON(id)}" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="d">d${d}</span><input type="number" class="mn" value="1" min="1" title="extractors on it" style="width:46px;margin-left:6px" onclick="event.stopPropagation()"></label>`).join(''):'').join('')||'<div class="muted" style="padding:6px">no deposits or geysers on this planet</div>'}
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
       <button class="btn sec" onclick="closeModal()">Cancel</button>
@@ -437,7 +437,7 @@ function closeModal(){ $('#modal').style.display='none'; }
 async function saveBase(sysId, planetIdx){
   if(!window.CORP){ closeModal(); openAuth(); return; }
   const s=G.sysById[sysId];
-  const mining=[...document.querySelectorAll('#modalBox input[type=checkbox]:checked')].map(c=>c.value);
+  const mining=[...document.querySelectorAll('#modalBox .mineopt')].filter(l=>l.querySelector('input[type=checkbox]').checked).map(l=>({id:l.querySelector('input[type=checkbox]').value, n:parseInt((l.querySelector('.mn')||{}).value)||1}));
   const planet = planetIdx!=null ? s.name+' '+(ROMAN[planetIdx]||planetIdx+1) : (document.getElementById('mbPlanet')?document.getElementById('mbPlanet').value:'');
   const btype=(document.querySelector('input[name=mbType]:checked')||{}).value||'corp';
   const row={corp_id:window.CORP.id, name:document.getElementById('mbName').value.trim()||s.name+' Base', btype, owner:document.getElementById('mbOwner').value.trim(),

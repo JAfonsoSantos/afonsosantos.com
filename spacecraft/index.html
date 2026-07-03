@@ -76,6 +76,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 .cnode .meta{color:var(--dim);font-size:11px;margin-top:3px}
 .cnode.raw{border-color:#2f6d4a}
 .cnode.cov{border-color:var(--good);box-shadow:0 0 0 1px var(--good) inset, 0 4px 14px #0006}
+.cnode.part{border-color:var(--accent2)}
 .cnode select{width:100%;margin-top:5px;font-size:10.5px;padding:3px 5px}
 .cnode .cov-badge{color:var(--good);font-size:10px;margin-top:3px}
 .csum{display:flex;gap:18px;flex-wrap:wrap;align-items:center;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 14px;margin-top:10px;font-size:12.5px}
@@ -507,7 +508,7 @@ function baseCard(b, compact){
     <div class="muted small">${b.type?(b.type==='personal'?'⛺ personal':'🏠 corp')+' · ':''}${esc(loc||'location unknown')} ${b.owner?'· '+esc(b.owner):''}</div>
     ${b.coords?`<div class="muted small">📍 ${esc(b.coords)}</div>`:''}
     <div class="row small"><span class="muted">Power</span> <span class="${p>=0?'raw':'chip bad'}">${fmt(p)}</span></div>
-    ${(b.mining&&b.mining.length)?`<div class="flexwrap" style="margin-top:6px">${b.mining.map(m=>`<span class="chip ok">${icoRes(m,'sm')}${esc(m.replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2'))}</span>`).join('')}</div>`:''}
+    ${(b.mining&&b.mining.length)?`<div class="flexwrap" style="margin-top:6px">${b.mining.map(m=>{const mid=typeof m==='string'?m:m.id; const mn=typeof m==='string'?1:(m.n||1); return `<span class="chip ok">${icoRes(mid,'sm')}${esc(String(mid).replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2'))}${mn>1?' ×'+mn:''}</span>`;}).join('')}</div>`:''}
     ${deps?`<div class="flexwrap" style="margin-top:6px">${deps}</div>`:''}
     ${!compact&&blds?`<div class="flexwrap" style="margin-top:6px">${blds}</div>`:''}
     ${!compact&&b.notes?`<div class="muted small" style="margin-top:6px">${esc(b.notes)}</div>`:''}
@@ -592,59 +593,84 @@ function extractorInfo(slug){
   }
   return best;
 }
+function miningEntries(b){ return (b.mining||[]).map(m=> typeof m==='string' ? {id:m,n:1} : {id:m.id,n:m.n||1}); }
+function corpCapacity(slug){
+  const srcs=[]; let tot=0;
+  const norm = id => String(id).replace(/[-_]/g,'').toLowerCase();
+  for(const b of STATE.bases){
+    let r=0;
+    for(const d of (b.deposits||[])){ const res=RES[d.slug]; if(!res) continue; const drop=(res.drops||[]).find(x=>x.slug===slug&&x.rate&&String(x.rate).includes('/h')); if(drop) r += (d.count||1)*parseFloat(drop.rate); }
+    for(const m of miningEntries(b)){ const res=GAME.resources.find(x=>norm(x.slug)===norm(m.id)); if(!res) continue; const drop=(res.drops||[]).find(x=>x.slug===slug&&x.rate&&String(x.rate).includes('/h')); if(drop) r += m.n*parseFloat(drop.rate); }
+    if(r>0){ srcs.push({base:b.name, rate:r}); tot+=r; }
+  }
+  return {rate:tot, sources:srcs};
+}
 function corpCovers(slug){
   const out = corpSourcesFor(slug).map(x=>x.base.name);
   // also via mining selections on bases (resource ids like CopperDeposit)
   const norm = id => String(id).replace(/[-_]/g,'').toLowerCase();
-  for(const b of STATE.bases) for(const m of (b.mining||[])){
-    const res = GAME.resources.find(r=>norm(r.slug)===norm(m));
+  for(const b of STATE.bases) for(const me of miningEntries(b)){
+    const res = GAME.resources.find(r=>norm(r.slug)===norm(me.id));
     if(res && (res.drops||[]).some(d=>d.slug===slug) && !out.includes(b.name)) out.push(b.name);
   }
   return out;
 }
 function buildChain(target, rateH){
-  const nodes={}, edges={};
   const useCorp = !!(document.getElementById('chainUseCorp')||{}).checked;
-  function need(slug, rate, depth){
-    const n = nodes[slug] = nodes[slug] || {slug, rate:0, depth:0, expanding:false};
-    n.rate += rate; n.depth = Math.max(n.depth, depth);
-    if(n.raw || n.recipe) { if(n.recipe) cascade(n, rate, depth); return; }
-    if(useCorp && depth>0 && corpCovers(slug).length){ n.raw=true; n.supplied=true; return; }
+  const nodes={}, edges={};
+  (function expand(slug, depth, stack){
+    const n = nodes[slug] = nodes[slug]||{slug, depth:0};
+    n.depth = Math.max(n.depth, depth);
+    if(stack.has(slug)) return;
     const r = chosenRecipe(slug);
     if(!r){ n.raw=true; return; }
     n.recipe = r;
-    cascade(n, rate, depth);
-  }
-  function cascade(n, rate, depth){
-    if(n.expanding) return;
-    n.expanding = true;
-    const r = n.recipe;
-    const outQty = qtyNum((r.outputs.find(o=>o.slug===n.slug)||{}).qty);
-    const craftsH = rate/outQty;
+    stack.add(slug);
     for(const ing of r.ingredients){
-      const ingRate = qtyNum(ing.qty)*craftsH;
-      const k = ing.slug+'>'+n.slug;
-      edges[k] = edges[k]||{from:ing.slug, to:n.slug, rate:0};
-      edges[k].rate += ingRate;
-      need(ing.slug, ingRate, depth+1);
+      const k=ing.slug+'>'+slug;
+      edges[k]=edges[k]||{from:ing.slug,to:slug,rate:0};
+      expand(ing.slug, depth+1, stack);
     }
-    n.expanding = false;
+    stack.delete(slug);
+  })(target, 0, new Set());
+  const order = Object.values(nodes).sort((a,b)=>a.depth-b.depth);
+  const demand = {}; demand[target]=rateH;
+  for(const n of order){
+    n.rate = demand[n.slug]||0;
+    if(n.rate<=0.0001 && n.slug!==target){ n.hidden=true; continue; }
+    let capUsed=0;
+    if(useCorp && n.slug!==target){
+      const cap = corpCapacity(n.slug);
+      capUsed = Math.min(cap.rate, n.rate);
+      if(capUsed>0){ n.corpRate = capUsed; n.corpSources = cap.sources; }
+    }
+    n.net = n.rate - capUsed;
+    if(n.recipe && n.net>0.0001){
+      const outQty = qtyNum((n.recipe.outputs.find(o=>o.slug===n.slug)||{}).qty);
+      const craftsH = n.net/outQty;
+      for(const ing of n.recipe.ingredients){
+        const add = qtyNum(ing.qty)*craftsH;
+        demand[ing.slug]=(demand[ing.slug]||0)+add;
+        edges[ing.slug+'>'+n.slug].rate += add;
+      }
+    } else if(n.net<=0.0001){ n.supplied=true; }
   }
-  need(target, rateH, 0);
-  // machines + power + extractors
   for(const n of Object.values(nodes)){
-    if(n.recipe){
+    if(n.hidden) continue;
+    if(n.recipe && n.net>0.0001){
       n.perM = ratePerMachineH(n.recipe, n.slug);
-      n.machines = Math.max(1, Math.ceil(n.rate/n.perM));
+      n.machines = Math.max(1, Math.ceil(n.net/n.perM));
       n.ws = n.recipe.workstation;
       const bp = num(BLD[n.ws] && BLD[n.ws].power);
       n.power = bp ? Math.abs(bp)*n.machines : 0;
-    } else if(!n.supplied) {
+    } else if(n.raw && !n.supplied && n.net>0.0001){
       const ex = extractorInfo(n.slug);
-      if(ex){ n.ext=ex; n.machines=Math.ceil(n.rate/ex.rate); n.ws='b-extractor'; const bp=num(BLD['b-extractor']&&BLD['b-extractor'].power); n.power=bp?Math.abs(bp)*n.machines:0; }
+      if(ex){ n.ext=ex; n.machines=Math.ceil(n.net/ex.rate); n.ws='b-extractor'; const bp=num(BLD['b-extractor']&&BLD['b-extractor'].power); n.power=bp?Math.abs(bp)*n.machines:0; }
     }
     n.covered = corpCovers(n.slug);
   }
+  for(const k of Object.keys(nodes)) if(nodes[k].hidden) delete nodes[k];
+  for(const k of Object.keys(edges)) if(edges[k].rate<=0.0001 || !nodes[edges[k].from] || !nodes[edges[k].to]) delete edges[k];
   return {nodes, edges, target, rateH};
 }
 let CHAIN_CUR=null, CHAIN_DIM=null, CHAIN_SCALE=1;
@@ -693,9 +719,9 @@ function renderChain(){
       pos[n.slug]={x,y};
       const rs = recipesFor(n.slug);
       const sel = (rs.length>1 && n.recipe) ? `<select onchange="setChainRecipe('${n.slug}', this.value)">${rs.map(r=>`<option value="${r._id}" ${n.recipe._id===r._id?'selected':''}>${esc(wsName(r.workstation))}: ${r.ingredients.map(i2=>qtyNum(i2.qty)+'× '+itemName(i2.slug)).join(', ')}</option>`).join('')}</select>` : '';
-      const mach = n.machines? `${n.machines}× ${ico(n.ws,'sm')}${esc(wsName(n.ws||''))}` : (n.supplied?'🏠 supplied by corp':(n.raw?'gather / buy / trade':''));
-      const cov = n.covered.length? `<div class="cov-badge">🏠 produced at ${esc(n.covered.slice(0,2).join(', '))}</div>`:'';
-      html += `<div class="cnode ${n.raw?'raw':''} ${n.covered.length?'cov':''}" style="left:${x}px;top:${y}px">
+      const mach = n.machines? `${n.machines}× ${ico(n.ws,'sm')}${esc(wsName(n.ws||''))}` : (n.supplied?'':(n.raw?'gather / buy / trade':''));
+      const cov = n.corpRate? `<div class="cov-badge">🏠 ${n.supplied?'fully supplied':fmt(n.corpRate)+'/h from corp — build '+fmt(n.net)+'/h'}${n.corpSources&&n.corpSources.length?' · '+esc(n.corpSources.slice(0,2).map(x=>x.base).join(', ')):''}</div>` : (n.covered.length? `<div class="cov-badge">🏠 available at ${esc(n.covered.slice(0,2).join(', '))}</div>`:'');
+      html += `<div class="cnode ${n.raw?'raw':''} ${n.supplied?'cov':(n.corpRate?'part':(n.covered.length?'cov':''))}" style="left:${x}px;top:${y}px">
         <div class="nm">${ico(n.slug)}${esc(itemName(n.slug))}</div>
         <div class="meta">${fmt(n.rate)}/h${n.power?` · ${fmt(n.power)} pw`:''}</div>
         <div class="meta">${mach}</div>${cov}${sel}</div>`;
@@ -726,7 +752,7 @@ function renderChain(){
     Object.entries(byWs).map(([w,c])=>`<span>${ico(w,'sm')}${esc(wsName(w))} <b>${c}</b></span>`).join('')+
     `<span>⚡ <b>${fmt(totPower)}</b> power</span>`+
     `<span>⛏ raw: ${raws.map(r=>`${ico(r.slug,'sm')}${fmt(r.rate)}/h`).join(' ')}</span>`+
-    (covered.length?`<span style="color:var(--good)">🏠 corp covers ${covered.length} inputs${list.some(n=>n.supplied)?' (supplying '+list.filter(n=>n.supplied).length+')':''}</span>`:'');
+    ((()=>{ const tot=list.reduce((a,n)=>a+(n.corpRate||0),0); const cnt=list.filter(n=>n.corpRate).length; return tot>0? `<span style="color:var(--good)">🏠 corp supplies ${fmt(tot)}/h across ${cnt} inputs (${list.filter(n=>n.supplied).length} fully)</span>` : (covered.length?`<span style="color:var(--good)">🏠 corp has sources for ${covered.length} inputs — set mining on your bases to use them</span>`:''); })());
 }
 </script>
 
