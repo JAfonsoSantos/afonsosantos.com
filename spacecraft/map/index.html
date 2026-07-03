@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Corp Map — SpaceCraft</title>
+<style>
+:root{--bg:#0b0e14;--panel:#141925;--panel2:#1b2233;--border:#2a3348;--text:#dbe4f5;--dim:#8593ad;--accent:#5eb2ff;--accent2:#ffb454;--good:#4ade80;--bad:#f87171;--chip:#233049}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font:13px/1.4 system-ui,Segoe UI,Roboto,sans-serif;overflow:hidden}
+#top{position:fixed;top:0;left:0;right:0;height:46px;display:flex;align-items:center;gap:10px;padding:0 14px;background:var(--panel);border-bottom:1px solid var(--border);z-index:20}
+#top h1{font-size:14px;color:var(--accent);margin:0;white-space:nowrap}
+#top a{color:var(--dim);text-decoration:none;font-size:12px}
+#top a:hover{color:var(--text)}
+select,input{background:var(--panel2);border:1px solid var(--border);color:var(--text);border-radius:7px;padding:5px 8px;font-size:12px;outline:none}
+canvas{display:block;cursor:grab}
+canvas.drag{cursor:grabbing}
+#side{position:fixed;top:46px;right:0;bottom:0;width:330px;background:var(--panel);border-left:1px solid var(--border);overflow-y:auto;padding:12px;z-index:15;display:none}
+#side h2{font-size:14px;margin:0 0 2px;color:var(--accent2)}
+#side h3{font-size:12px;margin:12px 0 4px;color:var(--accent)}
+.muted{color:var(--dim);font-size:11px}
+.chip{display:inline-block;background:var(--chip);border-radius:5px;padding:1px 7px;font-size:11px;margin:1px}
+.row{display:flex;justify-content:space-between;gap:6px;padding:2px 0;border-bottom:1px solid #1e2637;font-size:12px}
+.row:last-child{border:none}
+button.btn{background:var(--accent);color:#08111f;border:0;border-radius:7px;padding:5px 10px;font-weight:600;cursor:pointer;font-size:12px}
+button.btn.sec{background:var(--panel2);color:var(--text);border:1px solid var(--border)}
+#legend{position:fixed;left:12px;bottom:12px;background:var(--panel);border:1px solid var(--border);border-radius:10px;padding:8px 12px;font-size:11px;z-index:15;max-width:280px}
+#status{position:fixed;left:50%;top:60px;transform:translateX(-50%);background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:6px 14px;z-index:30;display:none}
+.close{float:right;cursor:pointer;color:var(--dim)}
+#resPanel{position:fixed;top:46px;left:0;bottom:0;width:250px;background:var(--panel);border-right:1px solid var(--border);overflow-y:auto;padding:10px;z-index:15;display:none}
+.resitem{display:flex;justify-content:space-between;padding:3px 6px;border-radius:6px;cursor:pointer;font-size:12px}
+.resitem:hover{background:var(--panel2)}
+.resitem.on{background:#1c2c45;color:var(--accent)}
+.pill{font-size:10px;color:var(--dim)}
+#routeBox{margin-top:8px}
+</style>
+</head>
+<body>
+<div id="top">
+  <h1>🛰️ Corp Map</h1>
+  <select id="quadSel"></select>
+  <input id="sysSearch" placeholder="Find system…" list="sysList" style="width:150px">
+  <datalist id="sysList"></datalist>
+  <button class="btn sec" id="resBtn" onclick="toggleRes()">Resources</button>
+  <button class="btn sec" id="routeBtn" onclick="routeMode()">Route: off</button>
+  <span class="muted" id="quadInfo"></span>
+  <span style="flex:1"></span>
+  <a href="../">← Planner</a>
+</div>
+<div id="resPanel"></div>
+<canvas id="cv"></canvas>
+<div id="side"></div>
+<div id="legend"></div>
+<div id="status"></div>
+<script>
+const RESOURCE_NAMES = {"aludeposit": "Aluminum Deposit", "aluclusterunderwaternative": "Aluminum Reduction", "aluclusteraquamarine": "Aquamarine", "alutitaneclusteraugurite": "Augurite", "copperclusterazurite": "Azurite", "basaltshell": "Basalt Shell", "aluironclusterbauxite": "Bauxite Rock", "shipwreckdeco05": "Big Intake Vent", "shipwreckblackbox": "Black Box", "bluegranitshell": "Blue Granite Shell", "copperclusternativecopper": "Brassy Outcrop", "waterdeposit": "Brine Pool", "brinegeyser": "Brine Water Geyser", "uraniumvanadiumclustercarnotite": "Carnotite Cluster", "chalcedonyshell": "Chalcedony Shell", "copperclusterchalcocite": "Chalcocite", "copperironclusterchalcopyrite": "Chalcopyrite", "chondriteshell": "Chondrite", "scoriashell": "Cinder", "cinnabar": "Cinnabar", "clayshell": "Clay Shell", "carbonclustercoal": "Coal Clump", "coaldeposit": "Coal Deposit", "platinumclustercooperite": "Cooperite", "copperdeposit": "Copper Deposit", "copperclustercopperstone": "Cupric Stone", "alunuggetdeposit": "Dense Aluminum Deposit", "coppernuggetdeposit": "Dense Copper Deposit", "ironnuggetdeposit": "Dense Iron Deposit", "platnuggetdeposit": "Dense Platinum Deposit", "dres22": "Deposit", "elmeriumclusterelmeritenight": "Elmerite", "aluclusteremerald": "Emerald", "ironclusterironstone": "Ferric Stone", "ironclusternickeliron": "Ferrous Outcrop", "gabbroshell": "Gabbro Shell", "diamondcluster": "Gigantic Diamonds", "granitshell": "Granite Shell", "graphitecluster": "Graphite", "quartzgrey": "Gray Quartz", "shipwrecktitaniumbeam": "Heavy-Duty Beam", "heliumgeyser": "Helium Geyser", "elmeriumclusterelmeriteday": "Hollow Outcrop", "shipwrecksteelhullscraps": "Hull Steel Scraps", "iceshell": "Ice Shell", "shipwreckdeco04": "Intake Vent", "irondeposit": "Iron Deposit", "ironasteroidshell": "Iron Spherule", "shipwreckcoil": "Magnetic Coil", "ironclustermagnetite": "Magnetite", "copperclustermalachite": "Malachite", "mercurygeyser": "Mercury Geyser", "mercurydeposit": "Mercury Pool", "shipwreckironsheet": "Metal Sheet", "shipwreckmicrochip": "Microchip", "shipwreckmotor": "Motor", "obsidianshell": "Obsidian Shell", "opalshell": "Opal Shell", "vanadiumclusterpatronite": "Patronite", "platinumclusterplatinomagnetite": "Plagnetite", "platinumdeposit": "Platinum Deposit", "shipwreckzirconiumtube": "Pressure-tight Tube", "pumiceshell": "Pumice", "pyritedeposit": "Pyrite Deposit", "pyrite": "Pyrite Formation", "radongeyser": "Radon Geyser", "quartzred": "Red Quartz", "rockwoodroot": "Rockwood Root", "shipwreckdeco01": "Round Hatch", "ironclusterspecularite": "S-Iron Cluster", "sandstonedeposit": "Sandstone Deposit", "silicatesandstone": "Sandstone Mound", "ironcarbonclustersiderite": "Siderite", "shipwrecksolarcell": "Solar Cell", "spacewheatroot": "Spacekorn Root", "shipwreckwing01": "Spoilers", "shipwreckwing02": "Spoilers", "shipwreckplate1": "Stainless Plate", "shipwrecksteelscraps": "Steel Scraps", "shipwrecksteelbeam": "Structural Beam", "sulfurdeposit": "Sulfur Deposit", "sulfurstone": "Sulphuric Stone", "shipwrecksystemscraps": "System Scraps", "copperclustertenorite": "Tenorite", "titaneclustertitanite": "Titanite", "titaniumdeposit": "Titanium Deposit", "irontitaneclustertitanomagnetite": "Titanomagnetite", "tungstendeposit": "Tungsten Deposit", "tungstenclusterunderwaternative": "Tungsten Reduction", "aluclusterturquoise": "Turquoise Clump", "aluclusterturquoisestone": "Turquoise Stone", "uraniumclusteruraninite": "Uraninite Outcrop", "vanadiumclustervanadinite": "Vanadinite", "vanadiumdeposit": "Vanadium Deposit", "carbonclustervitrous": "Vitreous Carbon", "vitriolgeyser": "Vitriol Geyser", "vitrioldeposit": "Vitriol Pool", "volcanicshell": "Volcanic Shell", "watergeyser": "Water Geyser", "shipwreckcoppertube": "Watertight Tube", "aluclusterwhitefeldspar": "White Feldspar Mound", "quartzwhite": "White Quartz", "shipwreckwing04": "Wings", "shipwreckwire": "Wire", "irontungstenclusterwolframite": "Wolframite", "zirconiumclusterzircon": "Zircon"};
+const SYNC = { url:'https://echjwaxjgzhsqyhrlvzj.supabase.co', key:'sb_publishable_KrVSX1GtQrCSpmuHaZbEFw_VXBMNW9C', room:'vega-onyx-7731' };
+const $ = s=>document.querySelector(s);
+const esc = s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+function prettyRes(id){ return RESOURCE_NAMES[id.replace(/_/g,'').toLowerCase()] || id.replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2'); }
+
+let G=null, corpBases=[], view={x:0,y:0,k:1}, hoverSys=null, selSys=null, resFilter=null, route={on:false,a:null,b:null,path:null,cost:0};
+const cv = $('#cv'), ctx = cv.getContext('2d');
+function resize(){ cv.width=innerWidth; cv.height=innerHeight-46; cv.style.marginTop='46px'; draw(); }
+addEventListener('resize', resize);
+
+/* ---------- data ---------- */
+async function loadQuad(slug){
+  showStatus('Loading '+slug+'…');
+  const r = await fetch('../data/galaxy-'+slug+'.json');
+  G = await r.json();
+  G.sysById = {}; G.systems.forEach(s=>G.sysById[s.id]=s);
+  G.adj = {};
+  for(const e of G.edges){ (G.adj[e.a]=G.adj[e.a]||[]).push({to:e.b,cost:e.cost}); (G.adj[e.b]=G.adj[e.b]||[]).push({to:e.a,cost:e.cost}); }
+  // bounds → initial view
+  const xs=G.systems.map(s=>s.x), ys=G.systems.map(s=>s.y);
+  const minx=Math.min(...xs),maxx=Math.max(...xs),miny=Math.min(...ys),maxy=Math.max(...ys);
+  const k = Math.min(cv.width/(maxx-minx+200), cv.height/(maxy-miny+200));
+  view = {k, x: cv.width/2 - (minx+maxx)/2*k, y: cv.height/2 - (miny+maxy)/2*k};
+  selSys=null; route={on:false,a:null,b:null,path:null,cost:0}; $('#routeBtn').textContent='Route: off';
+  $('#sysList').innerHTML = G.systems.map(s=>`<option value="${esc(s.name)}">`).join('');
+  $('#quadInfo').textContent = G.systems.length+' systems · '+G.edges.length+' lanes';
+  buildResourcePanel();
+  hideStatus(); draw(); renderSide();
+  localStorage.setItem('corpmap:quad', slug);
+}
+function showStatus(t){ $('#status').textContent=t; $('#status').style.display='block'; }
+function hideStatus(){ $('#status').style.display='none'; }
+
+/* ---------- corp bases ---------- */
+async function loadCorp(){
+  try{
+    const r = await fetch(`${SYNC.url}/rest/v1/corp_state?room=eq.${SYNC.room}&select=data`,{headers:{apikey:SYNC.key,Authorization:'Bearer '+SYNC.key}});
+    const rows = await r.json();
+    corpBases = (rows[0]&&rows[0].data&&rows[0].data.bases)||[];
+    draw();
+  }catch(e){}
+}
+
+/* ---------- resource panel ---------- */
+function collectResources(){
+  const m = {};
+  for(const s of G.systems) for(const p of s.planets) for(const kind of ['res','dep','gey']) for(const r of (p[kind]||[])){
+    m[r.id] = m[r.id]||{count:0, systems:new Set()}; m[r.id].count += r.n||1; m[r.id].systems.add(s.id);
+  }
+  return m;
+}
+function buildResourcePanel(){
+  const m = collectResources();
+  const items = Object.entries(m).sort((a,b)=>prettyRes(a[0]).localeCompare(prettyRes(b[0])));
+  $('#resPanel').innerHTML = '<div class="muted" style="margin-bottom:6px">Click to highlight systems</div>' +
+    items.map(([id,v])=>`<div class="resitem ${resFilter===id?'on':''}" onclick="setResFilter('${id}')"><span>${esc(prettyRes(id))}</span><span class="pill">${v.systems.size} sys</span></div>`).join('');
+}
+function setResFilter(id){ resFilter = resFilter===id?null:id; buildResourcePanel(); draw(); }
+function toggleRes(){ const p=$('#resPanel'); p.style.display = p.style.display==='block'?'none':'block'; }
+function systemHasRes(s, id){ return s.planets.some(p=>['res','dep','gey'].some(k=>(p[k]||[]).some(r=>r.id===id))); }
+
+/* ---------- routing ---------- */
+function routeMode(){ route.on=!route.on; route.a=route.b=route.path=null; $('#routeBtn').textContent='Route: '+(route.on?'pick A':'off'); draw(); }
+function dijkstra(a,b){
+  const dist={}, prev={}, pq=[[0,a]];
+  dist[a]=0;
+  while(pq.length){
+    pq.sort((x,y)=>x[0]-y[0]); const [d,u]=pq.shift();
+    if(u===b) break; if(d>(dist[u]??Infinity)) continue;
+    for(const e of (G.adj[u]||[])){ const nd=d+e.cost; if(nd<(dist[e.to]??Infinity)){ dist[e.to]=nd; prev[e.to]=u; pq.push([nd,e.to]); } }
+  }
+  if(dist[b]==null) return null;
+  const path=[b]; let c=b; while(c!==a){ c=prev[c]; path.unshift(c); }
+  return {path, cost:dist[b]};
+}
+
+/* ---------- canvas ---------- */
+function sxy(s){ return [s.x*view.k+view.x, s.y*view.k+view.y]; }
+function draw(){
+  if(!G) return;
+  ctx.clearRect(0,0,cv.width,cv.height);
+  // sector polygons
+  for(const sec of G.sectors){
+    if(!sec.polygon||!sec.polygon.length) continue;
+    ctx.beginPath();
+    sec.polygon.forEach((p,i)=>{ const x=p[0]*view.k+view.x, y=p[1]*view.k+view.y; i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.closePath(); ctx.strokeStyle=sec.color+'88'; ctx.lineWidth=1.2; ctx.stroke();
+    if(sec.centroid && view.k>0.05){ ctx.fillStyle=sec.color+'cc'; ctx.font='bold '+Math.max(10,13*Math.min(1,view.k*8))+'px system-ui'; ctx.textAlign='center'; ctx.fillText(sec.name+' ['+sec.level+']', sec.centroid.x*view.k+view.x, sec.centroid.y*view.k+view.y); }
+  }
+  // edges
+  ctx.lineWidth=0.5; ctx.strokeStyle='#2a334855';
+  ctx.beginPath();
+  for(const e of G.edges){ const a=G.sysById[e.a], b=G.sysById[e.b]; if(!a||!b) continue; const [x1,y1]=sxy(a),[x2,y2]=sxy(b); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); }
+  ctx.stroke();
+  // route path
+  if(route.path){
+    ctx.lineWidth=2.5; ctx.strokeStyle='#4ade80'; ctx.beginPath();
+    route.path.forEach((id,i)=>{ const [x,y]=sxy(G.sysById[id]); i?ctx.lineTo(x,y):ctx.moveTo(x,y); });
+    ctx.stroke();
+  }
+  // systems
+  for(const s of G.systems){
+    const [x,y]=sxy(s);
+    if(x<-20||y<-20||x>cv.width+20||y>cv.height+20) continue;
+    const dim = resFilter && !systemHasRes(s,resFilter);
+    ctx.beginPath(); ctx.arc(x,y, s===selSys?6:(s===hoverSys?5:3.2), 0, 7);
+    ctx.fillStyle = dim ? '#33415577' : (s.color||'#8ab');
+    ctx.fill();
+    if(resFilter && !dim){ ctx.strokeStyle='#ffb454'; ctx.lineWidth=1.5; ctx.stroke(); }
+    if(s===selSys){ ctx.strokeStyle='#fff'; ctx.lineWidth=1.5; ctx.stroke(); }
+  }
+  // corp bases overlay
+  for(const b of corpBases){
+    const s = b.system && G.systems.find(x=>x.name.toLowerCase()===String(b.system).toLowerCase());
+    if(!s) continue;
+    const [x,y]=sxy(s);
+    ctx.font='14px system-ui'; ctx.textAlign='center'; ctx.fillText('🏠', x, y-10);
+    ctx.fillStyle='#4ade80'; ctx.font='10px system-ui'; ctx.fillText(b.name, x, y-22);
+  }
+  // hover label
+  if(hoverSys){ const [x,y]=sxy(hoverSys); ctx.fillStyle='#fff'; ctx.font='12px system-ui'; ctx.textAlign='center'; ctx.fillText(hoverSys.name, x, y-8); }
+  // route endpoints
+  if(route.a){ const [x,y]=sxy(G.sysById[route.a]); ctx.fillStyle='#4ade80'; ctx.font='bold 12px system-ui'; ctx.fillText('A', x+8, y-6); }
+  if(route.b){ const [x,y]=sxy(G.sysById[route.b]); ctx.fillStyle='#4ade80'; ctx.font='bold 12px system-ui'; ctx.fillText('B', x+8, y-6); }
+}
+function pick(mx,my){
+  let best=null, bd=12;
+  for(const s of G.systems){ const [x,y]=sxy(s); const d=Math.hypot(x-mx,y-my); if(d<bd){bd=d;best=s;} }
+  return best;
+}
+/* pan/zoom/click */
+let dragging=false, moved=false, last=null;
+cv.addEventListener('mousedown',e=>{ dragging=true; moved=false; last=[e.offsetX,e.offsetY]; cv.classList.add('drag'); });
+addEventListener('mouseup',()=>{ dragging=false; cv.classList.remove('drag'); });
+cv.addEventListener('mousemove',e=>{
+  if(dragging){ view.x+=e.offsetX-last[0]; view.y+=e.offsetY-last[1]; last=[e.offsetX,e.offsetY]; moved=true; draw(); }
+  else { const h=pick(e.offsetX,e.offsetY); if(h!==hoverSys){hoverSys=h;draw();} }
+});
+cv.addEventListener('wheel',e=>{
+  e.preventDefault();
+  const f = e.deltaY<0?1.15:0.87;
+  view.x = e.offsetX-(e.offsetX-view.x)*f; view.y = e.offsetY-(e.offsetY-view.y)*f; view.k*=f; draw();
+},{passive:false});
+cv.addEventListener('click',e=>{
+  if(moved) return;
+  const s = pick(e.offsetX,e.offsetY);
+  if(!s) return;
+  if(route.on){
+    if(!route.a){ route.a=s.id; $('#routeBtn').textContent='Route: pick B'; }
+    else if(!route.b){ route.b=s.id; const r=dijkstra(route.a,route.b); if(r){route.path=r.path; route.cost=r.cost;} $('#routeBtn').textContent='Route: done'; }
+    else { route.a=s.id; route.b=null; route.path=null; $('#routeBtn').textContent='Route: pick B'; }
+    draw(); renderSide(); return;
+  }
+  selSys=s; draw(); renderSide();
+});
+$('#sysSearch').addEventListener('change',e=>{
+  const s = G.systems.find(x=>x.name.toLowerCase()===e.target.value.toLowerCase());
+  if(s){ selSys=s; view.x = cv.width/2 - s.x*view.k; view.y = cv.height/2 - s.y*view.k; draw(); renderSide(); }
+});
+
+/* ---------- side panel ---------- */
+function renderSide(){
+  const el = $('#side');
+  let html = '';
+  if(route.path){
+    html += `<h3>Route (cheapest)</h3><div class="muted">${route.path.length-1} jumps · total cost <b style="color:var(--good)">${route.cost}</b></div>` +
+      route.path.map(id=>`<div class="row"><span>${esc(G.sysById[id].name)}</span><span class="muted">${esc(G.sysById[id].sector)}</span></div>`).join('') + '<hr style="border-color:var(--border)">';
+  }
+  if(selSys){
+    const s = selSys;
+    const bases = corpBases.filter(b=>b.system&&b.system.toLowerCase()===s.name.toLowerCase());
+    html += `<span class="close" onclick="selSys=null;renderSide();draw()">✕</span>
+      <h2>${esc(s.name)}</h2>
+      <div class="muted">${esc(s.designation||'')} · ${esc(s.sector)} [lvl ${s.level}] · ${s.star||''} star · ${s.planets.length} planets</div>`;
+    if(bases.length) html += '<div style="margin:6px 0">'+bases.map(b=>`<span class="chip" style="color:var(--good)">🏠 ${esc(b.name)} (${esc(b.owner||'?')})</span>`).join('')+'</div>';
+    for(const p of s.planets){
+      const rows = [...(p.res||[]).map(r=>['⛏',r]), ...(p.dep||[]).map(r=>['🕳',r]), ...(p.gey||[]).map(r=>['♨',r])];
+      html += `<h3>Planet ${p.i+1} <span class="muted">${rows.length? '' : '— nothing detected'}</span></h3>`;
+      html += rows.map(([ic,r])=>`<div class="row"><span>${ic} ${esc(prettyRes(r.id))}</span><span class="muted">×${r.n??'?'} · d${r.d??'?'}</span></div>`).join('');
+    }
+    const lanes = (G.adj[s.id]||[]).map(e=>({n:G.sysById[e.to], c:e.cost})).sort((a,b)=>a.c-b.c);
+    html += '<h3>FTL lanes</h3>'+lanes.map(l=>`<div class="row"><span class="pointer" style="cursor:pointer" onclick="jumpTo('${l.n.id}')">${esc(l.n.name)}</span><span class="muted">cost ${l.c}</span></div>`).join('');
+  }
+  el.innerHTML = html;
+  el.style.display = html?'block':'none';
+}
+function jumpTo(id){ const s=G.sysById[id]; selSys=s; view.x=cv.width/2-s.x*view.k; view.y=cv.height/2-s.y*view.k; draw(); renderSide(); }
+
+/* ---------- init ---------- */
+async function init(){
+  const idx = await fetch('../data/index.json').then(r=>r.json());
+  const saved = localStorage.getItem('corpmap:quad') || 'abuxey';
+  $('#quadSel').innerHTML = idx.map(q=>`<option value="${q.slug}" ${q.slug===saved?'selected':''}>${q.name} (${q.region})</option>`).join('');
+  $('#quadSel').addEventListener('change',e=>loadQuad(e.target.value));
+  $('#legend').innerHTML = '<b>Corp Map</b> · scroll = zoom, drag = pan, click = system details<br>Resources button = highlight by resource · Route = cheapest path between two systems<br><span class="muted">🏠 = corp base (set "System" on a base in the Planner to pin it)</span>';
+  resize();
+  await loadQuad(saved);
+  loadCorp(); setInterval(loadCorp, 30000);
+}
+init();
+</script>
+</body>
+</html>
