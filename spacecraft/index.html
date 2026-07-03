@@ -599,8 +599,12 @@ function corpCapacity(slug){
   const norm = id => String(id).replace(/[-_]/g,'').toLowerCase();
   for(const b of STATE.bases){
     let r=0;
-    for(const d of (b.deposits||[])){ const res=RES[d.slug]; if(!res) continue; const drop=(res.drops||[]).find(x=>x.slug===slug&&x.rate&&String(x.rate).includes('/h')); if(drop) r += (d.count||1)*parseFloat(drop.rate); }
-    for(const m of miningEntries(b)){ const res=GAME.resources.find(x=>norm(x.slug)===norm(m.id)); if(!res) continue; const drop=(res.drops||[]).find(x=>x.slug===slug&&x.rate&&String(x.rate).includes('/h')); if(drop) r += m.n*parseFloat(drop.rate); }
+    const mins = miningEntries(b);
+    if(mins.length){ // mining selections (with extractor counts) are the source of truth
+      for(const m of mins){ const res=GAME.resources.find(x=>norm(x.slug)===norm(m.id)); if(!res) continue; const drop=(res.drops||[]).find(x=>x.slug===slug&&x.rate&&String(x.rate).includes('/h')); if(drop) r += m.n*parseFloat(drop.rate); }
+    } else { // fallback: registered deposits
+      for(const d of (b.deposits||[])){ const res=RES[d.slug]; if(!res) continue; const drop=(res.drops||[]).find(x=>x.slug===slug&&x.rate&&String(x.rate).includes('/h')); if(drop) r += (d.count||1)*parseFloat(drop.rate); }
+    }
     if(r>0){ srcs.push({base:b.name, rate:r}); tot+=r; }
   }
   return {rate:tot, sources:srcs};
