@@ -351,17 +351,18 @@ function exitSystem(){ mode='galaxy'; curSys=null; pinned=null; hideCard(); $('#
 /* ---------- make base ---------- */
 function openBaseModal(sysId, planetIdx){
   const s=G.sysById[sysId];
-  const pool={};
+  const poolDep={}, poolGey={};
   const src = planetIdx!=null ? [s.planets.find(p=>p.i===planetIdx)] : s.planets;
-  for(const p of src) for(const k of ['res','dep','gey']) for(const r of (p[k]||[])) pool[r.id]=Math.max(pool[r.id]||0, r.d||0);
+  for(const p of src){ for(const r of (p.dep||[])) poolDep[r.id]=Math.max(poolDep[r.id]||0,r.d||0); for(const r of (p.gey||[])) poolGey[r.id]=Math.max(poolGey[r.id]||0,r.d||0); }
+  const total=Object.keys(poolDep).length+Object.keys(poolGey).length;
   const pname = planetIdx!=null ? s.name+' '+(ROMAN[planetIdx]||planetIdx+1) : '';
   $('#modalBox').innerHTML=`<h3>🏠 New base — ${esc(pname||s.name)}</h3>
     <label>Base name</label><input type="text" id="mbName" value="${esc((pname||s.name)+' Base')}">
     <label>Owner</label><input type="text" id="mbOwner" placeholder="who runs it">
     ${planetIdx==null?`<label>Planet</label><select id="mbPlanet"><option value="">— not set —</option>${s.planets.map(p=>`<option>${esc(s.name+' '+(ROMAN[p.i]||p.i+1))}</option>`).join('')}</select>`:''}
-    <label>Mining here (${Object.keys(pool).length} available)</label>
+    <label>Extractable here (${total} available — deposits & geysers only)</label>
     <div style="max-height:220px;overflow-y:auto;border:1px solid var(--border);border-radius:8px;padding:4px">
-      ${Object.entries(pool).sort((a,b)=>b[1]-a[1]).map(([id,d])=>`<label class="mineopt"><input type="checkbox" value="${id}"><img referrerpolicy="no-referrer" src="${ICON(id)}" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="d">d${d}</span></label>`).join('')||'<div class="muted" style="padding:6px">nothing here</div>'}
+      ${[['Deposits — Extractor',poolDep],['Geysers — Liquid Extractor',poolGey]].map(([title,pool])=>Object.keys(pool).length?`<div class="grp" style="padding:4px 6px">${title}</div>`+Object.entries(pool).sort((a,b)=>b[1]-a[1]).map(([id,d])=>`<label class="mineopt"><input type="checkbox" value="${id}"><img referrerpolicy="no-referrer" src="${ICON(id)}" onerror="this.style.visibility='hidden'"><span>${esc(pretty(id))}</span><span class="d">d${d}</span></label>`).join(''):'').join('')||'<div class="muted" style="padding:6px">no deposits or geysers on this planet</div>'}
     </div>
     <div style="display:flex;gap:8px;justify-content:flex-end;margin-top:14px">
       <button class="btn sec" onclick="closeModal()">Cancel</button>
