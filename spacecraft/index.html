@@ -640,7 +640,7 @@ function chainSetScale(sc){
   CHAIN_SCALE=Math.max(0.15,Math.min(2,sc));
   const cv=document.getElementById('chainCanvas');
   cv.style.transform='scale('+CHAIN_SCALE+')';
-  if(CHAIN_DIM){ cv.style.width=CHAIN_DIM.W+'px'; cv.style.height=CHAIN_DIM.H+'px'; cv.parentElement.scrollTo(0,0); }
+  if(CHAIN_DIM){ cv.style.width=CHAIN_DIM.W+'px'; cv.style.height=CHAIN_DIM.H+'px'; if(cv.parentElement.scrollTo) cv.parentElement.scrollTo(0,0); }
 }
 function chainZoomBy(f){ chainSetScale(CHAIN_SCALE*f); }
 function chainFit(){
