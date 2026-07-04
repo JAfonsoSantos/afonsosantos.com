@@ -278,6 +278,7 @@ body{font-size:14px;-webkit-font-smoothing:antialiased}
       <button class="btn sec" onclick="chainZoomBy(1.25)">+</button>
       <button class="btn sec" onclick="chainZoomBy(0.8)">−</button>
       <label class="muted small" style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="chainUseCorp" checked onchange="if(CHAIN_CUR){renderChain();chainFit();}"> 🏠 Use corp supply</label>
+      <label class="muted small" style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="chainLogi" onchange="CHAIN_LOGI=this.checked; if(CHAIN_CUR){ensureGalaxy().then(()=>{renderChain();chainFit();});}"> 🚀 Logistics</label>
       <button class="btn sec" onclick="shareChain()" title="copy a link that opens this chain">🔗 Share</button>
       <button class="btn sec" onclick="saveChainLayout()" title="save node positions to your corp">💾 Save layout</button>
       <button class="btn sec" onclick="resetChainLayout()" title="auto-arrange again">↺ Auto</button>
@@ -883,6 +884,45 @@ function renderProfit(){
     </tr>`).join('')+'</tbody></table>';
 }
 
+/* ============ Logistics (Phase 2) ============ */
+const SHUTTLE_RANGE=600000;
+function nodeByslugSet(m,n){ m[n.slug]=n; }
+const BASE_COLORS=['#5eb2ff','#ffb454','#5fe08a','#f0a5ff','#ff7a7a','#7dd3fc','#c084fc','#facc15','#4ade80','#fb923c'];
+let CHAIN_LOGI=false; // logistics overlay on/off
+let GALAXY_CACHE=null, GALAXY_CACHE_QUAD=null;
+async function ensureGalaxy(){
+  const q=(window.CORP&&window.CORP.quadrant)||'abuxey';
+  if(GALAXY_CACHE_QUAD===q && GALAXY_CACHE) return GALAXY_CACHE;
+  try{ GALAXY_CACHE=await fetch('data/galaxy-'+q+'.json').then(r=>r.json()); GALAXY_CACHE_QUAD=q; }catch(e){ GALAXY_CACHE=null; }
+  return GALAXY_CACHE;
+}
+function baseColorMap(){
+  const m={}; let i=0;
+  for(const b of (STATE.bases||[])){ m[b.name]=BASE_COLORS[i%BASE_COLORS.length]; i++; }
+  return m;
+}
+// node -> base name (the base supplying it), or null
+function nodeBase(n){ return (n.corpSources&&n.corpSources.length)?n.corpSources[0].base:null; }
+// distance between two bases: same system -> planet euclidean; else galaxy route cost*, fallback big
+function baseDistance(g, an, bn){
+  const A=(STATE.bases||[]).find(x=>x.name===an), B=(STATE.bases||[]).find(x=>x.name===bn);
+  if(!A||!B) return null;
+  if(!A.system||!B.system) return null;
+  if(A.system.toLowerCase()===B.system.toLowerCase()){
+    if(!g) return 0; // same system, assume shuttle-viable
+    const sys=g.systems.find(s=>s.name.toLowerCase()===A.system.toLowerCase());
+    if(!sys) return 0;
+    const roman={I:0,II:1,III:2,IV:3,V:4,VI:5,VII:6,VIII:7};
+    const pIdx=nm=>{ if(!nm)return null; const m=nm.match(/([IVX]+)$/); return m?(roman[m[1]]!=null?roman[m[1]]:null):null; };
+    const pa=sys.planets[pIdx(A.planet)]||sys.planets[0], pb=sys.planets[pIdx(B.planet)]||sys.planets[0];
+    if(pa&&pb&&pa.pos&&pb.pos){ const dx=pa.pos.x-pb.pos.x,dy=pa.pos.y-pb.pos.y,dz=(pa.pos.z||0)-(pb.pos.z||0); return Math.sqrt(dx*dx+dy*dy+dz*dz); }
+    return 0;
+  }
+  // different systems: use galaxy straight-line between systems (well beyond shuttle range in practice)
+  if(g){ const sa=g.systems.find(s=>s.name.toLowerCase()===A.system.toLowerCase()), sb=g.systems.find(s=>s.name.toLowerCase()===B.system.toLowerCase()); if(sa&&sb){ const dx=sa.x-sb.x,dy=sa.y-sb.y; return Math.sqrt(dx*dx+dy*dy)*1000; } }
+  return Infinity;
+}
+
 /* ============ Chain Designer ============ */
 function ratePerMachineH(recipe, slug){
   const secs = durSecs(recipe.duration) || 60;
@@ -1104,6 +1144,7 @@ function renderChain(){
 
   // pass 1: build + append nodes at x, temp y=0, so we can measure real heights
   const pos={};
+  window.__baseColors = baseColorMap();
   let html='';
   for(const c of Object.keys(cols)){
     const x = PAD + (+c)*COLW;
@@ -1115,7 +1156,9 @@ function renderChain(){
       const assign = (window.CORP && n.machines && !n.supplied) ? `<select onchange="chainAssign(this.value,'${n.slug}',${n.net||n.rate});this.value=''" title="record that a base will produce this"><option value="">→ assign to base…</option>${STATE.bases.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>` : '';
       let bvb='';
       if(window.MARKET && !n.raw){ const mp=mktPrice(n.slug); if(mp&&mp.av){ const bc=buildUnitCost(n.slug,0); if(bc!=null){ const cheaper = mp.av<bc; bvb=`<div class="cov-badge" style="color:${cheaper?'var(--accent2)':'var(--dim)'}">💰 buy ${fmt(mp.av)} vs build ${fmt(bc)}/u${cheaper?' — buy':''}</div>`; } } }
-      html += `<div class="cnode ${n.raw?'raw':''} ${n.supplied?'cov':(n.corpRate?'part':(n.covered.length?'cov':''))}" data-cslug="${n.slug}" style="left:${x}px;top:0px;visibility:hidden">
+      const _nb = nodeBase(n); const _bc = (CHAIN_LOGI&&_nb)? (window.__baseColors&&window.__baseColors[_nb]) : null;
+      html += `<div class="cnode ${n.raw?'raw':''} ${n.supplied?'cov':(n.corpRate?'part':(n.covered.length?'cov':''))}" data-cslug="${n.slug}" data-base="${_nb?esc(_nb):''}" style="left:${x}px;top:0px;visibility:hidden${_bc?';border-left:4px solid '+_bc:''}">
+        ${CHAIN_LOGI&&_nb?`<div style="font-size:10px;color:${_bc};font-weight:600">🚀 ${esc(_nb)}</div>`:''}
         <div class="nm">${ico(n.slug)}${esc(itemName(n.slug))}</div>
         <div class="meta">${fmt(n.rate)}/h${n.power?` · ${fmt(n.power)} pw`:''}</div>
         <div class="meta">${mach}</div>${bvb}${cov}${sel}${assign}</div>`;
@@ -1140,14 +1183,19 @@ function renderChain(){
   cv.style.width=W+'px'; cv.style.height=H+'px';
 
   // edges (anchor at real vertical centers)
-  let svg='';
+  let svg=''; const shuttleLinks=[]; const nodeByslug={}; for(const n of list) nodeByslugSet(nodeByslug,n);
   for(const e of Object.values(edges)){
     const a=pos[e.from], b=pos[e.to]; if(!a||!b||a.h==null||b.h==null) continue;
     const x1=a.x+NODEW, y1=a.y+a.h/2, x2=b.x, y2=b.y+b.h/2;
     const mx=(x1+x2)/2;
-    svg += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="#3b4a6b" stroke-width="1.6"/>`;
-    svg += `<rect x="${mx-26}" y="${(y1+y2)/2-9}" width="52" height="16" rx="8" fill="#1b2740" stroke="#2e3f63"/><text x="${mx}" y="${(y1+y2)/2+3}" text-anchor="middle" fill="#9fc3ff" font-size="10">${fmt(e.rate)}/h</text>`;
+    let stroke='#3b4a6b', dash='', shuttle=null;
+    if(CHAIN_LOGI){ const fb=nodeBase(nodeByslug[e.from]), tb=nodeBase(nodeByslug[e.to]); if(fb&&tb&&fb!==tb){ const d=baseDistance(GALAXY_CACHE,fb,tb); const inRange=(d!=null&&d<=SHUTTLE_RANGE); stroke=inRange?'#5fe08a':'#ff7a7a'; dash=' stroke-dasharray="7 5"'; shuttle={from:fb,to:tb,rate:e.rate,d,inRange}; shuttleLinks.push(shuttle); } }
+    svg += `<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${stroke}" stroke-width="${shuttle?2.4:1.6}"${dash}/>`;
+    const label = shuttle? (shuttle.inRange?'🚀 '+fmt(e.rate)+'/h':'⚠ '+fmt(e.rate)+'/h') : fmt(e.rate)+'/h';
+    const lw = shuttle?72:52;
+    svg += `<rect x="${mx-lw/2}" y="${(y1+y2)/2-9}" width="${lw}" height="16" rx="8" fill="${shuttle?(shuttle.inRange?'#12351f':'#3a1414'):'#1b2740'}" stroke="${shuttle?stroke:'#2e3f63'}"/><text x="${mx}" y="${(y1+y2)/2+3}" text-anchor="middle" fill="${shuttle?stroke:'#9fc3ff'}" font-size="10">${label}</text>`;
   }
+  window.__shuttleLinks=shuttleLinks;
   CHAIN_DIM={W,H};
   window.__chainPos=pos; window.__chainEdges=Object.values(edges);
   const sv=document.getElementById('chainSvg');
@@ -1165,7 +1213,8 @@ function renderChain(){
     Object.entries(byWs).map(([w,c])=>`<span>${ico(w,'sm')}${esc(wsName(w))} <b>${c}</b></span>`).join('')+
     `<span>⚡ <b>${fmt(totPower)}</b> power</span>`+
     `<span>⛏ raw: ${raws.map(r=>`${ico(r.slug,'sm')}${fmt(r.rate)}/h`).join(' ')}</span>`+
-    ((()=>{ const tot=list.reduce((a,n)=>a+(n.corpRate||0),0); const cnt=list.filter(n=>n.corpRate).length; return tot>0? `<span style="color:var(--good)">🏠 corp supplies ${fmt(tot)}/h across ${cnt} inputs (${list.filter(n=>n.supplied).length} fully)</span>` : (covered.length?`<span style="color:var(--good)">🏠 corp has sources for ${covered.length} inputs — set mining on your bases to use them</span>`:''); })());
+    ((()=>{ const tot=list.reduce((a,n)=>a+(n.corpRate||0),0); const cnt=list.filter(n=>n.corpRate).length; return tot>0? `<span style="color:var(--good)">🏠 corp supplies ${fmt(tot)}/h across ${cnt} inputs (${list.filter(n=>n.supplied).length} fully)</span>` : (covered.length?`<span style="color:var(--good)">🏠 corp has sources for ${covered.length} inputs — set mining on your bases to use them</span>`:''); })())+
+    (CHAIN_LOGI?(()=>{ const sl=window.__shuttleLinks||[]; const over=sl.filter(x=>!x.inRange).length; const cols=window.__baseColors||{}; const bl=Object.entries(cols).filter(([b])=>list.some(n=>nodeBase(n)===b)).map(([b,c])=>`<span style="color:${c}">🚀 ${esc(b)}</span>`).join(' '); return `<span style="border-left:1px solid var(--border);padding-left:12px">${bl||'<span class="muted">assign nodes to bases to see the logistics network</span>'}</span>`+(sl.length?`<span>🚀 <b>${sl.length}</b> shuttle transfers${over?` · <span style="color:var(--bad)">${over} beyond ${fmt(SHUTTLE_RANGE/1000)}k range — need cargo/FTL</span>`:` · <span style="color:var(--good)">all in range</span>`}</span>`:''); })():'');
 }
 </script>
 
