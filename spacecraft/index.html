@@ -116,6 +116,57 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 #landing .feat h3{margin:0 0 6px;font-size:15px;color:var(--accent2)}
 #landing .feat p{margin:0;color:var(--dim);font-size:13px}
 #landing .foot{text-align:center;color:#5a6a85;font-size:12px;margin-top:60px}
+
+/* ===== CorpHQ design system v2 ===== */
+:root{
+  --bg:#0a0d14; --panel:#111725; --panel2:#18202f; --panel3:#1e2839;
+  --border:#26324a; --border2:#33425f;
+  --text:#e6edfb; --dim:#8ea0bf; --dim2:#67779a;
+  --accent:#5eb2ff; --accent2:#ffb454; --good:#5fe08a; --bad:#ff7a7a; --chip:#20293c;
+}
+body{font-size:14px;-webkit-font-smoothing:antialiased}
+/* numeric = tabular */
+.num,td.right,th.right{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
+/* framed icon tile */
+.tile{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#1c2740,#141b2b);border:1px solid var(--border);border-radius:9px;flex:0 0 auto;overflow:hidden}
+.tile img{width:100%;height:100%;object-fit:contain;padding:3px}
+.tile.s{width:30px;height:30px}
+.tile.m{width:40px;height:40px}
+.tile.l{width:72px;height:72px;border-radius:14px}
+.itemcell{display:flex;align-items:center;gap:10px}
+.itemcell .nm{font-weight:600;font-size:13.5px}
+.itemcell .sub{font-size:11px;color:var(--dim2)}
+/* category accent dot */
+.catdot{width:7px;height:7px;border-radius:50%;flex:0 0 auto}
+/* tables — premium */
+.dtable{width:100%;border-collapse:separate;border-spacing:0;font-size:13.5px}
+.dtable thead th{position:sticky;top:0;background:#0e1420;z-index:2;color:var(--dim);font-weight:600;font-size:11px;letter-spacing:.6px;text-transform:uppercase;padding:9px 12px;text-align:left;border-bottom:1px solid var(--border2)}
+.dtable thead th.right{text-align:right}
+.dtable tbody td{padding:8px 12px;border-bottom:1px solid #161d2b;vertical-align:middle}
+.dtable tbody tr:nth-child(even) td{background:#0d1320}
+.dtable tbody tr:hover td{background:#172136}
+.dtable tbody tr{cursor:pointer;transition:background .08s}
+.dtable td.right{text-align:right;font-variant-numeric:tabular-nums}
+.big{font-size:15px;font-weight:700} .pos{color:var(--good)} .neg{color:var(--bad)}
+.val-avg{color:var(--text);font-weight:700} .val-dim{color:var(--dim2)}
+.pill2{display:inline-block;padding:1px 8px;border-radius:20px;font-size:11px;font-weight:600;background:#1a2439;border:1px solid var(--border)}
+.pill2.ok{color:var(--good);border-color:#2b6b45;background:#12351f}
+.pill2.warn{color:var(--accent2);border-color:#6b5326;background:#33280f}
+/* detail hero + stat blocks */
+.hero{display:flex;gap:16px;align-items:flex-start;padding:6px 2px 14px}
+.hero .htext h2{margin:0;font-size:22px;letter-spacing:.2px}
+.hero .bc{font-size:11px;color:var(--dim2);letter-spacing:.5px;text-transform:uppercase;margin-bottom:4px}
+.statgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}
+.stat{background:var(--panel2);border:1px solid var(--border);border-radius:10px;padding:8px 10px}
+.stat .k{font-size:10px;color:var(--dim2);text-transform:uppercase;letter-spacing:.5px}
+.stat .v{font-size:16px;font-weight:700;margin-top:2px;font-variant-numeric:tabular-nums}
+.mktcard{display:grid;grid-template-columns:repeat(auto-fit,minmax(90px,1fr));gap:8px;margin-top:10px}
+.mktcard .mc{background:linear-gradient(160deg,#15203a,#111828);border:1px solid var(--border);border-radius:10px;padding:8px 10px;text-align:center}
+.mktcard .mc .k{font-size:10px;color:var(--dim2);text-transform:uppercase} .mktcard .mc .v{font-size:17px;font-weight:800;font-variant-numeric:tabular-nums}
+.rrow{display:flex;align-items:center;gap:8px;background:#0f1524;border:1px solid var(--border);border-radius:10px;padding:8px 10px;margin:5px 0;font-size:13px;flex-wrap:wrap}
+.ingchip{display:inline-flex;align-items:center;gap:5px;background:var(--chip);border:1px solid var(--border);border-radius:7px;padding:3px 8px;font-size:12px}
+.arrow{color:var(--dim2);margin:0 3px}
+
 </style>
 </head>
 <body>
@@ -171,7 +222,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
     <select id="dbCat"><option value="">All categories</option></select>
   </div>
   <div class="card" style="margin-top:8px;overflow-x:auto">
-    <table id="dbTable"><thead><tr><th>Name</th><th>Category</th><th>Lvl</th><th>Storage</th><th class="right">Price</th><th>Crafted?</th><th>Found in</th></tr></thead><tbody></tbody></table>
+    <table id="dbTable" class="dtable"><thead><tr><th>Name</th><th>Category</th><th>Lvl</th><th>Storage</th><th class="right">Price</th><th>Crafted?</th><th>Found in</th></tr></thead><tbody></tbody></table>
     <div class="muted" id="dbCount"></div>
   </div>
 </section>
@@ -255,7 +306,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 
 </main>
 
-<dialog id="detailDlg"><div id="detailBox"></div></dialog>
+<dialog id="detailDlg" style="max-width:640px;width:94%"><div id="detailBox"></div></dialog>
 <dialog id="baseDialog">
   <form method="dialog" style="padding:16px" onsubmit="App.saveBase(event)">
     <h3 id="baseDialogTitle">Add base</h3>
@@ -303,6 +354,11 @@ const num = v => { if(v==null) return null; const n = parseFloat(String(v).repla
 const fmt = n => n==null?'—':(Math.round(n*100)/100).toLocaleString();
 const CDN='https://cdn.pixel6.tools/spacecraft/images/icons/';
 function ico(slug,sz){ const f=window.ICONS&&window.ICONS[slug]; return f? '<img class="ico'+(sz?' '+sz:'')+'" referrerpolicy="no-referrer" src="'+CDN+f+'.webp?v=2" onerror="this.style.display=\'none\'">' : ''; }
+const CAT_COLORS={'resources':'#7dd3fc','components':'#a78bfa','ship-parts':'#5eb2ff','consumables':'#ffb454','buildings':'#5fe08a','blueprints':'#f0a5ff'};
+function catColor(c){ return CAT_COLORS[c]||'#8ea0bf'; }
+function tile(slug,sz){ const f=window.ICONS&&window.ICONS[slug]; sz=sz||'s'; const inner=f?'<img referrerpolicy="no-referrer" src="'+CDN+f+'.webp?v=2" onerror="this.style.visibility=\'hidden\'">':''; return '<span class="tile '+sz+'">'+inner+'</span>'; }
+function tileRes(id,sz){ const f=window.ICONS&&window.ICONS[id]; sz=sz||'s'; const inner=f?'<img referrerpolicy="no-referrer" src="'+CDN+f+'.webp?v=2">':(id?'<img referrerpolicy="no-referrer" src="'+CDN+'resources/'+id+'.webp?v=2" onerror="this.style.visibility=\'hidden\'">':''); return '<span class="tile '+sz+'">'+inner+'</span>'; }
+function itemCell(slug,sub){ const it=ITEMS[slug]; const cat=it?it.category:''; return '<div class="itemcell"><span class="catdot" style="background:'+catColor(cat)+'"></span>'+tile(slug,'s')+'<div><div class="nm">'+esc(itemName(slug))+'</div>'+(sub?'<div class="sub">'+esc(sub)+'</div>':'')+'</div></div>'; }
 function icoRes(id,sz){ return id? '<img class="ico'+(sz?' '+sz:'')+'" referrerpolicy="no-referrer" src="'+CDN+'resources/'+id+'.webp?v=2" onerror="this.style.display=\'none\'">' : ''; }
 
 /* index game data */
@@ -642,11 +698,11 @@ function baseCard(b, compact){
 function renderDb(){
   const q = ($('#dbSearch').value||'').toLowerCase(), cat = $('#dbCat').value;
   const rows = GAME.items.filter(i=>(!q||i.name.toLowerCase().includes(q))&&(!cat||i.category===cat)).slice(0,300);
-  $('#dbTable tbody').innerHTML = rows.map(i=>`<tr class="pointer" onclick="itemDetail('${i.slug}')">
-    <td>${ico(i.slug)}${esc(i.name)}</td><td class="muted">${esc(i.category||'')}</td><td>${esc(i.level||'—')}</td><td>${esc(i.storage||'—')}</td>
-    <td class="right">${esc(i.price||'—')}</td>
-    <td>${recipesFor(i.slug).length?'<span class="tag">'+recipesFor(i.slug).length+' recipe(s)</span>':''}</td>
-    <td class="small muted">${(i.sources||[]).slice(0,2).map(r=>RES[r]?RES[r].name:r).join(', ')}</td>
+  $('#dbTable tbody').innerHTML = rows.map(i=>`<tr onclick="itemDetail('${i.slug}')">
+    <td>${itemCell(i.slug)}</td><td class="val-dim">${esc(i.category||'')}</td><td>${esc(i.level||'—')}</td><td>${esc(i.storage||'—')}</td>
+    <td class="right val-avg">${esc(i.price||'—')}</td>
+    <td>${recipesFor(i.slug).length?'<span class="pill2">'+recipesFor(i.slug).length+' recipe'+(recipesFor(i.slug).length>1?'s':'')+'</span>':''}</td>
+    <td class="val-dim" style="font-size:12px">${(i.sources||[]).slice(0,2).map(r=>RES[r]?RES[r].name:r).join(', ')}</td>
   </tr>`).join('');
   $('#dbCount').textContent = rows.length+' shown';
 }
@@ -735,15 +791,28 @@ function itemDetail(slug){
   const made=recipesFor(slug);
   const usedIn=GAME.recipes.filter(r=>!r.recycling && r.ingredients.some(i=>i.slug===slug));
   const found=(it.sources||[]).map(r=>RES[r]?RES[r].name:r);
-  const recipeLine=r=>`${ico(r.workstation,'sm')}${esc(wsName(r.workstation))}: ${r.ingredients.map(i=>ico(i.slug,'sm')+qtyNum(i.qty)+'× '+esc(itemName(i.slug))).join(', ')} → ${qtyNum((r.outputs.find(o=>o.slug===slug)||{}).qty)||1}`;
-  let html=`<div style="padding:16px;max-width:560px">
-    <div class="row" style="justify-content:space-between"><h3 style="margin:0">${ico(slug)}${esc(it.name)}</h3><span class="pointer muted" onclick="document.getElementById('detailDlg').close()">✕</span></div>
-    <div class="muted small">${esc(it.category||'')}${it.level&&it.level!=='—'?' · level '+it.level:''}${it.storage?' · '+it.storage:''}${it.price?' · base '+it.price+' cr':''}</div>`;
-  if(mp&&mp.av) html+=`<div class="csum" style="margin-top:8px"><span>💰 market avg <b>${fmt(mp.av)}</b></span><span class="muted">min ${fmt(mp.mn)} · max ${fmt(mp.mx)} · ${mp.orders||0} orders</span></div>`;
-  if(made.length){ html+='<h3 class="small" style="margin:12px 0 4px">Crafted by</h3>'+made.map(r=>`<div class="ri" style="margin:3px 0">${recipeLine(r)}</div>`).join(''); }
-  if(found.length){ html+='<h3 class="small" style="margin:12px 0 4px">Found in</h3><div class="flexwrap">'+found.map(f=>`<span class="chip">${esc(f)}</span>`).join('')+'</div>'; }
-  if(usedIn.length){ html+='<h3 class="small" style="margin:12px 0 4px">Used in ('+usedIn.length+')</h3><div class="flexwrap">'+usedIn.slice(0,24).map(r=>r.outputs.map(o=>`<span class="chip pointer" onclick="itemDetail('${o.slug}')">${ico(o.slug,'sm')}${esc(itemName(o.slug))}</span>`).join('')).join('')+'</div>'; }
-  html+=`<div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn sec" onclick="App.toChain('${slug}')">⚙ Plan production</button></div></div>`;
+  const bc=window.MARKET?buildUnitCost(slug,0):null;
+  const recipeRow=r=>`<div class="rrow">${tile(r.workstation,'s')}<b style="min-width:78px">${esc(wsName(r.workstation))}</b>${r.ingredients.map(i=>`<span class="ingchip">${tile(i.slug,'s')}${qtyNum(i.qty)}× ${esc(itemName(i.slug))}</span>`).join('')}<span class="arrow">→</span><span class="ingchip">${qtyNum((r.outputs.find(o=>o.slug===slug)||{}).qty)||1}× ${esc(itemName(slug))}</span>${r.duration?`<span class="val-dim" style="margin-left:auto;font-size:11px">${esc(r.duration)}</span>`:''}</div>`;
+  const stats=[];
+  if(it.level&&it.level!=='—') stats.push(['Level',it.level]);
+  if(it.storage) stats.push(['Storage',it.storage]);
+  if(it.price) stats.push(['Base price',it.price+' cr']);
+  stats.push(['Category',(it.category||'').replace('-',' ')]);
+  let html=`<div style="padding:18px;max-width:600px">
+    <div class="row" style="justify-content:space-between;align-items:flex-start">
+      <div class="hero" style="padding:0">
+        ${tile(slug,'l')}
+        <div class="htext"><div class="bc">${esc((it.category||'').replace('-',' '))}</div><h2>${esc(it.name)}</h2>
+        ${bc!=null||mp?`<div class="val-dim" style="font-size:12px;margin-top:4px">${bc!=null?'build ~'+fmt(bc)+' cr/unit':''}${mp&&mp.av?(bc!=null?' · ':'')+'market '+fmt(mp.av)+' cr':''}</div>`:''}</div>
+      </div>
+      <span class="pointer" style="color:var(--dim);font-size:18px" onclick="document.getElementById('detailDlg').close()">✕</span>
+    </div>
+    <div class="statgrid" style="margin-top:12px">${stats.map(([k,v])=>`<div class="stat"><div class="k">${esc(k)}</div><div class="v">${esc(v)}</div></div>`).join('')}</div>`;
+  if(mp&&mp.av) html+=`<div class="mktcard"><div class="mc"><div class="k">Avg</div><div class="v val-avg">${fmt(mp.av)}</div></div><div class="mc"><div class="k">Min</div><div class="v">${fmt(mp.mn)}</div></div><div class="mc"><div class="k">Max</div><div class="v">${fmt(mp.mx)}</div></div><div class="mc"><div class="k">Orders</div><div class="v">${mp.orders||0}</div></div>${bc!=null?`<div class="mc"><div class="k">${mp.av<bc?'Buy < Build':'Build < Buy'}</div><div class="v ${mp.av<bc?'':'pos'}">${mp.av<bc?'buy':'make'}</div></div>`:''}</div>`;
+  if(made.length){ html+='<h3 class="small" style="margin:14px 0 4px;color:var(--accent2)">Crafted by</h3>'+made.map(recipeRow).join(''); }
+  if(found.length){ html+='<h3 class="small" style="margin:14px 0 4px;color:var(--accent2)">Found in</h3><div class="flexwrap">'+found.map(f=>`<span class="pill2">${esc(f)}</span>`).join('')+'</div>'; }
+  if(usedIn.length){ html+='<h3 class="small" style="margin:14px 0 4px;color:var(--accent2)">Used in ('+usedIn.length+')</h3><div class="flexwrap">'+usedIn.slice(0,30).map(r=>r.outputs.map(o=>`<span class="ingchip pointer" onclick="itemDetail('${o.slug}')">${tile(o.slug,'s')}${esc(itemName(o.slug))}</span>`).join('')).join('')+'</div>'; }
+  html+=`<div class="row" style="margin-top:16px;justify-content:flex-end"><button class="btn" onclick="App.toChain('${slug}')">⚙ Plan production chain</button></div></div>`;
   document.getElementById('detailBox').innerHTML=html;
   document.getElementById('detailDlg').showModal();
 }
@@ -771,8 +840,8 @@ function renderMarket(){
     .filter(x=>!search||x.name.toLowerCase().includes(search.toLowerCase()))
     .sort((a,b)=>b.av-a.av);
   document.getElementById('mktInfo').textContent = `${Object.keys(rows).length} tradeable items · quadrant ${q} · prices updated ${window.MARKET.updated.slice(0,10)}`;
-  el.innerHTML='<table><thead><tr><th>Item</th><th class="right">Avg</th><th class="right">Min</th><th class="right">Max</th><th class="right">Orders</th><th class="right">Units</th></tr></thead><tbody>'+
-    list.map(x=>`<tr><td>${ico(x.slug,'sm')}${esc(x.name)}</td><td class="right qty">${fmt(x.av)}</td><td class="right muted">${fmt(x.mn)}</td><td class="right muted">${fmt(x.mx)}</td><td class="right">${x.o||''}</td><td class="right muted">${x.u||''}</td></tr>`).join('')+'</tbody></table>';
+  el.innerHTML='<table class="dtable"><thead><tr><th>Item</th><th class="right">Avg</th><th class="right">Min</th><th class="right">Max</th><th class="right">Orders</th><th class="right">Units</th></tr></thead><tbody>'+
+    list.map(x=>`<tr onclick="itemDetail('${x.slug}')"><td>${itemCell(x.slug)}</td><td class="right val-avg big">${fmt(x.av)}</td><td class="right val-dim">${fmt(x.mn)}</td><td class="right val-dim">${fmt(x.mx)}</td><td class="right">${x.o||''}</td><td class="right val-dim">${x.u||''}</td></tr>`).join('')+'</tbody></table>';
 }
 function setMarketQuad(q){ window.marketQuad=q; renderMarket(); renderProfit(); }
 // Profit Advisor: what can the corp make, and does it sell for more than it costs to build?
@@ -797,15 +866,15 @@ function renderProfit(){
   if(onlyCorp) show=show.filter(x=>x.totalInputs>0 && x.corpInputs===x.totalInputs);
   show.sort((a,b)=>b.margin-a.margin);
   document.getElementById('profitInfo').textContent = `${show.length} profitable items · sell prices from quadrant ${q}`;
-  el.innerHTML = '<table><thead><tr><th>Item</th><th class="right">Sell (avg)</th><th class="right">Build cost</th><th class="right">Margin/unit</th><th class="right">Markup</th><th>Corp ready</th><th></th></tr></thead><tbody>'+
-    show.slice(0,120).map(x=>`<tr>
-      <td>${ico(x.slug,'sm')}${esc(x.name)}</td>
-      <td class="right qty">${fmt(x.sell)}</td>
-      <td class="right muted">${fmt(x.cost)}</td>
-      <td class="right" style="color:${x.margin>=0?'var(--good)':'var(--bad)'}">${x.margin>=0?'+':''}${fmt(x.margin)}</td>
-      <td class="right" style="color:${x.pct>=0?'var(--good)':'var(--bad)'}">${x.pct>=0?'+':''}${fmt(x.pct)}%</td>
-      <td>${x.totalInputs?`<span class="chip ${x.corpInputs===x.totalInputs?'ok':''}">${x.corpInputs}/${x.totalInputs} inputs</span>`:''}</td>
-      <td><span class="pointer" style="color:var(--accent)" onclick="App.toChain('${x.slug}')" title="plan it">⚙</span></td>
+  el.innerHTML = '<table class="dtable"><thead><tr><th>Item</th><th class="right">Sell avg</th><th class="right">Build cost</th><th class="right">Margin/unit</th><th class="right">Markup</th><th>Corp ready</th><th></th></tr></thead><tbody>'+
+    show.slice(0,120).map(x=>`<tr onclick="itemDetail('${x.slug}')">
+      <td>${itemCell(x.slug)}</td>
+      <td class="right val-avg big">${fmt(x.sell)}</td>
+      <td class="right val-dim">${fmt(x.cost)}</td>
+      <td class="right big ${x.margin>=0?'pos':'neg'}">${x.margin>=0?'+':''}${fmt(x.margin)}</td>
+      <td class="right ${x.pct>=0?'pos':'neg'}">${x.pct>=0?'+':''}${fmt(x.pct)}%</td>
+      <td>${x.totalInputs?`<span class="pill2 ${x.corpInputs===x.totalInputs?'ok':(x.corpInputs>0?'warn':'')}">${x.corpInputs}/${x.totalInputs}</span>`:''}</td>
+      <td class="right"><span class="pointer" style="color:var(--accent)" onclick="event.stopPropagation();App.toChain('${x.slug}')" title="plan it">⚙</span></td>
     </tr>`).join('')+'</tbody></table>';
 }
 
