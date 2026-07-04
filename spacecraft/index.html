@@ -187,6 +187,32 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
   </div>
 </section>
 
+<section class="tab" id="tab-profit">
+  <div class="card">
+    <div class="row">
+      <b style="color:var(--accent2)">💰 Profit Advisor</b>
+      <span class="muted small">What's worth building — sell price vs. build cost, using live market data.</span>
+      <span style="flex:1"></span>
+      <select id="profitQuad" onchange="setMarketQuad(this.value)" title="market quadrant"></select>
+    </div>
+    <div class="row">
+      <label class="muted small">min markup %<input id="profitMinPct" type="number" value="0" style="width:70px;margin-left:5px" onchange="renderProfit()"></label>
+      <label class="muted small" style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="profitCorpOnly" onchange="renderProfit()"> only items my corp can fully supply</label>
+      <span class="muted small" id="profitInfo"></span>
+    </div>
+    <div id="profitBody" style="overflow-x:auto;margin-top:8px" class="muted">Loading market…</div>
+  </div>
+</section>
+<section class="tab" id="tab-market">
+  <div class="card">
+    <div class="row">
+      <input id="mktSearch" class="searchbox" placeholder="Search market…" oninput="renderMarket()">
+      <select id="mktQuadSel" onchange="setMarketQuad(this.value)" title="quadrant"></select>
+      <span class="muted small" id="mktInfo"></span>
+    </div>
+    <div id="marketBody" style="overflow-x:auto;margin-top:8px" class="muted">Loading market…</div>
+  </div>
+</section>
 <section class="tab" id="tab-chain">
   <div class="card">
     <div class="row">
@@ -427,7 +453,7 @@ function basePower(b){
 }
 
 /* ============ UI ============ */
-const TABS = [['dashboard','Dashboard'],['bases','Bases'],['planner','Crafting Planner'],['chain','Chain Designer'],['database','Database'],['settings','Settings']];
+const TABS = [['dashboard','Dashboard'],['bases','Bases'],['planner','Crafting Planner'],['chain','Chain Designer'],['profit','💰 Profit'],['market','Market'],['database','Database'],['settings','Settings']];
 let activeTab = 'dashboard';
 let editingBaseId = null, draftDeposits = [], draftBuildings = [], draftMining = [], draftProduction = [];
 
@@ -627,6 +653,7 @@ function renderDb(){
 /* ============ init ============ */
 function init(){
   fetch('data/icons.json').then(r=>r.json()).then(m=>{ window.ICONS=m; render(); }).catch(()=>{});
+  fetch('data/market.json').then(r=>r.json()).then(m=>{ window.MARKET=m; window.marketQuad=(window.CORP&&window.CORP.quadrant)||'abuxey'; fetch('data/index.json').then(r=>r.json()).then(idx=>{ const opts=idx.map(q=>`<option value="${q.slug}" ${q.slug===window.marketQuad?'selected':''}>${q.name} (${q.region})</option>`).join(''); ['profitQuad','mktQuadSel'].forEach(id=>{const el=document.getElementById(id); if(el)el.innerHTML=opts;}); }); renderMarket(); renderProfit(); }).catch(()=>{});
   $('#nav').innerHTML = TABS.map(([id,label])=>`<button data-tab="${id}" onclick="App.show('${id}')">${label}</button>`).join('');
   $('#verInfo').textContent = `game ${GAME.meta.gameVersion} · ${GAME.meta.counts.items} items · ${GAME.meta.counts.recipes} recipes`;
   $('#aboutVer').textContent = GAME.meta.gameVersion;
@@ -700,6 +727,67 @@ init();
 </script>
 
 <script>
+/* ============ Market + Profit ============ */
+function mktQuad(){ return window.marketQuad || (window.CORP&&window.CORP.quadrant) || 'abuxey'; }
+function mktPrice(slug){ const M=window.MARKET; if(!M) return null; const q=M.quads[mktQuad()]; const row=q&&q[slug]; return row? {av:row[0], mn:row[1], mx:row[2], orders:row[3], units:row[4]} : null; }
+// unit build cost = sum of raw-input market/base prices through the chosen recipes
+function buildUnitCost(slug, depth, seen){
+  seen=seen||new Set(); if(depth>12||seen.has(slug)) return null;
+  const r=chosenRecipe(slug);
+  if(!r){ const it=ITEMS[slug]; return it&&it.price!=null? num(it.price) : (mktPrice(slug)?mktPrice(slug).av:null); }
+  seen.add(slug);
+  const outQty=qtyNum((r.outputs.find(o=>o.slug===slug)||{}).qty)||1;
+  let cost=0;
+  for(const ing of r.ingredients){ const c=buildUnitCost(ing.slug, depth+1, seen); if(c==null){ seen.delete(slug); return null; } cost += c*qtyNum(ing.qty); }
+  seen.delete(slug);
+  return cost/outQty;
+}
+function renderMarket(){
+  const el=document.getElementById('marketBody'); if(!el||!window.MARKET) return;
+  const q=mktQuad(); const rows=window.MARKET.quads[q]||{};
+  const search=(document.getElementById('mktSearch')||{}).value||'';
+  const list=Object.entries(rows).map(([slug,v])=>({slug, name:itemName(slug), av:v[0],mn:v[1],mx:v[2],o:v[3],u:v[4]}))
+    .filter(x=>!search||x.name.toLowerCase().includes(search.toLowerCase()))
+    .sort((a,b)=>b.av-a.av);
+  document.getElementById('mktInfo').textContent = `${Object.keys(rows).length} tradeable items · quadrant ${q} · prices updated ${window.MARKET.updated.slice(0,10)}`;
+  el.innerHTML='<table><thead><tr><th>Item</th><th class="right">Avg</th><th class="right">Min</th><th class="right">Max</th><th class="right">Orders</th><th class="right">Units</th></tr></thead><tbody>'+
+    list.map(x=>`<tr><td>${ico(x.slug,'sm')}${esc(x.name)}</td><td class="right qty">${fmt(x.av)}</td><td class="right muted">${fmt(x.mn)}</td><td class="right muted">${fmt(x.mx)}</td><td class="right">${x.o||''}</td><td class="right muted">${x.u||''}</td></tr>`).join('')+'</tbody></table>';
+}
+function setMarketQuad(q){ window.marketQuad=q; renderMarket(); renderProfit(); }
+// Profit Advisor: what can the corp make, and does it sell for more than it costs to build?
+function renderProfit(){
+  const el=document.getElementById('profitBody'); if(!el) return;
+  if(!window.MARKET){ el.innerHTML='<div class="muted">Loading market…</div>'; return; }
+  const q=mktQuad();
+  const rows=[];
+  for(const it of GAME.items){
+    const p=mktPrice(it.slug); if(!p||!p.av) continue;
+    if(!recipesFor(it.slug).length) continue; // must be craftable
+    const cost=buildUnitCost(it.slug,0); if(cost==null) continue;
+    const margin=p.av-cost; const pct=cost>0?margin/cost*100:0;
+    // corp readiness: how many raw inputs the corp already supplies
+    const r=chosenRecipe(it.slug); let corpInputs=0, totalInputs=0;
+    if(r){ for(const ing of r.ingredients){ totalInputs++; try{ if(corpCovers(ing.slug).length) corpInputs++; }catch(e){} } }
+    rows.push({slug:it.slug, name:itemName(it.slug), sell:p.av, cost, margin, pct, orders:p.orders, corpInputs, totalInputs});
+  }
+  const minMargin = parseFloat((document.getElementById('profitMinPct')||{}).value)|| -100;
+  const onlyCorp = (document.getElementById('profitCorpOnly')||{}).checked;
+  let show=rows.filter(x=>x.pct>=minMargin);
+  if(onlyCorp) show=show.filter(x=>x.totalInputs>0 && x.corpInputs===x.totalInputs);
+  show.sort((a,b)=>b.margin-a.margin);
+  document.getElementById('profitInfo').textContent = `${show.length} profitable items · sell prices from quadrant ${q}`;
+  el.innerHTML = '<table><thead><tr><th>Item</th><th class="right">Sell (avg)</th><th class="right">Build cost</th><th class="right">Margin/unit</th><th class="right">Markup</th><th>Corp ready</th><th></th></tr></thead><tbody>'+
+    show.slice(0,120).map(x=>`<tr>
+      <td>${ico(x.slug,'sm')}${esc(x.name)}</td>
+      <td class="right qty">${fmt(x.sell)}</td>
+      <td class="right muted">${fmt(x.cost)}</td>
+      <td class="right" style="color:${x.margin>=0?'var(--good)':'var(--bad)'}">${x.margin>=0?'+':''}${fmt(x.margin)}</td>
+      <td class="right" style="color:${x.pct>=0?'var(--good)':'var(--bad)'}">${x.pct>=0?'+':''}${fmt(x.pct)}%</td>
+      <td>${x.totalInputs?`<span class="chip ${x.corpInputs===x.totalInputs?'ok':''}">${x.corpInputs}/${x.totalInputs} inputs</span>`:''}</td>
+      <td><span class="pointer" style="color:var(--accent)" onclick="App.toChain('${x.slug}')" title="plan it">⚙</span></td>
+    </tr>`).join('')+'</tbody></table>';
+}
+
 /* ============ Chain Designer ============ */
 function ratePerMachineH(recipe, slug){
   const secs = durSecs(recipe.duration) || 60;
@@ -868,10 +956,12 @@ function renderChain(){
       const mach = n.machines? `${n.machines}× ${ico(n.ws,'sm')}${esc(wsName(n.ws||''))}` : (n.supplied?'':(n.raw?'gather / buy / trade':''));
       const cov = n.corpRate? `<div class="cov-badge">🏠 ${n.supplied?'fully supplied':fmt(n.corpRate)+'/h from corp — build '+fmt(n.net)+'/h'}${n.corpSources&&n.corpSources.length?' · '+esc(n.corpSources.slice(0,2).map(x=>x.base).join(', ')):''}</div>` : (n.covered.length? `<div class="cov-badge">🏠 available at ${esc(n.covered.slice(0,2).join(', '))}</div>`:'');
       const assign = (window.CORP && n.machines && !n.supplied) ? `<select onchange="chainAssign(this.value,'${n.slug}',${n.net||n.rate});this.value=''" title="record that a base will produce this"><option value="">→ assign to base…</option>${STATE.bases.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>` : '';
+      let bvb='';
+      if(window.MARKET && !n.raw){ const mp=mktPrice(n.slug); if(mp&&mp.av){ const bc=buildUnitCost(n.slug,0); if(bc!=null){ const cheaper = mp.av<bc; bvb=`<div class="cov-badge" style="color:${cheaper?'var(--accent2)':'var(--dim)'}">💰 buy ${fmt(mp.av)} vs build ${fmt(bc)}/u${cheaper?' — buy':''}</div>`; } } }
       html += `<div class="cnode ${n.raw?'raw':''} ${n.supplied?'cov':(n.corpRate?'part':(n.covered.length?'cov':''))}" data-cslug="${n.slug}" style="left:${x}px;top:0px;visibility:hidden">
         <div class="nm">${ico(n.slug)}${esc(itemName(n.slug))}</div>
         <div class="meta">${fmt(n.rate)}/h${n.power?` · ${fmt(n.power)} pw`:''}</div>
-        <div class="meta">${mach}</div>${cov}${sel}${assign}</div>`;
+        <div class="meta">${mach}</div>${bvb}${cov}${sel}${assign}</div>`;
       pos[n.slug]={x};
     });
   }
