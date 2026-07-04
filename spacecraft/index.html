@@ -276,7 +276,9 @@ body{font-size:14px;-webkit-font-smoothing:antialiased}
       <button class="btn sec" onclick="chainZoomBy(0.8)">−</button>
       <label class="muted small" style="display:flex;align-items:center;gap:5px;cursor:pointer"><input type="checkbox" id="chainUseCorp" checked onchange="if(CHAIN_CUR){renderChain();chainFit();}"> 🏠 Use corp supply</label>
       <button class="btn sec" onclick="shareChain()" title="copy a link that opens this chain">🔗 Share</button>
-      <span class="muted small">Generates the full production workflow — machines, rates, power. Green nodes = your corp already produces it.</span>
+      <button class="btn sec" onclick="saveChainLayout()" title="save node positions to your corp">💾 Save layout</button>
+      <button class="btn sec" onclick="resetChainLayout()" title="auto-arrange again">↺ Auto</button>
+      <span class="muted small">Full production workflow — drag nodes to arrange, 💾 saves the layout to your corp. Green = corp already produces it.</span>
     </div>
   </div>
   <div class="csum" id="chainSummary" style="display:none"></div>
@@ -374,7 +376,7 @@ const qtyNum = q => { if(!q) return 1; const m = String(q).match(/^([\d.]+)/); r
 function durSecs(d){ if(!d) return null; const part = d.split('/').pop().trim(); let s=0; const h=part.match(/([\d.]+)\s*h/), m=part.match(/([\d.]+)\s*m/), sec=part.match(/([\d.]+)\s*s/); if(h)s+=parseFloat(h[1])*3600; if(m)m&&(s+=parseFloat(m[1])*60); if(sec)s+=parseFloat(sec[1]); return s||null; }
 
 /* ============ state ============ */
-const DEFAULT_STATE = { bases: [], planTargets: [], recipeChoice: {} };
+const DEFAULT_STATE = { bases: [], planTargets: [], recipeChoice: {}, layouts: {} };
 let STATE = JSON.parse(localStorage.getItem('corpState')||'null') || structuredClone(DEFAULT_STATE);
 const SYNC = { url:'https://echjwaxjgzhsqyhrlvzj.supabase.co', key:'sb_publishable_KrVSX1GtQrCSpmuHaZbEFw_VXBMNW9C' };
 let corpTimer = null;
@@ -396,12 +398,12 @@ async function fetchPlan(){
   try{
     const r = await fetch(SYNC.url+'/rest/v1/corp_plans?select=data', {headers:sbHeaders()});
     const rows = await r.json();
-    if(rows&&rows[0]&&rows[0].data){ STATE.planTargets=rows[0].data.planTargets||[]; STATE.recipeChoice=rows[0].data.recipeChoice||{}; }
+    if(rows&&rows[0]&&rows[0].data){ STATE.planTargets=rows[0].data.planTargets||[]; STATE.recipeChoice=rows[0].data.recipeChoice||{}; STATE.layouts=rows[0].data.layouts||{}; }
   }catch(e){}
 }
 async function pushPlan(){
   if(!window.CORP) return;
-  try{ await fetch(SYNC.url+'/rest/v1/corp_plans', {method:'POST', headers:sbHeaders({Prefer:'resolution=merge-duplicates'}), body:JSON.stringify([{corp_id:window.CORP.id, data:{planTargets:STATE.planTargets, recipeChoice:STATE.recipeChoice}, updated_at:new Date().toISOString()}])}); }catch(e){}
+  try{ await fetch(SYNC.url+'/rest/v1/corp_plans', {method:'POST', headers:sbHeaders({Prefer:'resolution=merge-duplicates'}), body:JSON.stringify([{corp_id:window.CORP.id, data:{planTargets:STATE.planTargets, recipeChoice:STATE.recipeChoice, layouts:STATE.layouts}, updated_at:new Date().toISOString()}])}); }catch(e){}
 }
 async function saveBaseRow(b){
   const row={corp_id:window.CORP.id, name:b.name, btype:b.type||'corp', owner:b.owner||'', quadrant:b.quadrant||'', system:b.system||'', planet:b.planet||'', coords:b.coords||'', notes:b.notes||'', mining:b.mining||[], deposits:b.deposits||[], buildings:b.buildings||[], production:b.production||[], updated_at:new Date().toISOString()};
@@ -1023,8 +1025,37 @@ function computeChainUI(){
   chainFit();
 }
 function setChainRecipe(slug, rid){ STATE.recipeChoice[slug]=parseInt(rid); persist(false); renderChain(); }
+let CHAIN_LAYOUT={}; // slug -> {x,y} manual overrides for current target
+function layoutKey(){ return CHAIN_CUR?CHAIN_CUR.slug:''; }
+function saveChainLayout(){
+  if(!CHAIN_CUR) return;
+  STATE.layouts = STATE.layouts||{};
+  STATE.layouts[layoutKey()] = JSON.parse(JSON.stringify(CHAIN_LAYOUT));
+  if(window.CORP) pushPlan();
+  const b=event&&event.target; if(b){ const t=b.textContent; b.textContent='✓ saved'; setTimeout(()=>b.textContent=t,1500); }
+}
+function resetChainLayout(){ CHAIN_LAYOUT={}; if(STATE.layouts) delete STATE.layouts[layoutKey()]; if(window.CORP) pushPlan(); renderChain(); chainFit(); }
+function chainRedrawEdges(){
+  if(!window.__chainEdges||!window.__chainPos) return;
+  const NODEW=216; let svg='';
+  for(const e of window.__chainEdges){ const a=window.__chainPos[e.from], b=window.__chainPos[e.to]; if(!a||!b||a.h==null||b.h==null) continue; const x1=a.x+NODEW,y1=a.y+a.h/2,x2=b.x,y2=b.y+b.h/2,mx=(x1+x2)/2; svg+=`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="#3b4a6b" stroke-width="1.6"/><rect x="${mx-26}" y="${(y1+y2)/2-9}" width="52" height="16" rx="8" fill="#1b2740" stroke="#2e3f63"/><text x="${mx}" y="${(y1+y2)/2+3}" text-anchor="middle" fill="#9fc3ff" font-size="10">${fmt(e.rate)}/h</text>`; }
+  const sv=document.getElementById('chainSvg'); if(sv) sv.innerHTML=svg;
+}
+function makeNodeDraggable(el, slug){
+  el.style.cursor='grab';
+  el.addEventListener('pointerdown', ev=>{
+    if(ev.target.closest('select,button,input,a')) return;
+    ev.preventDefault(); el.setPointerCapture(ev.pointerId); el.style.cursor='grabbing'; el.style.zIndex=50;
+    const sc=CHAIN_SCALE||1; const sx=ev.clientX, sy=ev.clientY;
+    const startL=parseFloat(el.style.left)||0, startT=parseFloat(el.style.top)||0;
+    const move=e=>{ const nx=startL+(e.clientX-sx)/sc, ny=startT+(e.clientY-sy)/sc; el.style.left=nx+'px'; el.style.top=ny+'px'; const p=window.__chainPos&&window.__chainPos[slug]; if(p){p.x=nx;p.y=ny;} chainRedrawEdges(); };
+    const up=e=>{ el.releasePointerCapture(ev.pointerId); el.style.cursor='grab'; el.style.zIndex=''; el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); CHAIN_LAYOUT[slug]={x:parseFloat(el.style.left)||0,y:parseFloat(el.style.top)||0}; };
+    el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
+  });
+}
 function renderChain(){
   if(!CHAIN_CUR) return;
+  if(STATE.layouts && STATE.layouts[layoutKey()] && !Object.keys(CHAIN_LAYOUT).length) CHAIN_LAYOUT=JSON.parse(JSON.stringify(STATE.layouts[layoutKey()]));
   const {nodes, edges} = buildChain(CHAIN_CUR.slug, CHAIN_CUR.rate);
   const list = Object.values(nodes);
   const maxD = Math.max(...list.map(n=>n.depth));
@@ -1066,6 +1097,8 @@ function renderChain(){
   for(const c of Object.keys(cols)){
     let y = PAD + (H-2*PAD-colH[c])/2;
     cols[c].forEach(n=>{ const el=cv.querySelector(`.cnode[data-cslug="${n.slug}"]`); pos[n.slug].y=y; if(el){ el.style.top=y+'px'; el.style.visibility='visible'; } y += pos[n.slug].h+GAP; });
+    // apply manual layout overrides
+    cols[c].forEach(n=>{ const ov=CHAIN_LAYOUT[n.slug]; if(ov){ const el=cv.querySelector(`.cnode[data-cslug="${n.slug}"]`); pos[n.slug].x=ov.x; pos[n.slug].y=ov.y; if(el){ el.style.left=ov.x+'px'; el.style.top=ov.y+'px'; } } });
   }
   const W = PAD*2 + (maxD+1)*COLW;
   cv.style.width=W+'px'; cv.style.height=H+'px';
@@ -1080,8 +1113,10 @@ function renderChain(){
     svg += `<rect x="${mx-26}" y="${(y1+y2)/2-9}" width="52" height="16" rx="8" fill="#1b2740" stroke="#2e3f63"/><text x="${mx}" y="${(y1+y2)/2+3}" text-anchor="middle" fill="#9fc3ff" font-size="10">${fmt(e.rate)}/h</text>`;
   }
   CHAIN_DIM={W,H};
+  window.__chainPos=pos; window.__chainEdges=Object.values(edges);
   const sv=document.getElementById('chainSvg');
   sv.setAttribute('width',W); sv.setAttribute('height',H); sv.innerHTML=svg;
+  cv.querySelectorAll('.cnode').forEach(el=>{ const sl=el.getAttribute('data-cslug'); if(sl) makeNodeDraggable(el, sl); });
   // summary
   const byWs={}; let totPower=0, totMach=0;
   for(const n of list){ if(n.machines&&n.ws){ byWs[n.ws]=(byWs[n.ws]||0)+n.machines; totMach+=n.machines; totPower+=n.power||0; } }
