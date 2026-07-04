@@ -255,6 +255,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 
 </main>
 
+<dialog id="detailDlg"><div id="detailBox"></div></dialog>
 <dialog id="baseDialog">
   <form method="dialog" style="padding:16px" onsubmit="App.saveBase(event)">
     <h3 id="baseDialogTitle">Add base</h3>
@@ -641,7 +642,7 @@ function baseCard(b, compact){
 function renderDb(){
   const q = ($('#dbSearch').value||'').toLowerCase(), cat = $('#dbCat').value;
   const rows = GAME.items.filter(i=>(!q||i.name.toLowerCase().includes(q))&&(!cat||i.category===cat)).slice(0,300);
-  $('#dbTable tbody').innerHTML = rows.map(i=>`<tr>
+  $('#dbTable tbody').innerHTML = rows.map(i=>`<tr class="pointer" onclick="itemDetail('${i.slug}')">
     <td>${ico(i.slug)}${esc(i.name)}</td><td class="muted">${esc(i.category||'')}</td><td>${esc(i.level||'—')}</td><td>${esc(i.storage||'—')}</td>
     <td class="right">${esc(i.price||'—')}</td>
     <td>${recipesFor(i.slug).length?'<span class="tag">'+recipesFor(i.slug).length+' recipe(s)</span>':''}</td>
@@ -727,6 +728,26 @@ init();
 </script>
 
 <script>
+/* ============ item detail modal ============ */
+function itemDetail(slug){
+  const it=ITEMS[slug]; if(!it) return;
+  const mp=window.MARKET?mktPrice(slug):null;
+  const made=recipesFor(slug);
+  const usedIn=GAME.recipes.filter(r=>!r.recycling && r.ingredients.some(i=>i.slug===slug));
+  const found=(it.sources||[]).map(r=>RES[r]?RES[r].name:r);
+  const recipeLine=r=>`${ico(r.workstation,'sm')}${esc(wsName(r.workstation))}: ${r.ingredients.map(i=>ico(i.slug,'sm')+qtyNum(i.qty)+'× '+esc(itemName(i.slug))).join(', ')} → ${qtyNum((r.outputs.find(o=>o.slug===slug)||{}).qty)||1}`;
+  let html=`<div style="padding:16px;max-width:560px">
+    <div class="row" style="justify-content:space-between"><h3 style="margin:0">${ico(slug)}${esc(it.name)}</h3><span class="pointer muted" onclick="document.getElementById('detailDlg').close()">✕</span></div>
+    <div class="muted small">${esc(it.category||'')}${it.level&&it.level!=='—'?' · level '+it.level:''}${it.storage?' · '+it.storage:''}${it.price?' · base '+it.price+' cr':''}</div>`;
+  if(mp&&mp.av) html+=`<div class="csum" style="margin-top:8px"><span>💰 market avg <b>${fmt(mp.av)}</b></span><span class="muted">min ${fmt(mp.mn)} · max ${fmt(mp.mx)} · ${mp.orders||0} orders</span></div>`;
+  if(made.length){ html+='<h3 class="small" style="margin:12px 0 4px">Crafted by</h3>'+made.map(r=>`<div class="ri" style="margin:3px 0">${recipeLine(r)}</div>`).join(''); }
+  if(found.length){ html+='<h3 class="small" style="margin:12px 0 4px">Found in</h3><div class="flexwrap">'+found.map(f=>`<span class="chip">${esc(f)}</span>`).join('')+'</div>'; }
+  if(usedIn.length){ html+='<h3 class="small" style="margin:12px 0 4px">Used in ('+usedIn.length+')</h3><div class="flexwrap">'+usedIn.slice(0,24).map(r=>r.outputs.map(o=>`<span class="chip pointer" onclick="itemDetail('${o.slug}')">${ico(o.slug,'sm')}${esc(itemName(o.slug))}</span>`).join('')).join('')+'</div>'; }
+  html+=`<div class="row" style="margin-top:14px;justify-content:flex-end"><button class="btn sec" onclick="App.toChain('${slug}')">⚙ Plan production</button></div></div>`;
+  document.getElementById('detailBox').innerHTML=html;
+  document.getElementById('detailDlg').showModal();
+}
+
 /* ============ Market + Profit ============ */
 function mktQuad(){ return window.marketQuad || (window.CORP&&window.CORP.quadrant) || 'abuxey'; }
 function mktPrice(slug){ const M=window.MARKET; if(!M) return null; const q=M.quads[mktQuad()]; const row=q&&q[slug]; return row? {av:row[0], mn:row[1], mx:row[2], orders:row[3], units:row[4]} : null; }
