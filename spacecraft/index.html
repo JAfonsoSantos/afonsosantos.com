@@ -1135,6 +1135,8 @@ function startPaletteDrag(ev, slug){
   document.addEventListener('pointermove',move); document.addEventListener('pointerup',up);
 }
 function addManualNode(slug, x, y){
+  // ensure the current layout is loaded BEFORE pushing, so we don't wipe the new node
+  if(!CHAIN_CUR && window.__layoutLoadedFor!=='__free__'){ loadLayoutFor('__free__'); window.__layoutLoadedFor='__free__'; }
   const id='mn'+Date.now()+Math.floor(Math.random()*99);
   CHAIN_MANUAL.push({id, slug, x, y, note:''});
   renderChain();
