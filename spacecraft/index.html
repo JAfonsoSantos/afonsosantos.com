@@ -100,6 +100,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 .bpitem:hover{background:var(--panel2)}
 .bpghost{position:fixed;z-index:9999;pointer-events:none;opacity:.85}
 .cnode.manual{border-color:#a78bfa;border-style:dashed}
+.cnode.linking{outline:2px solid var(--accent2);outline-offset:2px;box-shadow:0 0 16px #ffb45455}
 .cnode.manual .mnnote{width:100%;margin-top:4px;font-size:11px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text)}
 .cnode.manual .mnsel{width:100%;margin-top:4px;font-size:11px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text)}
 #chainWrap.panning{cursor:grabbing}
@@ -1143,7 +1144,13 @@ function addManualNode(slug, x, y){
   return id;
 }
 function deleteManual(id){ CHAIN_MANUAL=CHAIN_MANUAL.filter(m=>m.id!==id); CHAIN_LINKS=CHAIN_LINKS.filter(l=>l.a!=='m:'+id&&l.b!=='m:'+id); renderChain(); }
-function startLink(key){ if(CHAIN_LINKING===key){ CHAIN_LINKING=null; } else if(CHAIN_LINKING){ if(CHAIN_LINKING!==key){ CHAIN_LINKS.push({a:CHAIN_LINKING,b:key}); } CHAIN_LINKING=null; } else { CHAIN_LINKING=key; } updateLinkHint(); chainRedrawEdges(); }
+function startLink(key){
+  if(CHAIN_LINKING===key){ CHAIN_LINKING=null; }
+  else if(CHAIN_LINKING){ if(CHAIN_LINKING!==key){ CHAIN_LINKS.push({a:CHAIN_LINKING,b:key}); if(typeof chainToast==='function') chainToast('🔗 connected'); } CHAIN_LINKING=null; }
+  else { CHAIN_LINKING=key; if(typeof chainToast==='function') chainToast('🔗 now click the node to connect to'); }
+  updateLinkHint(); markLinking(); chainRedrawEdges();
+}
+function markLinking(){ document.querySelectorAll('.cnode.linking').forEach(n=>n.classList.remove('linking')); if(CHAIN_LINKING){ const k=CHAIN_LINKING; let el=null; if(k.startsWith('m:')) el=document.querySelector('.cnode.manual[data-manual="'+k.slice(2)+'"]'); else el=document.querySelector('.cnode[data-cslug="'+k+'"]'); if(el) el.classList.add('linking'); } }
 function updateLinkHint(){ const h=document.getElementById('linkHint'); if(h) h.style.display=CHAIN_LINKING?'inline':'none'; }
 function buildingOptions(bslug){
   // crafting buildings: recipes whose workstation is this building
@@ -1190,15 +1197,14 @@ function renderManualNodes(cv){
 function makeManualDraggable(el, id){
   el.style.cursor='grab';
   el.addEventListener('pointerdown', ev=>{
-    if(ev.button!==0||ev.target.closest('input,span.pointer')) return;
+    if(ev.button!==0 || ev.target.closest('select,input,button,a,.pointer')) return;
+    if(CHAIN_LINKING){ ev.preventDefault(); ev.stopPropagation(); startLink('m:'+id); return; }
     ev.preventDefault(); ev.stopPropagation(); el.setPointerCapture(ev.pointerId); el.style.zIndex=50;
     const sc=CHAIN_SCALE||1, sx=ev.clientX, sy=ev.clientY, sl=parseFloat(el.style.left)||0, st=parseFloat(el.style.top)||0;
     const move=e=>{ const nx=sl+(e.clientX-sx)/sc, ny=st+(e.clientY-sy)/sc; el.style.left=nx+'px'; el.style.top=ny+'px'; const m=CHAIN_MANUAL.find(x=>x.id===id); if(m){m.x=nx;m.y=ny;} const p=window.__chainPos['m:'+id]; if(p){p.x=nx;p.y=ny;} chainRedrawEdges(); };
     const up=e=>{ el.releasePointerCapture(ev.pointerId); el.style.zIndex=''; el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
     el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
   });
-  // click node body in link mode completes a link
-  el.addEventListener('click', e=>{ if(CHAIN_LINKING && !e.target.closest('input')) startLink('m:'+id); });
 }
 function chainRedrawEdges(){
   if(!window.__chainEdges||!window.__chainPos) return;
@@ -1213,7 +1219,8 @@ function chainClearSel(){ CHAIN_SEL.clear(); document.querySelectorAll('.cnode.s
 function makeNodeDraggable(el, slug){
   el.style.cursor='grab';
   el.addEventListener('pointerdown', ev=>{
-    if(ev.button!==0 || ev.target.closest('select,button,input,a')) return;
+    if(ev.button!==0 || ev.target.closest('select,button,input,a,.pointer')) return;
+    if(CHAIN_LINKING){ ev.preventDefault(); ev.stopPropagation(); startLink(slug); return; }
     ev.preventDefault(); ev.stopPropagation(); el.setPointerCapture(ev.pointerId); el.style.cursor='grabbing'; el.style.zIndex=50;
     const sc=CHAIN_SCALE||1; const sx=ev.clientX, sy=ev.clientY;
     // which nodes move: the selected group if this node is part of it, else just this
@@ -1343,8 +1350,7 @@ function renderChain(){
   renderManualNodes(cv);
   chainRedrawEdges();
   bindChainCanvas();
-  // link-complete on calculated nodes
-  cv.querySelectorAll('.cnode[data-cslug]').forEach(el=>{ el.addEventListener('click', e=>{ if(CHAIN_LINKING && !e.target.closest('select,button,input,a,span.pointer')) startLink(el.getAttribute('data-cslug')); }); });
+
   // summary
   const byWs={}; let totPower=0, totMach=0;
   for(const n of list){ if(n.machines&&n.ws){ byWs[n.ws]=(byWs[n.ws]||0)+n.machines; totMach+=n.machines; totPower+=n.power||0; } }
