@@ -96,7 +96,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 .cnode.sel{outline:2px solid var(--accent);outline-offset:1px}
 #bpanel{position:absolute;top:8px;left:8px;width:220px;max-height:calc(100% - 16px);overflow-y:auto;background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:10px;z-index:70;display:none;box-shadow:0 8px 30px #0008}
 #bpanel .bphd{margin-bottom:8px}
-.bpitem{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:8px;cursor:grab;font-size:12.5px}
+.bpitem{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:8px;cursor:grab;font-size:12.5px;user-select:none;-webkit-user-drag:none;touch-action:none}
 .bpitem:hover{background:var(--panel2)}
 .bpghost{position:fixed;z-index:9999;pointer-events:none;opacity:.85}
 .cnode.manual{border-color:#a78bfa;border-style:dashed}
@@ -139,7 +139,7 @@ body{font-size:14px;-webkit-font-smoothing:antialiased}
 .num,td.right,th.right{font-variant-numeric:tabular-nums;font-feature-settings:"tnum"}
 /* framed icon tile */
 .tile{display:inline-flex;align-items:center;justify-content:center;background:linear-gradient(160deg,#1c2740,#141b2b);border:1px solid var(--border);border-radius:9px;flex:0 0 auto;overflow:hidden}
-.tile img{width:100%;height:100%;object-fit:contain;padding:3px}
+.tile img{width:100%;height:100%;object-fit:contain;padding:3px;-webkit-user-drag:none;user-select:none;pointer-events:none}
 .tile.s{width:30px;height:30px}
 .tile.m{width:40px;height:40px}
 .tile.l{width:72px;height:72px;border-radius:14px}
@@ -295,7 +295,7 @@ body{font-size:14px;-webkit-font-smoothing:antialiased}
     </div>
   </div>
   <div class="csum" id="chainSummary" style="display:none"></div>
-  <div id="chainWrap"><div id="chainCanvas"><svg id="chainSvg"></svg></div><div id="chainSelRect"></div><div id="bpanel"><div class="bphd"><b>Buildings</b> <span class="muted small">drag onto canvas</span><input id="bpSearch" placeholder="search…" oninput="renderBPanel()" style="width:100%;margin-top:6px"></div><div id="bpList"></div></div></div>
+  <div id="chainWrap"><div id="chainCanvas"><svg id="chainSvg"></svg></div><div id="chainSelRect"></div><div id="bpanel"><div class="bphd"><b>Buildings</b> <span class="muted small">click or drag to add</span><input id="bpSearch" placeholder="search…" oninput="renderBPanel()" style="width:100%;margin-top:6px"></div><div id="bpList"></div></div></div>
 </section>
 
 <section class="tab" id="tab-settings">
@@ -1104,15 +1104,26 @@ function renderBPanel(){
   document.getElementById('bpList').innerHTML=list.map(b=>`<div class="bpitem" title="drag onto canvas" onpointerdown="startPaletteDrag(event,'${b.slug}')">${tile(b.slug,'s')}<span>${esc(b.name)}</span></div>`).join('');
 }
 function startPaletteDrag(ev, slug){
-  ev.preventDefault();
+  ev.preventDefault(); ev.stopPropagation();
   const ghost=document.createElement('div'); ghost.className='bpghost'; ghost.innerHTML=tile(slug,'m'); document.body.appendChild(ghost);
-  const move=e=>{ ghost.style.left=(e.clientX+8)+'px'; ghost.style.top=(e.clientY+8)+'px'; };
+  let moved=false;
+  const move=e=>{ moved=true; ghost.style.left=(e.clientX+8)+'px'; ghost.style.top=(e.clientY+8)+'px'; };
   move(ev);
   const up=e=>{ document.removeEventListener('pointermove',move); document.removeEventListener('pointerup',up); ghost.remove();
-    const wrap=document.getElementById('chainWrap'); const wr=wrap.getBoundingClientRect();
-    if(e.clientX>=wr.left&&e.clientX<=wr.right&&e.clientY>=wr.top&&e.clientY<=wr.bottom){
-      const sc=CHAIN_SCALE||1; const x=(e.clientX-wr.left+wrap.scrollLeft)/sc-100, y=(e.clientY-wr.top+wrap.scrollTop)/sc-30;
-      addManualNode(slug, Math.max(0,x), Math.max(0,y));
+    const wrap=document.getElementById('chainWrap'); if(!wrap) return; const wr=wrap.getBoundingClientRect();
+    const overCanvas = e.clientX>=wr.left&&e.clientX<=wr.right&&e.clientY>=wr.top&&e.clientY<=wr.bottom;
+    const sc=CHAIN_SCALE||1;
+    if(overCanvas && moved){
+      // dropped on canvas — place at drop point (unless it's over the palette panel, then offset)
+      const bp=document.getElementById('bpanel'); const br=bp?bp.getBoundingClientRect():null;
+      const overPanel = br && e.clientX>=br.left&&e.clientX<=br.right&&e.clientY>=br.top&&e.clientY<=br.bottom;
+      let cx=(e.clientX-wr.left+wrap.scrollLeft)/sc-100, cy=(e.clientY-wr.top+wrap.scrollTop)/sc-30;
+      if(overPanel){ cx=(wrap.scrollLeft)/sc+250; cy=(wrap.scrollTop)/sc+40; }
+      addManualNode(slug, Math.max(0,cx), Math.max(0,cy));
+    } else if(!moved){
+      // plain click — add near current view centre
+      const cx=(wrap.scrollLeft+wrap.clientWidth/2)/sc-100, cy=(wrap.scrollTop+wrap.clientHeight/2)/sc-30;
+      addManualNode(slug, Math.max(0,cx), Math.max(0,cy));
     }
   };
   document.addEventListener('pointermove',move); document.addEventListener('pointerup',up);
