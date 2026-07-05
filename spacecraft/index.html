@@ -443,6 +443,12 @@ window.chainAssign = async function(baseId, slug, rate){
   await assignProduction(baseId, slug, rate);
   renderChain();
 };
+function assignedBaseId(slug){ const b=(STATE.bases||[]).find(x=>(x.production||[]).some(p=>p.slug===slug)); return b?b.id:''; }
+window.chainAssignSel = async function(baseId, slug, rate){
+  if(baseId){ await assignProduction(baseId, slug, rate); if(typeof chainToast==='function') chainToast('🏠 '+itemName(slug)+' → '+(((STATE.bases||[]).find(b=>b.id===baseId)||{}).name||'base')); }
+  else { const b=(STATE.bases||[]).find(x=>(x.production||[]).some(p=>p.slug===slug)); if(b){ await unassignProduction(b.id, slug); if(typeof chainToast==='function') chainToast('unassigned '+itemName(slug)); } }
+  renderChain();
+};
 async function deleteBaseRow(id){ await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+id, {method:'DELETE', headers:sbHeaders()}); }
 
 /* ============ crafting planner ============ */
@@ -1327,7 +1333,8 @@ function renderChain(){
       const sel = (rs.length>1 && n.recipe) ? `<div class="recipe-pick"><span class="rp-label">⇄ Recipe · ${rs.length} options</span><select onchange="setChainRecipe('${n.slug}', this.value)">${rs.map(r=>`<option value="${r._id}" ${n.recipe._id===r._id?'selected':''}>${esc(wsName(r.workstation))}: ${r.ingredients.map(i2=>qtyNum(i2.qty)+'× '+itemName(i2.slug)).join(', ')}</option>`).join('')}</select></div>` : '';
       const mach = n.machines? `${n.machines}× ${ico(n.ws,'sm')}${esc(wsName(n.ws||''))}` : (n.supplied?'':(n.raw?'gather / buy / trade':''));
       const cov = n.corpRate? `<div class="cov-badge">🏠 ${n.supplied?'fully supplied':fmt(n.corpRate)+'/h from corp — build '+fmt(n.net)+'/h'}${n.corpSources&&n.corpSources.length?' · '+esc(n.corpSources.slice(0,2).map(x=>x.base).join(', ')):''}</div>` : (n.covered.length? `<div class="cov-badge">🏠 available at ${esc(n.covered.slice(0,2).join(', '))}</div>`:'');
-      const assign = (window.CORP && n.machines && !n.supplied) ? `<select onchange="chainAssign(this.value,'${n.slug}',${n.net||n.rate});this.value=''" title="record that a base will produce this"><option value="">→ assign to base…</option>${STATE.bases.map(b=>`<option value="${b.id}">${esc(b.name)}</option>`).join('')}</select>` : '';
+      const _abid = window.CORP ? assignedBaseId(n.slug) : '';
+      const assign = (window.CORP && (n.machines || _abid)) ? `<select onchange="chainAssignSel(this.value,'${n.slug}',${n.net||n.rate})" title="which base makes this" style="${_abid?'border-color:var(--good)':''}"><option value="">${_abid?'— unassign —':'→ assign to base…'}</option>${STATE.bases.map(b=>`<option value="${b.id}" ${b.id===_abid?'selected':''}>${esc(b.name)}</option>`).join('')}</select>` : '';
       let bvb='';
       if(window.MARKET && !n.raw){ const mp=mktPrice(n.slug); if(mp&&mp.av){ const bc=buildUnitCost(n.slug,0); if(bc!=null){ const cheaper = mp.av<bc; bvb=`<div class="cov-badge" style="color:${cheaper?'var(--accent2)':'var(--dim)'}">💰 buy ${fmt(mp.av)} vs build ${fmt(bc)}/u${cheaper?' — buy':''}</div>`; } } }
       const _nb = nodeBase(n); const _bc = (CHAIN_LOGI&&_nb)? (window.__baseColors&&window.__baseColors[_nb]) : null;
