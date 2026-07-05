@@ -1101,7 +1101,7 @@ function toggleBPanel(){ const p=document.getElementById('bpanel'); p.style.disp
 function renderBPanel(){
   const q=(document.getElementById('bpSearch')||{}).value||'';
   const list=GAME.buildings.filter(b=>!q||b.name.toLowerCase().includes(q.toLowerCase()));
-  document.getElementById('bpList').innerHTML=list.map(b=>`<div class="bpitem" title="click to add · drag to place" onpointerdown="startPaletteDrag(event,'${b.slug}')">${tile(b.slug,'s')}<span>${esc(b.name)}</span></div>`).join('');
+  document.getElementById('bpList').innerHTML=list.map(b=>`<div class="bpitem" title="click to add to canvas" onclick="paletteAddCentered('${b.slug}')">${tile(b.slug,'s')}<span>${esc(b.name)}</span></div>`).join('');
 }
 let PALETTE_DRAGGED=false;
 function paletteAddCentered(slug){ const wrap=document.getElementById('chainWrap'); const sc=CHAIN_SCALE||1; const cx=(wrap.scrollLeft+wrap.clientWidth/2)/sc-100, cy=(wrap.scrollTop+wrap.clientHeight/2)/sc-30; addManualNode(slug, Math.max(0,cx), Math.max(0,cy)); }
