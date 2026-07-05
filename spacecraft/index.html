@@ -1154,7 +1154,7 @@ function addManualNode(slug, x, y){
 function deleteManual(id){ CHAIN_MANUAL=CHAIN_MANUAL.filter(m=>m.id!==id); CHAIN_LINKS=CHAIN_LINKS.filter(l=>l.a!=='m:'+id&&l.b!=='m:'+id); renderChain(); }
 function startLink(key){
   if(CHAIN_LINKING===key){ CHAIN_LINKING=null; }
-  else if(CHAIN_LINKING){ if(CHAIN_LINKING!==key){ CHAIN_LINKS.push({a:CHAIN_LINKING,b:key}); const meta=linkMeta(CHAIN_LINKING,key); if(typeof chainToast==='function') chainToast(meta.unset?'🔗 linked — pick each node\'s output to validate':(meta.valid?('✓ '+itemName(meta.item)+' flows'):'⚠ linked, but outputs don\'t match inputs')); } CHAIN_LINKING=null; }
+  else if(CHAIN_LINKING){ if(CHAIN_LINKING!==key){ const from=CHAIN_LINKING; CHAIN_LINKS.push({a:from,b:key}); const meta=linkMeta(from,key); if(typeof chainToast==='function') chainToast(meta.unset?'🔗 linked — pick either node\'s output and I\'ll suggest the other':(meta.valid?('✓ '+itemName(meta.item)+' flows'):'⚠ linked, but outputs don\'t match inputs')); const A=nodeIO(from), B=nodeIO(key); if(!A.unset) inferLinkedNodes(from); else if(!B.unset) inferLinkedNodes(key); } CHAIN_LINKING=null; }
   else { CHAIN_LINKING=key; if(typeof chainToast==='function') chainToast('🔗 now click the node to connect to'); }
   updateLinkHint(); markLinking(); chainRedrawEdges();
 }
@@ -1182,7 +1182,7 @@ function manualSelect(m){
   const o=buildingOptions(m.slug);
   if(!o) return `<input class="mnnote" placeholder="note / count…" value="${esc(m.note||'')}" oninput="(CHAIN_MANUAL.find(x=>x.id==='${m.id}')||{}).note=this.value">`;
   const opt=x=>`<option value="${x.slug}" ${m.sel===x.slug?'selected':''}>${esc(x.name)}</option>`;
-  return `<select class="mnsel" onchange="(CHAIN_MANUAL.find(x=>x.id==='${m.id}')||{}).sel=this.value; renderChain();">`
+  return `<select class="mnsel" onchange="manualSetSel('${m.id}', this.value)">`
     +`<option value="">${o.type==='craft'?'— what does it make? —':'— what does it extract? —'}</option>`
     +(o.top.length?`<optgroup label="🏠 Your corp">${o.top.map(opt).join('')}</optgroup>`:'')
     +`<optgroup label="${o.type==='craft'?'All recipes':'All resources'}">${o.rest.map(opt).join('')}</optgroup></select>`;
@@ -1235,6 +1235,36 @@ function linkMeta(a,b){
   if(item) return {valid:true, item, from:b, to:a};
   return {valid:false, item:null};
 }
+function manualNodeByKey(key){ return (key&&key.indexOf('m:')===0)?CHAIN_MANUAL.find(x=>x.id===key.slice(2)):null; }
+function _corpMinedSet(){ const set=new Set(); const norm=id=>String(id).replace(/[-_]/g,'').toLowerCase(); for(const b of (STATE.bases||[])){ for(const me of (b.mining||[])){ const id=typeof me==='string'?me:me.id; const res=GAME.resources.find(r=>norm(r.slug)===norm(id)); if(res) set.add(res.slug); } for(const d of (b.deposits||[])) set.add(d.slug); } return set; }
+// pick what an UNSET manual node should become, given neighbour needs/products
+function recommendManualSel(node, neededItems, producedItems){
+  const isExt=/extractor|gatherer|condenser/i.test(node.slug);
+  if(isExt){
+    const corp=_corpMinedSet();
+    for(const need of (neededItems||[])){
+      let cands=GAME.resources.filter(r=>(r.drops||[]).some(d=>d.slug===need));
+      if(cands.length){ cands=cands.slice().sort((a,b)=>((corp.has(b.slug)?1:0)-(corp.has(a.slug)?1:0)) || ((a.drops||[]).length-(b.drops||[]).length) || (a.name||'').localeCompare(b.name||'')); return {sel:cands[0].slug, via:need}; }
+    }
+    return null;
+  }
+  // crafting building: prefer to PRODUCE a needed item…
+  for(const need of (neededItems||[])){ const r=GAME.recipes.find(x=>!x.recycling && x.workstation===node.slug && x.outputs.some(o=>o.slug===need)); if(r) return {sel:need, via:need}; }
+  // …otherwise CONSUME something the neighbour produces
+  for(const prod of (producedItems||[])){ const r=GAME.recipes.find(x=>!x.recycling && x.workstation===node.slug && x.ingredients.some(i=>i.slug===prod)); if(r && r.outputs[0]) return {sel:r.outputs[0].slug, via:prod}; }
+  return null;
+}
+function inferLinkedNodes(key){
+  const io=nodeIO(key); if(!io || io.unset) return;
+  const partners=(CHAIN_LINKS||[]).filter(l=>l.a===key||l.b===key).map(l=>l.a===key?l.b:l.a);
+  let msgs=[];
+  for(const pk of partners){ const pm=manualNodeByKey(pk); if(!pm || pm.sel) continue;
+    const rec=recommendManualSel(pm, io.inputs, io.outputs);
+    if(rec){ pm.sel=rec.sel; const bn=BLD[pm.slug]?BLD[pm.slug].name:pm.slug; msgs.push(bn+' → '+itemName(rec.sel)); }
+  }
+  if(msgs.length){ renderChain(); if(typeof chainToast==='function') chainToast('💡 '+msgs.join(' · ')); }
+}
+window.manualSetSel=function(id,val){ const m=CHAIN_MANUAL.find(x=>x.id===id); if(!m) return; m.sel=val; renderChain(); if(val) inferLinkedNodes('m:'+id); };
 function chainRedrawEdges(){
   if(!window.__chainEdges||!window.__chainPos) return;
   const NODEW=216; let svg='';
