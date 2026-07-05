@@ -1097,14 +1097,23 @@ function saveChainLayout(){
 }
 function resetChainLayout(){ CHAIN_LAYOUT={}; CHAIN_MANUAL=[]; CHAIN_LINKS=[]; CHAIN_LINKING=null; if(STATE.layouts) delete STATE.layouts[layoutKey()]; if(window.CORP) pushPlan(); renderChain(); chainFit(); }
 /* ---- manual building nodes ---- */
-function toggleBPanel(){ const p=document.getElementById('bpanel'); p.style.display = p.style.display==='block'?'none':'block'; if(p.style.display==='block') renderBPanel(); }
+function toggleBPanel(){ const p=document.getElementById('bpanel'); p.style.display = p.style.display==='block'?'none':'block'; if(p.style.display==='block'){ renderBPanel(); bindPalette(); } }
+let _paletteBound=false;
+function bindPalette(){ if(_paletteBound) return; const l=document.getElementById('bpList'); if(!l) return; _paletteBound=true; l.addEventListener('click', e=>{ const it=e.target.closest('.bpitem'); if(it&&it.dataset.slug){ e.preventDefault(); e.stopPropagation(); paletteAddCentered(it.dataset.slug); } }); }
 function renderBPanel(){
   const q=(document.getElementById('bpSearch')||{}).value||'';
   const list=GAME.buildings.filter(b=>!q||b.name.toLowerCase().includes(q.toLowerCase()));
-  document.getElementById('bpList').innerHTML=list.map(b=>`<div class="bpitem" title="click to add to canvas" onclick="paletteAddCentered('${b.slug}')">${tile(b.slug,'s')}<span>${esc(b.name)}</span></div>`).join('');
+  document.getElementById('bpList').innerHTML=list.map(b=>`<div class="bpitem" title="click to add to canvas" data-slug="${b.slug}">${tile(b.slug,'s')}<span>${esc(b.name)}</span></div>`).join('');
 }
 let PALETTE_DRAGGED=false;
-function paletteAddCentered(slug){ const wrap=document.getElementById('chainWrap'); const sc=CHAIN_SCALE||1; const cx=(wrap.scrollLeft+wrap.clientWidth/2)/sc-100, cy=(wrap.scrollTop+wrap.clientHeight/2)/sc-30; addManualNode(slug, Math.max(0,cx), Math.max(0,cy)); }
+function chainToast(t){ let e=document.getElementById('chainToast'); if(!e){ e=document.createElement('div'); e.id='chainToast'; e.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#123524;border:1px solid #1f7a4c;color:#7ef0b2;border-radius:9px;padding:8px 16px;z-index:120;font-size:13px'; document.body.appendChild(e);} e.textContent=t; e.style.display='block'; clearTimeout(window.__ctT); window.__ctT=setTimeout(()=>e.style.display='none',2000); }
+function paletteAddCentered(slug){
+  const wrap=document.getElementById('chainWrap'); const sc=CHAIN_SCALE||1;
+  // place near top-left of the CURRENT visible area (offset right of the palette), guaranteed on-screen
+  const cx=(wrap.scrollLeft)/sc+ (250/sc), cy=(wrap.scrollTop)/sc+ (30/sc);
+  const id=addManualNode(slug, Math.max(0,cx), Math.max(0,cy));
+  chainToast('＋ '+((BLD[slug]&&BLD[slug].name)||slug)+' added — drag it where you want');
+}
 function paletteClick(ev, slug){ ev.preventDefault(); ev.stopPropagation(); if(PALETTE_DRAGGED){ PALETTE_DRAGGED=false; return; } paletteAddCentered(slug); }
 function startPaletteDrag(ev, slug){
   ev.preventDefault(); ev.stopPropagation();
@@ -1128,6 +1137,7 @@ function addManualNode(slug, x, y){
   const id='mn'+Date.now()+Math.floor(Math.random()*99);
   CHAIN_MANUAL.push({id, slug, x, y, note:''});
   if(CHAIN_CUR) renderChain();
+  return id;
 }
 function deleteManual(id){ CHAIN_MANUAL=CHAIN_MANUAL.filter(m=>m.id!==id); CHAIN_LINKS=CHAIN_LINKS.filter(l=>l.a!=='m:'+id&&l.b!=='m:'+id); renderChain(); }
 function startLink(key){ if(CHAIN_LINKING===key){ CHAIN_LINKING=null; } else if(CHAIN_LINKING){ if(CHAIN_LINKING!==key){ CHAIN_LINKS.push({a:CHAIN_LINKING,b:key}); } CHAIN_LINKING=null; } else { CHAIN_LINKING=key; } updateLinkHint(); chainRedrawEdges(); }
