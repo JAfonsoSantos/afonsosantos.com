@@ -83,7 +83,7 @@ dialog::backdrop{background:rgba(0,0,0,.6)}
 code{background:var(--panel2);padding:1px 5px;border-radius:4px;font-size:12px}
 img.ico{width:20px;height:20px;border-radius:4px;vertical-align:-5px;margin-right:5px}
 img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
-#chainWrap{position:relative;overflow:auto;border:1px solid var(--border);border-radius:12px;background:#0d1119;height:calc(100vh - 250px);min-height:420px;margin-top:12px}
+#chainWrap{position:relative;overflow:hidden;border:1px solid var(--border);border-radius:12px;background:#0d1119;height:calc(100vh - 250px);min-height:420px;margin-top:12px}
 #chainCanvas{position:relative;transform-origin:0 0}
 #chainSvg{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 .cnode{position:absolute;width:216px;background:var(--panel);border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px #0006}
@@ -1048,7 +1048,7 @@ function buildChain(target, rateH){
   for(const k of Object.keys(edges)) if(edges[k].rate<=0.0001 || !nodes[edges[k].from] || !nodes[edges[k].to]) delete edges[k];
   return {nodes, edges, target, rateH};
 }
-let CHAIN_CUR=null, CHAIN_DIM=null, CHAIN_SCALE=1;
+let CHAIN_CUR=null, CHAIN_DIM=null, CHAIN_SCALE=1, CHAIN_PANX=8, CHAIN_PANY=8;
 function shareChain(){
   if(!CHAIN_CUR){ alert('Compute a chain first'); return; }
   const rc = encodeURIComponent(JSON.stringify(STATE.recipeChoice||{}));
@@ -1068,17 +1068,22 @@ function tryOpenSharedChain(){
   history.replaceState(null,'',location.pathname);
   return true;
 }
-function chainSetScale(sc){
-  CHAIN_SCALE=Math.max(0.15,Math.min(2,sc));
-  const cv=document.getElementById('chainCanvas');
-  cv.style.transform='scale('+CHAIN_SCALE+')';
-  if(CHAIN_DIM){ cv.style.width=CHAIN_DIM.W+'px'; cv.style.height=CHAIN_DIM.H+'px'; if(cv.parentElement.scrollTo) cv.parentElement.scrollTo(0,0); }
+function applyChainTransform(){
+  const cv=document.getElementById('chainCanvas'); if(!cv) return;
+  if(CHAIN_DIM){ cv.style.width=CHAIN_DIM.W+'px'; cv.style.height=CHAIN_DIM.H+'px'; }
+  cv.style.transformOrigin='0 0';
+  cv.style.transform='translate('+CHAIN_PANX+'px,'+CHAIN_PANY+'px) scale('+CHAIN_SCALE+')';
 }
+function chainSetScale(sc){ CHAIN_SCALE=Math.max(0.15,Math.min(2,sc)); applyChainTransform(); }
 function chainZoomBy(f){ chainSetScale(CHAIN_SCALE*f); }
 function chainFit(){
   if(!CHAIN_DIM) return;
   const w=document.getElementById('chainWrap');
-  chainSetScale(Math.min((w.clientWidth-24)/CHAIN_DIM.W, (w.clientHeight-24)/CHAIN_DIM.H, 1));
+  const sc=Math.min((w.clientWidth-24)/CHAIN_DIM.W, (w.clientHeight-24)/CHAIN_DIM.H, 1);
+  CHAIN_SCALE=Math.max(0.15,Math.min(2,sc));
+  CHAIN_PANX=Math.max(8,(w.clientWidth - CHAIN_DIM.W*CHAIN_SCALE)/2);
+  CHAIN_PANY=Math.max(8,(w.clientHeight - CHAIN_DIM.H*CHAIN_SCALE)/2);
+  applyChainTransform();
 }
 function computeChainUI(){
   const name = document.getElementById('chainItem').value.trim();
@@ -1327,15 +1332,16 @@ function bindChainCanvas(){
   if(chainCanvasBound) return; chainCanvasBound=true;
   const wrap=document.getElementById('chainWrap'); if(!wrap) return;
   wrap.addEventListener('contextmenu', e=>e.preventDefault());
+  wrap.addEventListener('wheel', e=>{ if(!CHAIN_DIM) return; e.preventDefault(); const wr=wrap.getBoundingClientRect(); const mx=e.clientX-wr.left, my=e.clientY-wr.top; const old=CHAIN_SCALE; const ns=Math.max(0.15,Math.min(2, old*(e.deltaY<0?1.1:0.9))); const cxp=(mx-CHAIN_PANX)/old, cyp=(my-CHAIN_PANY)/old; CHAIN_SCALE=ns; CHAIN_PANX=mx-cxp*ns; CHAIN_PANY=my-cyp*ns; applyChainTransform(); }, {passive:false});
   wrap.addEventListener('pointerdown', ev=>{
     const onNode = ev.target.closest('.cnode');
     if(ev.button===2 || (ev.button===0 && !onNode && (ev.target===wrap || ev.target.id==='chainCanvas' || ev.target.id==='chainSvg'))){
       // PAN: right-drag anywhere, OR plain left-drag on empty space. SELECT: shift+left-drag on empty.
       const wantPan = (ev.button===2) || (ev.button===0 && !ev.shiftKey);
-      if(wantPan){ ev.preventDefault(); wrap.setPointerCapture&&wrap.setPointerCapture(ev.pointerId); wrap.classList.add('panning'); const sx=ev.clientX,sy=ev.clientY,sl=wrap.scrollLeft,st=wrap.scrollTop;
-        const mv=e=>{ wrap.scrollLeft=sl-(e.clientX-sx); wrap.scrollTop=st-(e.clientY-sy); };
-        const up=()=>{ wrap.classList.remove('panning'); try{wrap.releasePointerCapture(ev.pointerId)}catch(_){} wrap.removeEventListener('pointermove',mv); wrap.removeEventListener('pointerup',up); };
-        wrap.addEventListener('pointermove',mv); wrap.addEventListener('pointerup',up); return;
+      if(wantPan){ ev.preventDefault(); wrap.classList.add('panning'); let lx=ev.clientX, ly=ev.clientY;
+        const mv=e=>{ CHAIN_PANX += (e.clientX-lx); CHAIN_PANY += (e.clientY-ly); lx=e.clientX; ly=e.clientY; applyChainTransform(); };
+        const up=()=>{ wrap.classList.remove('panning'); window.removeEventListener('pointermove',mv); window.removeEventListener('pointerup',up); };
+        window.addEventListener('pointermove',mv); window.addEventListener('pointerup',up); return;
       }
       // SHIFT+LEFT drag on empty = SELECTION RECTANGLE
       chainClearSel();
@@ -1360,6 +1366,7 @@ function renderManualOnly(){
   let maxX=800,maxY=500; for(const m of CHAIN_MANUAL){ maxX=Math.max(maxX,m.x+300); maxY=Math.max(maxY,m.y+200); }
   cv.style.width=maxX+'px'; cv.style.height=maxY+'px'; CHAIN_DIM={W:maxX,H:maxY};
   renderManualNodes(cv);
+  applyChainTransform();
   chainRedrawEdges();
   bindChainCanvas();
   document.getElementById('chainSummary').style.display='none';
