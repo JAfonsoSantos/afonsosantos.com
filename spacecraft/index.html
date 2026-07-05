@@ -94,6 +94,13 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 .recipe-pick .rp-label{display:block;font-size:9.5px;color:var(--accent);letter-spacing:.3px;margin-top:4px}
 .recipe-pick select{margin-top:2px;border-color:#33507d}
 .cnode.sel{outline:2px solid var(--accent);outline-offset:1px}
+#bpanel{position:absolute;top:8px;left:8px;width:220px;max-height:calc(100% - 16px);overflow-y:auto;background:var(--panel);border:1px solid var(--border2);border-radius:12px;padding:10px;z-index:70;display:none;box-shadow:0 8px 30px #0008}
+#bpanel .bphd{margin-bottom:8px}
+.bpitem{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:8px;cursor:grab;font-size:12.5px}
+.bpitem:hover{background:var(--panel2)}
+.bpghost{position:fixed;z-index:9999;pointer-events:none;opacity:.85}
+.cnode.manual{border-color:#a78bfa;border-style:dashed}
+.cnode.manual .mnnote{width:100%;margin-top:4px;font-size:11px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text)}
 #chainWrap.panning{cursor:grabbing}
 #chainSelRect{position:absolute;border:1px solid var(--accent);background:#5eb2ff22;pointer-events:none;z-index:60;display:none}
 .cnode select{width:100%;margin-top:5px;font-size:10.5px;padding:3px 5px}
@@ -282,11 +289,13 @@ body{font-size:14px;-webkit-font-smoothing:antialiased}
       <button class="btn sec" onclick="shareChain()" title="copy a link that opens this chain">🔗 Share</button>
       <button class="btn sec" onclick="saveChainLayout()" title="save node positions to your corp">💾 Save layout</button>
       <button class="btn sec" onclick="resetChainLayout()" title="auto-arrange again">↺ Auto</button>
+      <button class="btn sec" onclick="toggleBPanel()" title="add buildings manually">＋ Buildings</button>
+      <span id="linkHint" class="muted small" style="display:none;color:var(--accent2)">click a node to connect…</span>
       <span class="muted small">Drag nodes to arrange · left-drag empty = select many · right-drag = pan · 💾 saves layout to your corp · green = corp already makes it.</span>
     </div>
   </div>
   <div class="csum" id="chainSummary" style="display:none"></div>
-  <div id="chainWrap"><div id="chainCanvas"><svg id="chainSvg"></svg></div><div id="chainSelRect"></div></div>
+  <div id="chainWrap"><div id="chainCanvas"><svg id="chainSvg"></svg></div><div id="chainSelRect"></div><div id="bpanel"><div class="bphd"><b>Buildings</b> <span class="muted small">drag onto canvas</span><input id="bpSearch" placeholder="search…" oninput="renderBPanel()" style="width:100%;margin-top:6px"></div><div id="bpList"></div></div></div>
 </section>
 
 <section class="tab" id="tab-settings">
@@ -1068,20 +1077,87 @@ function computeChainUI(){
   chainFit();
 }
 function setChainRecipe(slug, rid){ STATE.recipeChoice[slug]=parseInt(rid); persist(false); renderChain(); }
-let CHAIN_LAYOUT={}; // slug -> {x,y} manual overrides for current target
+let CHAIN_LAYOUT={}; // slug -> {x,y} overrides for calculated nodes
+let CHAIN_MANUAL=[]; // [{id, slug, x, y, note}] manually added building nodes
+let CHAIN_LINKS=[]; // [{a,b}] manual connections; keys are item slug or 'm:'+id
+let CHAIN_LINKING=null; // node key awaiting a connection target
 function layoutKey(){ return CHAIN_CUR?CHAIN_CUR.slug:''; }
+function loadLayoutFor(key){
+  CHAIN_LAYOUT={}; CHAIN_MANUAL=[]; CHAIN_LINKS=[];
+  const L=STATE.layouts&&STATE.layouts[key]; if(!L) return;
+  if(L.pos||L.manual||L.links){ CHAIN_LAYOUT=JSON.parse(JSON.stringify(L.pos||{})); CHAIN_MANUAL=JSON.parse(JSON.stringify(L.manual||[])); CHAIN_LINKS=JSON.parse(JSON.stringify(L.links||[])); }
+  else { CHAIN_LAYOUT=JSON.parse(JSON.stringify(L)); } // back-compat: flat pos map
+}
 function saveChainLayout(){
   if(!CHAIN_CUR) return;
   STATE.layouts = STATE.layouts||{};
-  STATE.layouts[layoutKey()] = JSON.parse(JSON.stringify(CHAIN_LAYOUT));
+  STATE.layouts[layoutKey()] = {pos:JSON.parse(JSON.stringify(CHAIN_LAYOUT)), manual:JSON.parse(JSON.stringify(CHAIN_MANUAL)), links:JSON.parse(JSON.stringify(CHAIN_LINKS))};
   if(window.CORP) pushPlan();
   const b=event&&event.target; if(b){ const t=b.textContent; b.textContent='✓ saved'; setTimeout(()=>b.textContent=t,1500); }
 }
-function resetChainLayout(){ CHAIN_LAYOUT={}; if(STATE.layouts) delete STATE.layouts[layoutKey()]; if(window.CORP) pushPlan(); renderChain(); chainFit(); }
+function resetChainLayout(){ CHAIN_LAYOUT={}; CHAIN_MANUAL=[]; CHAIN_LINKS=[]; CHAIN_LINKING=null; if(STATE.layouts) delete STATE.layouts[layoutKey()]; if(window.CORP) pushPlan(); renderChain(); chainFit(); }
+/* ---- manual building nodes ---- */
+function toggleBPanel(){ const p=document.getElementById('bpanel'); p.style.display = p.style.display==='block'?'none':'block'; if(p.style.display==='block') renderBPanel(); }
+function renderBPanel(){
+  const q=(document.getElementById('bpSearch')||{}).value||'';
+  const list=GAME.buildings.filter(b=>!q||b.name.toLowerCase().includes(q.toLowerCase()));
+  document.getElementById('bpList').innerHTML=list.map(b=>`<div class="bpitem" title="drag onto canvas" onpointerdown="startPaletteDrag(event,'${b.slug}')">${tile(b.slug,'s')}<span>${esc(b.name)}</span></div>`).join('');
+}
+function startPaletteDrag(ev, slug){
+  ev.preventDefault();
+  const ghost=document.createElement('div'); ghost.className='bpghost'; ghost.innerHTML=tile(slug,'m'); document.body.appendChild(ghost);
+  const move=e=>{ ghost.style.left=(e.clientX+8)+'px'; ghost.style.top=(e.clientY+8)+'px'; };
+  move(ev);
+  const up=e=>{ document.removeEventListener('pointermove',move); document.removeEventListener('pointerup',up); ghost.remove();
+    const wrap=document.getElementById('chainWrap'); const wr=wrap.getBoundingClientRect();
+    if(e.clientX>=wr.left&&e.clientX<=wr.right&&e.clientY>=wr.top&&e.clientY<=wr.bottom){
+      const sc=CHAIN_SCALE||1; const x=(e.clientX-wr.left+wrap.scrollLeft)/sc-100, y=(e.clientY-wr.top+wrap.scrollTop)/sc-30;
+      addManualNode(slug, Math.max(0,x), Math.max(0,y));
+    }
+  };
+  document.addEventListener('pointermove',move); document.addEventListener('pointerup',up);
+}
+function addManualNode(slug, x, y){
+  const id='mn'+Date.now()+Math.floor(Math.random()*99);
+  CHAIN_MANUAL.push({id, slug, x, y, note:''});
+  if(CHAIN_CUR) renderChain();
+}
+function deleteManual(id){ CHAIN_MANUAL=CHAIN_MANUAL.filter(m=>m.id!==id); CHAIN_LINKS=CHAIN_LINKS.filter(l=>l.a!=='m:'+id&&l.b!=='m:'+id); renderChain(); }
+function startLink(key){ if(CHAIN_LINKING===key){ CHAIN_LINKING=null; } else if(CHAIN_LINKING){ if(CHAIN_LINKING!==key){ CHAIN_LINKS.push({a:CHAIN_LINKING,b:key}); } CHAIN_LINKING=null; } else { CHAIN_LINKING=key; } updateLinkHint(); chainRedrawEdges(); }
+function updateLinkHint(){ const h=document.getElementById('linkHint'); if(h) h.style.display=CHAIN_LINKING?'inline':'none'; }
+function renderManualNodes(cv){
+  for(const m of CHAIN_MANUAL){
+    const bd=BLD[m.slug];
+    const el=document.createElement('div');
+    el.className='cnode manual'; el.setAttribute('data-manual',m.id);
+    el.style.left=m.x+'px'; el.style.top=m.y+'px';
+    el.innerHTML=`<div class="nm">${tile(m.slug,'s')}${esc(bd?bd.name:m.slug)} <span class="pointer" style="float:right;color:var(--dim)" onclick="deleteManual('${m.id}')">✕</span></div>
+      <input class="mnnote" placeholder="note / count…" value="${esc(m.note||'')}" oninput="(CHAIN_MANUAL.find(x=>x.id==='${m.id}')||{}).note=this.value">
+      <div class="meta"><span class="pointer" style="color:var(--accent)" onclick="startLink('m:${m.id}')">🔗 connect</span></div>`;
+    cv.appendChild(el);
+    window.__chainPos['m:'+m.id]={x:m.x, y:m.y, h:el.offsetHeight||70};
+    makeManualDraggable(el, m.id);
+  }
+}
+function makeManualDraggable(el, id){
+  el.style.cursor='grab';
+  el.addEventListener('pointerdown', ev=>{
+    if(ev.button!==0||ev.target.closest('input,span.pointer')) return;
+    ev.preventDefault(); ev.stopPropagation(); el.setPointerCapture(ev.pointerId); el.style.zIndex=50;
+    const sc=CHAIN_SCALE||1, sx=ev.clientX, sy=ev.clientY, sl=parseFloat(el.style.left)||0, st=parseFloat(el.style.top)||0;
+    const move=e=>{ const nx=sl+(e.clientX-sx)/sc, ny=st+(e.clientY-sy)/sc; el.style.left=nx+'px'; el.style.top=ny+'px'; const m=CHAIN_MANUAL.find(x=>x.id===id); if(m){m.x=nx;m.y=ny;} const p=window.__chainPos['m:'+id]; if(p){p.x=nx;p.y=ny;} chainRedrawEdges(); };
+    const up=e=>{ el.releasePointerCapture(ev.pointerId); el.style.zIndex=''; el.removeEventListener('pointermove',move); el.removeEventListener('pointerup',up); };
+    el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
+  });
+  // click node body in link mode completes a link
+  el.addEventListener('click', e=>{ if(CHAIN_LINKING && !e.target.closest('input')) startLink('m:'+id); });
+}
 function chainRedrawEdges(){
   if(!window.__chainEdges||!window.__chainPos) return;
   const NODEW=216; let svg='';
   for(const e of window.__chainEdges){ const a=window.__chainPos[e.from], b=window.__chainPos[e.to]; if(!a||!b||a.h==null||b.h==null) continue; const x1=a.x+NODEW,y1=a.y+a.h/2,x2=b.x,y2=b.y+b.h/2,mx=(x1+x2)/2; svg+=`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="#3b4a6b" stroke-width="1.6"/><rect x="${mx-26}" y="${(y1+y2)/2-9}" width="52" height="16" rx="8" fill="#1b2740" stroke="#2e3f63"/><text x="${mx}" y="${(y1+y2)/2+3}" text-anchor="middle" fill="#9fc3ff" font-size="10">${fmt(e.rate)}/h</text>`; }
+  // manual links
+  for(const l of (CHAIN_LINKS||[])){ const a=window.__chainPos[l.a], b=window.__chainPos[l.b]; if(!a||!b||a.h==null||b.h==null) continue; const x1=a.x+NODEW,y1=a.y+a.h/2,x2=b.x,y2=b.y+b.h/2,mx=(x1+x2)/2; svg+=`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="#a78bfa" stroke-width="2" stroke-dasharray="4 4"/>`; }
   const sv=document.getElementById('chainSvg'); if(sv) sv.innerHTML=svg;
 }
 const CHAIN_SEL=new Set();
@@ -1131,7 +1207,7 @@ function bindChainCanvas(){
 }
 function renderChain(){
   if(!CHAIN_CUR) return;
-  if(STATE.layouts && STATE.layouts[layoutKey()] && !Object.keys(CHAIN_LAYOUT).length) CHAIN_LAYOUT=JSON.parse(JSON.stringify(STATE.layouts[layoutKey()]));
+  if(!window.__layoutLoadedFor || window.__layoutLoadedFor!==layoutKey()){ loadLayoutFor(layoutKey()); window.__layoutLoadedFor=layoutKey(); }
   const {nodes, edges} = buildChain(CHAIN_CUR.slug, CHAIN_CUR.rate);
   const list = Object.values(nodes);
   const maxD = Math.max(...list.map(n=>n.depth));
@@ -1201,7 +1277,11 @@ function renderChain(){
   const sv=document.getElementById('chainSvg');
   sv.setAttribute('width',W); sv.setAttribute('height',H); sv.innerHTML=svg;
   cv.querySelectorAll('.cnode').forEach(el=>{ const sl=el.getAttribute('data-cslug'); if(sl) makeNodeDraggable(el, sl); });
+  renderManualNodes(cv);
+  chainRedrawEdges();
   bindChainCanvas();
+  // link-complete on calculated nodes
+  cv.querySelectorAll('.cnode[data-cslug]').forEach(el=>{ el.addEventListener('click', e=>{ if(CHAIN_LINKING && !e.target.closest('select,button,input,a,span.pointer')) startLink(el.getAttribute('data-cslug')); }); });
   // summary
   const byWs={}; let totPower=0, totMach=0;
   for(const n of list){ if(n.machines&&n.ws){ byWs[n.ws]=(byWs[n.ws]||0)+n.machines; totMach+=n.machines; totPower+=n.power||0; } }
