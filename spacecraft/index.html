@@ -1146,7 +1146,7 @@ function addManualNode(slug, x, y){
 function deleteManual(id){ CHAIN_MANUAL=CHAIN_MANUAL.filter(m=>m.id!==id); CHAIN_LINKS=CHAIN_LINKS.filter(l=>l.a!=='m:'+id&&l.b!=='m:'+id); renderChain(); }
 function startLink(key){
   if(CHAIN_LINKING===key){ CHAIN_LINKING=null; }
-  else if(CHAIN_LINKING){ if(CHAIN_LINKING!==key){ CHAIN_LINKS.push({a:CHAIN_LINKING,b:key}); if(typeof chainToast==='function') chainToast('🔗 connected'); } CHAIN_LINKING=null; }
+  else if(CHAIN_LINKING){ if(CHAIN_LINKING!==key){ CHAIN_LINKS.push({a:CHAIN_LINKING,b:key}); const meta=linkMeta(CHAIN_LINKING,key); if(typeof chainToast==='function') chainToast(meta.unset?'🔗 linked — pick each node\'s output to validate':(meta.valid?('✓ '+itemName(meta.item)+' flows'):'⚠ linked, but outputs don\'t match inputs')); } CHAIN_LINKING=null; }
   else { CHAIN_LINKING=key; if(typeof chainToast==='function') chainToast('🔗 now click the node to connect to'); }
   updateLinkHint(); markLinking(); chainRedrawEdges();
 }
@@ -1206,12 +1206,41 @@ function makeManualDraggable(el, id){
     el.addEventListener('pointermove',move); el.addEventListener('pointerup',up);
   });
 }
+function fmt2(slug){ return itemName(slug); }
+function itemIngredients(itemSlug){ const r=chosenRecipe(itemSlug); return r?r.ingredients.map(i=>i.slug):[]; }
+function nodeIO(key){
+  if(key && key.indexOf('m:')===0){
+    const m=CHAIN_MANUAL.find(x=>x.id===key.slice(2)); if(!m) return {outputs:[],inputs:[]};
+    if(!m.sel) return {outputs:[],inputs:[],unset:true};
+    if(/extractor|gatherer|condenser/i.test(m.slug)){ const res=RES[m.sel]; return {outputs:((res&&res.drops)||[]).map(d=>d.slug), inputs:[]}; }
+    const r=GAME.recipes.find(x=>x.workstation===m.slug && x.outputs.some(o=>o.slug===m.sel)) || chosenRecipe(m.sel);
+    return {outputs:[m.sel], inputs: r?r.ingredients.map(i=>i.slug):[]};
+  }
+  return {outputs:[key], inputs: itemIngredients(key)};
+}
+function linkMeta(a,b){
+  const A=nodeIO(a), B=nodeIO(b);
+  if(A.unset||B.unset) return {valid:null, unset:true};
+  let item=A.outputs.find(o=>B.inputs.includes(o));
+  if(item) return {valid:true, item, from:a, to:b};
+  item=B.outputs.find(o=>A.inputs.includes(o));
+  if(item) return {valid:true, item, from:b, to:a};
+  return {valid:false, item:null};
+}
 function chainRedrawEdges(){
   if(!window.__chainEdges||!window.__chainPos) return;
   const NODEW=216; let svg='';
   for(const e of window.__chainEdges){ const a=window.__chainPos[e.from], b=window.__chainPos[e.to]; if(!a||!b||a.h==null||b.h==null) continue; const x1=a.x+NODEW,y1=a.y+a.h/2,x2=b.x,y2=b.y+b.h/2,mx=(x1+x2)/2; svg+=`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="#3b4a6b" stroke-width="1.6"/><rect x="${mx-26}" y="${(y1+y2)/2-9}" width="52" height="16" rx="8" fill="#1b2740" stroke="#2e3f63"/><text x="${mx}" y="${(y1+y2)/2+3}" text-anchor="middle" fill="#9fc3ff" font-size="10">${fmt(e.rate)}/h</text>`; }
-  // manual links
-  for(const l of (CHAIN_LINKS||[])){ const a=window.__chainPos[l.a], b=window.__chainPos[l.b]; if(!a||!b||a.h==null||b.h==null) continue; const x1=a.x+NODEW,y1=a.y+a.h/2,x2=b.x,y2=b.y+b.h/2,mx=(x1+x2)/2; svg+=`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="#a78bfa" stroke-width="2" stroke-dasharray="4 4"/>`; }
+  // manual links — smart: green if output feeds input, red if mismatch, grey if unset
+  for(const l of (CHAIN_LINKS||[])){ const a=window.__chainPos[l.a], b=window.__chainPos[l.b]; if(!a||!b||a.h==null||b.h==null) continue;
+    const meta=linkMeta(l.a,l.b);
+    const color = meta.unset?'#67779a':(meta.valid?'#5fe08a':'#ff7a7a');
+    const x1=a.x+NODEW,y1=a.y+a.h/2,x2=b.x,y2=b.y+b.h/2,mx=(x1+x2)/2;
+    svg+=`<path d="M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}" fill="none" stroke="${color}" stroke-width="2.2" stroke-dasharray="${meta.valid?'':'5 4'}"/>`;
+    const label = meta.unset?'pick output' : (meta.valid?fmt2(meta.item):'⚠ no match');
+    const lw = Math.max(52, label.length*6+14);
+    svg+=`<rect x="${mx-lw/2}" y="${(y1+y2)/2-9}" width="${lw}" height="16" rx="8" fill="${meta.valid?'#12351f':(meta.unset?'#1b2740':'#3a1414')}" stroke="${color}"/><text x="${mx}" y="${(y1+y2)/2+3}" text-anchor="middle" fill="${color}" font-size="10">${label}</text>`;
+  }
   const sv=document.getElementById('chainSvg'); if(sv) sv.innerHTML=svg;
 }
 const CHAIN_SEL=new Set();
