@@ -85,7 +85,7 @@ img.ico{width:20px;height:20px;border-radius:4px;vertical-align:-5px;margin-righ
 img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 #chainWrap{position:relative;overflow:auto;border:1px solid var(--border);border-radius:12px;background:#0d1119;height:calc(100vh - 250px);min-height:420px;margin-top:12px}
 #chainCanvas{position:relative;transform-origin:0 0}
-#chainSvg{position:absolute;top:0;left:0;pointer-events:none}
+#chainSvg{position:absolute;top:0;left:0;width:100%;height:100%;overflow:visible;pointer-events:none}
 .cnode{position:absolute;width:216px;background:var(--panel);border:1.5px solid var(--border);border-radius:10px;padding:8px 10px;font-size:12px;box-shadow:0 4px 14px #0006}
 .cnode .nm{font-weight:700;font-size:12.5px}
 .cnode .meta{color:var(--dim);font-size:11px;margin-top:3px}
@@ -539,7 +539,7 @@ let activeTab = 'dashboard';
 let editingBaseId = null, draftDeposits = [], draftBuildings = [], draftMining = [], draftProduction = [];
 
 const App = {
-  show(tab){ activeTab=tab; document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active', s.id==='tab-'+tab)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab)); },
+  show(tab){ activeTab=tab; document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active', s.id==='tab-'+tab)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab)); if(tab==='chain'){ setTimeout(()=>{ const p=document.getElementById('bpanel'); if(p && p.style.display!=='block'){ p.style.display='block'; if(typeof renderBPanel==='function') renderBPanel(); if(typeof bindPalette==='function') bindPalette(); const btn=document.querySelector('button[onclick="toggleBPanel()"]'); if(btn) btn.classList.add('act'); } },80); } },
 
   /* bases */
   editBase(id){
@@ -1221,17 +1221,21 @@ function nodeIO(key){
     const m=CHAIN_MANUAL.find(x=>x.id===key.slice(2)); if(!m) return {outputs:[],inputs:[]};
     if(!m.sel) return {outputs:[],inputs:[],unset:true};
     if(/extractor|gatherer|condenser/i.test(m.slug)){ const res=RES[m.sel]; return {outputs:((res&&res.drops)||[]).map(d=>d.slug), inputs:[]}; }
-    const r=GAME.recipes.find(x=>x.workstation===m.slug && x.outputs.some(o=>o.slug===m.sel)) || chosenRecipe(m.sel);
-    return {outputs:[m.sel], inputs: r?r.ingredients.map(i=>i.slug):[]};
+    const recs=GAME.recipes.filter(x=>!x.recycling && x.workstation===m.slug && x.outputs.some(o=>o.slug===m.sel));
+    const r=recs[0] || chosenRecipe(m.sel);
+    const alt=[...new Set(recs.flatMap(x=>x.ingredients.map(i=>i.slug)))];
+    return {outputs:[m.sel], inputs: r?r.ingredients.map(i=>i.slug):[], altInputs: alt.length?alt:(r?r.ingredients.map(i=>i.slug):[])};
   }
   return {outputs:[key], inputs: itemIngredients(key)};
 }
 function linkMeta(a,b){
   const A=nodeIO(a), B=nodeIO(b);
   if(A.unset||B.unset) return {valid:null, unset:true};
-  let item=A.outputs.find(o=>B.inputs.includes(o));
+  const bIn=o=>B.inputs.includes(o)||(B.altInputs||[]).includes(o);
+  const aIn=o=>A.inputs.includes(o)||(A.altInputs||[]).includes(o);
+  let item=A.outputs.find(bIn);
   if(item) return {valid:true, item, from:a, to:b};
-  item=B.outputs.find(o=>A.inputs.includes(o));
+  item=B.outputs.find(aIn);
   if(item) return {valid:true, item, from:b, to:a};
   return {valid:false, item:null};
 }
