@@ -295,7 +295,7 @@ body{font-size:14px;-webkit-font-smoothing:antialiased}
     </div>
   </div>
   <div class="csum" id="chainSummary" style="display:none"></div>
-  <div id="chainWrap"><div id="chainCanvas"><svg id="chainSvg"></svg></div><div id="chainSelRect"></div><div id="bpanel"><div class="bphd"><b>Buildings</b> <span class="muted small">click or drag to add</span><input id="bpSearch" placeholder="search…" oninput="renderBPanel()" style="width:100%;margin-top:6px"></div><div id="bpList"></div></div></div>
+  <div id="chainWrap"><div id="chainCanvas"><svg id="chainSvg"></svg></div><div id="chainEmptyHint" style="position:absolute;top:50%;left:55%;transform:translate(-50%,-50%);color:var(--dim2);font-size:14px;pointer-events:none;text-align:center">Compute a chain above, or open <b>＋ Buildings</b> and click to drop machines here — free-form mode.</div><div id="chainSelRect"></div><div id="bpanel"><div class="bphd"><b>Buildings</b> <span class="muted small">click or drag to add</span><input id="bpSearch" placeholder="search…" oninput="renderBPanel()" style="width:100%;margin-top:6px"></div><div id="bpList"></div></div></div>
 </section>
 
 <section class="tab" id="tab-settings">
@@ -1081,7 +1081,7 @@ let CHAIN_LAYOUT={}; // slug -> {x,y} overrides for calculated nodes
 let CHAIN_MANUAL=[]; // [{id, slug, x, y, note}] manually added building nodes
 let CHAIN_LINKS=[]; // [{a,b}] manual connections; keys are item slug or 'm:'+id
 let CHAIN_LINKING=null; // node key awaiting a connection target
-function layoutKey(){ return CHAIN_CUR?CHAIN_CUR.slug:''; }
+function layoutKey(){ return CHAIN_CUR?CHAIN_CUR.slug:'__free__'; }
 function loadLayoutFor(key){
   CHAIN_LAYOUT={}; CHAIN_MANUAL=[]; CHAIN_LINKS=[];
   const L=STATE.layouts&&STATE.layouts[key]; if(!L) return;
@@ -1136,7 +1136,7 @@ function startPaletteDrag(ev, slug){
 function addManualNode(slug, x, y){
   const id='mn'+Date.now()+Math.floor(Math.random()*99);
   CHAIN_MANUAL.push({id, slug, x, y, note:''});
-  if(CHAIN_CUR) renderChain();
+  renderChain();
   return id;
 }
 function deleteManual(id){ CHAIN_MANUAL=CHAIN_MANUAL.filter(m=>m.id!==id); CHAIN_LINKS=CHAIN_LINKS.filter(l=>l.a!=='m:'+id&&l.b!=='m:'+id); renderChain(); }
@@ -1222,8 +1222,22 @@ function bindChainCanvas(){
     }
   });
 }
+function renderManualOnly(){
+  const cv=document.getElementById('chainCanvas'); if(!cv) return;
+  if(!window.__layoutLoadedFor || window.__layoutLoadedFor!=='__free__'){ loadLayoutFor('__free__'); window.__layoutLoadedFor='__free__'; }
+  cv.querySelectorAll('.cnode').forEach(el=>el.remove());
+  window.__chainPos={}; window.__chainEdges=[];
+  // size canvas to fit manual nodes (min viewport)
+  let maxX=800,maxY=500; for(const m of CHAIN_MANUAL){ maxX=Math.max(maxX,m.x+300); maxY=Math.max(maxY,m.y+200); }
+  cv.style.width=maxX+'px'; cv.style.height=maxY+'px'; CHAIN_DIM={W:maxX,H:maxY};
+  renderManualNodes(cv);
+  chainRedrawEdges();
+  bindChainCanvas();
+  document.getElementById('chainSummary').style.display='none';
+  const eh=document.getElementById('chainEmptyHint'); if(eh) eh.style.display=CHAIN_MANUAL.length?'none':'block';
+}
 function renderChain(){
-  if(!CHAIN_CUR) return;
+  if(!CHAIN_CUR){ renderManualOnly(); return; }
   if(!window.__layoutLoadedFor || window.__layoutLoadedFor!==layoutKey()){ loadLayoutFor(layoutKey()); window.__layoutLoadedFor=layoutKey(); }
   const {nodes, edges} = buildChain(CHAIN_CUR.slug, CHAIN_CUR.rate);
   const list = Object.values(nodes);
@@ -1291,6 +1305,7 @@ function renderChain(){
   window.__shuttleLinks=shuttleLinks;
   CHAIN_DIM={W,H};
   window.__chainPos=pos; window.__chainEdges=Object.values(edges);
+  { const eh=document.getElementById('chainEmptyHint'); if(eh) eh.style.display='none'; }
   const sv=document.getElementById('chainSvg');
   sv.setAttribute('width',W); sv.setAttribute('height',H); sv.innerHTML=svg;
   cv.querySelectorAll('.cnode').forEach(el=>{ const sl=el.getAttribute('data-cslug'); if(sl) makeNodeDraggable(el, sl); });
