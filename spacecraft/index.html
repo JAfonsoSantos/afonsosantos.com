@@ -99,6 +99,9 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 #bpanel .bphd{margin-bottom:8px;position:relative}
 .bpitem{display:flex;align-items:center;gap:8px;padding:5px 6px;border-radius:8px;cursor:grab;font-size:12.5px;user-select:none;-webkit-user-drag:none;touch-action:none}
 .bpitem:hover{background:var(--panel2)}
+    .bpitem.own{background:rgba(94,178,255,.10);border:1px solid rgba(94,178,255,.35)}
+    .bpitem .ownpin{margin-left:auto;font-size:11px;opacity:.9}
+    .bpsub{font-size:10.5px;text-transform:uppercase;letter-spacing:.4px;color:var(--dim);margin:8px 2px 3px}
 .bpghost{position:fixed;z-index:9999;pointer-events:none;opacity:.85}
 .cnode.manual{border-color:#a78bfa;border-style:dashed}
 .cnode.linking{outline:2px solid var(--accent2);outline-offset:2px;box-shadow:0 0 16px #ffb45455}
@@ -298,7 +301,7 @@ body{font-size:14px;-webkit-font-smoothing:antialiased}
     </div>
   </div>
   <div class="csum" id="chainSummary" style="display:none"></div>
-  <div id="chainWrap"><div id="chainCanvas"><svg id="chainSvg"></svg></div><div id="chainEmptyHint" style="position:absolute;top:50%;left:55%;transform:translate(-50%,-50%);color:var(--dim2);font-size:14px;pointer-events:none;text-align:center">Compute a chain above, or open <b>＋ Buildings</b> and click to drop machines here — free-form mode.</div><div id="chainSelRect"></div><div id="bpanel"><div class="bphd"><button onclick="closeBPanel()" title="close" style="position:absolute;top:8px;right:8px;background:none;border:0;color:var(--dim2);font-size:16px;cursor:pointer;line-height:1;padding:2px 4px">✕</button><b>Buildings</b> <span class="muted small">click or drag to add</span><input id="bpSearch" placeholder="search…" oninput="renderBPanel()" style="width:100%;margin-top:6px"></div><div id="bpList"></div></div></div>
+  <div id="chainWrap"><div id="chainCanvas"><svg id="chainSvg"></svg></div><div id="chainEmptyHint" style="position:absolute;top:50%;left:55%;transform:translate(-50%,-50%);color:var(--dim2);font-size:14px;pointer-events:none;text-align:center">Compute a chain above, or open <b>＋ Buildings</b> and click to drop machines here — free-form mode.</div><div id="chainSelRect"></div><div id="bpanel"><div class="bphd"><button onclick="closeBPanel()" title="close" style="position:absolute;top:6px;right:4px;background:none;border:0;color:var(--dim2);font-size:15px;cursor:pointer;line-height:1;padding:2px 4px;z-index:2">✕</button><div style="padding-right:22px"><b>Buildings</b> <span class="muted small">click or drag</span></div><input id="bpSearch" placeholder="search…" oninput="renderBPanel()" style="width:100%;margin-top:6px"></div><div id="bpList"></div></div></div>
 </section>
 
 <section class="tab" id="tab-settings">
@@ -1109,11 +1112,18 @@ function resetChainLayout(){ CHAIN_LAYOUT={}; CHAIN_MANUAL=[]; CHAIN_LINKS=[]; C
 function toggleBPanel(){ const p=document.getElementById('bpanel'); const open = p.style.display!=='block'; p.style.display = open?'block':'none'; const btn=document.querySelector('button[onclick="toggleBPanel()"]'); if(btn) btn.classList.toggle('act', open); if(open){ renderBPanel(); bindPalette(); } }
 function closeBPanel(){ const p=document.getElementById('bpanel'); if(p) p.style.display='none'; const btn=document.querySelector('button[onclick="toggleBPanel()"]'); if(btn) btn.classList.remove('act'); }
 let _paletteBound=false;
-function bindPalette(){ if(_paletteBound) return; const l=document.getElementById('bpList'); if(!l) return; _paletteBound=true; l.addEventListener('click', e=>{ const it=e.target.closest('.bpitem'); if(it&&it.dataset.slug){ e.preventDefault(); e.stopPropagation(); paletteAddCentered(it.dataset.slug); } }); }
+function bindPalette(){ if(_paletteBound) return; const l=document.getElementById('bpList'); if(!l) return; _paletteBound=true; l.addEventListener('pointerdown', e=>{ if(e.button!==0) return; const it=e.target.closest('.bpitem'); if(it&&it.dataset.slug){ startPaletteDrag(e, it.dataset.slug); } }); }
 function renderBPanel(){
   const q=(document.getElementById('bpSearch')||{}).value||'';
+  const owned=new Set();
+  for(const b of (STATE.bases||[])){ for(const bd of (b.buildings||[])) owned.add(bd.slug); }
   const list=GAME.buildings.filter(b=>!q||b.name.toLowerCase().includes(q.toLowerCase()));
-  document.getElementById('bpList').innerHTML=list.map(b=>`<div class="bpitem" title="click to add to canvas" data-slug="${b.slug}">${tile(b.slug,'s')}<span>${esc(b.name)}</span></div>`).join('');
+  list.sort((a,b)=>((owned.has(b.slug)?1:0)-(owned.has(a.slug)?1:0)) || a.name.localeCompare(b.name));
+  const row=b=>{ const own=owned.has(b.slug); return `<div class="bpitem${own?' own':''}" title="${own?'you have this in your bases · ':''}click or drag to add" data-slug="${b.slug}">${tile(b.slug,'s')}<span>${esc(b.name)}</span>${own?'<span class="ownpin" title="in your bases">🏠</span>':''}</div>`; };
+  const ownedRows=list.filter(b=>owned.has(b.slug)), rest=list.filter(b=>!owned.has(b.slug));
+  const hdr=(ownedRows.length && !q)?'<div class="bpsub">🏠 In your bases</div>':'';
+  const restHdr=(ownedRows.length && rest.length && !q)?'<div class="bpsub">All buildings</div>':'';
+  document.getElementById('bpList').innerHTML=hdr+ownedRows.map(row).join('')+restHdr+rest.map(row).join('');
 }
 let PALETTE_DRAGGED=false;
 function chainToast(t){ let e=document.getElementById('chainToast'); if(!e){ e=document.createElement('div'); e.id='chainToast'; e.style.cssText='position:fixed;bottom:20px;left:50%;transform:translateX(-50%);background:#123524;border:1px solid #1f7a4c;color:#7ef0b2;border-radius:9px;padding:8px 16px;z-index:120;font-size:13px'; document.body.appendChild(e);} e.textContent=t; e.style.display='block'; clearTimeout(window.__ctT); window.__ctT=setTimeout(()=>e.style.display='none',2000); }
