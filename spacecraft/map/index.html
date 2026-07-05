@@ -349,9 +349,11 @@ function resRows(entries, kind){
 function showSystemCard(s, px, py, pin){
   const agg=aggSys(s);
   const star=STARC[s.star]||'#5aa9e6';
+  const _hereSys = pin ? basesHere(s, null) : [];
   const actions = pin?`<div class="actions">
       <button class="btn" onclick="enterSystem('${s.id}')">👁 View planets</button>
-      <button class="btn warn" onclick="openBaseModal('${s.id}',null)">🏠 Make base</button>
+      ${_hereSys.length?`<button class="btn" onclick="viewBaseModal('${s.id}','null')">🏠 See base${_hereSys.length>1?'s':''} (${_hereSys.length})</button>`:''}
+      <button class="btn warn" onclick="openBaseModal('${s.id}',null)">🏠 ${_hereSys.length?'Build another':'Make base'}</button>
       <button class="btn sec" onclick="setRoute('a','${s.id}')">Route A</button>
       <button class="btn sec" onclick="setRoute('b','${s.id}')">Route B</button>
     </div>`:`<div class="actions muted" style="border:none;padding:6px 12px">click system for actions</div>`;
@@ -365,7 +367,10 @@ function showSystemCard(s, px, py, pin){
 function showPlanetCard(s, p, px, py, pin){
   const t=TEMPS[p.temp];
   const pname=s.name+' '+(ROMAN[p.i]||p.i+1);
-  const actions=pin?`<div class="actions"><button class="btn warn" onclick="openBaseModal('${s.id}',${p.i})">🏠 Make base here</button></div>`:'';
+  const _here = pin ? basesHere(s, p.i) : [];
+  const actions = pin ? `<div class="actions">${ _here.length
+      ? `<button class="btn" onclick="viewBaseModal('${s.id}',${p.i})">👁 See base${_here.length>1?'s':''} (${_here.length})</button><button class="btn warn" onclick="openBaseModal('${s.id}',${p.i})">🏠 Build another</button>`
+      : `<button class="btn warn" onclick="openBaseModal('${s.id}',${p.i})">🏠 Make base here</button>` }</div>` : '';
   const rows=(arr,title)=>`<div class="grp">${title}</div>`+resRows((arr||[]).slice().sort((a,b)=>(b.d||0)-(a.d||0)).map(r=>[r.id, r.d!=null?r.d:('x'+(r.n||1))]), title.toLowerCase());
   $('#card').innerHTML=`<div class="hd">${t?`<span class="temp" style="color:${t[1]}">${t[0]}</span>`:''}<span class="sect">${esc(s.sector)} [${s.level}]</span>
       <div class="nm">${esc(pname)}</div></div>
@@ -406,6 +411,28 @@ function savePilot(){
 }
 
 /* ---------- make base ---------- */
+function basesHere(s, planetIdx){
+  if(!corpState||!corpState.bases) return [];
+  const pn = planetIdx!=null ? (s.name+' '+(ROMAN[planetIdx]||planetIdx+1)) : null;
+  return corpState.bases.filter(b=> b.system && String(b.system).toLowerCase()===s.name.toLowerCase() && (pn==null || b.planet===pn));
+}
+function viewBaseModal(sysId, planetIdx){
+  const s=G.sysById[sysId]; const list=basesHere(s, planetIdx==='null'||planetIdx==null?null:planetIdx);
+  const pname = (planetIdx!=null&&planetIdx!=='null') ? s.name+' '+(ROMAN[planetIdx]||planetIdx+1) : s.name;
+  $('#modalBox').innerHTML=`<h3>🏠 Your base${list.length>1?'s':''} — ${esc(pname)}</h3>`+
+    list.map(b=>`<div style="border:1px solid var(--border);border-radius:8px;padding:8px 10px;margin:6px 0">
+      <div style="font-weight:600">${esc(b.name)} <span class="muted small">${b.type==='personal'?'⛺ personal':'🏠 corp'}</span></div>
+      ${b.owner?`<div class="muted small">Owner: ${esc(b.owner)}</div>`:''}
+      ${b.planet?`<div class="muted small">${esc(b.planet)}</div>`:''}
+      <div class="muted small">Extracting: ${(b.mining&&b.mining.length)? b.mining.map(m=>esc(pretty(typeof m==='string'?m:m.id))+((m&&m.n>1)?(' ×'+m.n):'')).join(', ') : '—'}</div>
+    </div>`).join('')+
+    `<div style="display:flex;gap:8px;justify-content:flex-end;margin-top:12px;flex-wrap:wrap">
+       <button class="btn sec" onclick="closeModal()">Close</button>
+       <button class="btn warn" onclick="openBaseModal('${sysId}',${(planetIdx==null||planetIdx==='null')?'null':planetIdx})">🏠 Build another here</button>
+       <a class="btn" href="../" style="text-decoration:none">Manage in planner ↗</a>
+     </div>`;
+  $('#modal').style.display='flex';
+}
 function openBaseModal(sysId, planetIdx){
   if(!window.CORP){ openAuth(); return; }
   const s=G.sysById[sysId];
