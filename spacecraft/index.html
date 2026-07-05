@@ -1101,7 +1101,7 @@ function toggleBPanel(){ const p=document.getElementById('bpanel'); p.style.disp
 function renderBPanel(){
   const q=(document.getElementById('bpSearch')||{}).value||'';
   const list=GAME.buildings.filter(b=>!q||b.name.toLowerCase().includes(q.toLowerCase()));
-  document.getElementById('bpList').innerHTML=list.map(b=>`<div class="bpitem" title="click to add · drag to place" onclick="paletteClick(event,'${b.slug}')" onpointerdown="startPaletteDrag(event,'${b.slug}')">${tile(b.slug,'s')}<span>${esc(b.name)}</span></div>`).join('');
+  document.getElementById('bpList').innerHTML=list.map(b=>`<div class="bpitem" title="click to add · drag to place" onpointerdown="startPaletteDrag(event,'${b.slug}')">${tile(b.slug,'s')}<span>${esc(b.name)}</span></div>`).join('');
 }
 let PALETTE_DRAGGED=false;
 function paletteAddCentered(slug){ const wrap=document.getElementById('chainWrap'); const sc=CHAIN_SCALE||1; const cx=(wrap.scrollLeft+wrap.clientWidth/2)/sc-100, cy=(wrap.scrollTop+wrap.clientHeight/2)/sc-30; addManualNode(slug, Math.max(0,cx), Math.max(0,cy)); }
@@ -1117,13 +1117,10 @@ function startPaletteDrag(ev, slug){
     const wrap=document.getElementById('chainWrap'); if(!wrap) return; const wr=wrap.getBoundingClientRect();
     const overCanvas = e.clientX>=wr.left&&e.clientX<=wr.right&&e.clientY>=wr.top&&e.clientY<=wr.bottom;
     const sc=CHAIN_SCALE||1;
-    if(moved){
-      PALETTE_DRAGGED=true;
-      const bp=document.getElementById('bpanel'); const br=bp?bp.getBoundingClientRect():null;
-      const overPanel = br && e.clientX>=br.left&&e.clientX<=br.right&&e.clientY>=br.top&&e.clientY<=br.bottom;
-      if(overCanvas && !overPanel){ const cx=(e.clientX-wr.left+wrap.scrollLeft)/sc-100, cy=(e.clientY-wr.top+wrap.scrollTop)/sc-30; addManualNode(slug, Math.max(0,cx), Math.max(0,cy)); }
-      else { paletteAddCentered(slug); }
-    }
+    const bp=document.getElementById('bpanel'); const br=bp?bp.getBoundingClientRect():null;
+    const overPanel = br && e.clientX>=br.left&&e.clientX<=br.right&&e.clientY>=br.top&&e.clientY<=br.bottom;
+    if(moved && overCanvas && !overPanel){ const cx=(e.clientX-wr.left+wrap.scrollLeft)/sc-100, cy=(e.clientY-wr.top+wrap.scrollTop)/sc-30; addManualNode(slug, Math.max(0,cx), Math.max(0,cy)); }
+    else { paletteAddCentered(slug); }
   };
   document.addEventListener('pointermove',move); document.addEventListener('pointerup',up);
 }
