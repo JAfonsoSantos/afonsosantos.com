@@ -1116,7 +1116,15 @@ function bindPalette(){ if(_paletteBound) return; const l=document.getElementByI
 function renderBPanel(){
   const q=(document.getElementById('bpSearch')||{}).value||'';
   const owned=new Set();
-  for(const b of (STATE.bases||[])){ for(const bd of (b.buildings||[])) owned.add(bd.slug); }
+  const norm=id=>String(id).replace(/[-_]/g,'').toLowerCase();
+  for(const b of (STATE.bases||[])){
+    for(const bd of (b.buildings||[])) owned.add(bd.slug);
+    // mining implies an Extractor on that base
+    if((b.mining||[]).length){ owned.add('b-extractor'); }
+    for(const me of (b.mining||[])){ const id=typeof me==='string'?me:me.id; const res=GAME.resources.find(r=>norm(r.slug)===norm(id)); if(res && /liquid|gas|fluid/i.test(res.type||res.category||'')) owned.add('b-liquid-extractor'); }
+    // production implies the workstation that makes each item
+    for(const pr of (b.production||[])){ const r=chosenRecipe(pr.slug); if(r && r.workstation) owned.add(r.workstation); }
+  }
   const list=GAME.buildings.filter(b=>!q||b.name.toLowerCase().includes(q.toLowerCase()));
   list.sort((a,b)=>((owned.has(b.slug)?1:0)-(owned.has(a.slug)?1:0)) || a.name.localeCompare(b.name));
   const row=b=>{ const own=owned.has(b.slug); return `<div class="bpitem${own?' own':''}" title="${own?'you have this in your bases · ':''}click or drag to add" data-slug="${b.slug}">${tile(b.slug,'s')}<span>${esc(b.name)}</span>${own?'<span class="ownpin" title="in your bases">🏠</span>':''}</div>`; };
