@@ -58,11 +58,15 @@ function profitRows(){
   if(!GAME||!MARKET) return SAMPLE_PROFIT();
   const rows=[];
   for(const it of GAME.items){
-    const sell=priceOf(it.slug); if(sell==null||sell<=0)continue;
-    const cost=buildCost(it.slug); if(cost==null||cost<=0)continue;
+    const info=priceInfo(it.slug);
+    if(!info||info.price<10) continue;
+    if(info.listings<3||info.vol<100) continue;       // liquidity gate: real, tradeable market only
+    const sell=info.price;
+    const cost=buildCost(it.slug); if(cost==null||cost<5)continue;
     const margin=(sell-cost)/cost;
     if(margin<=0)continue;
-    rows.push({name:it.name,sell:fmtK(sell),cost:fmtK(cost),marginPct:margin,margin:'+'+Math.round(margin*100)+'%'});
+    const pct=Math.min(9999,Math.round(margin*100));
+    rows.push({name:it.name,sell:fmtK(sell),cost:fmtK(cost),marginPct:margin,margin:'+'+pct+'%'});
   }
   rows.sort((a,b)=>b.marginPct-a.marginPct);
   const top=rows.slice(0,5); const max=top.length?top[0].marginPct:1;
@@ -94,6 +98,40 @@ function coverageRows(filter){
 }
 
 /* ---- chain graph builder (from real recipes) ---- */
+function wsBuilding(ws){
+  if(!ws||ws==='No workstation'||!GAME) return null;
+  let b=GAME.buildings.find(x=>x.slug===ws); if(b)return b;
+  b=GAME.buildings.find(x=>x.name.toLowerCase()===String(ws).toLowerCase()); if(b)return b;
+  const kw=String(ws).replace(/^b-/,'').replace(/-\d+$/,'').replace(/[^a-z]/gi,'').toLowerCase().slice(0,4);
+  if(kw.length>=3){ b=GAME.buildings.find(x=>x.name.toLowerCase().replace(/[^a-z]/g,'').startsWith(kw)); if(b)return b; }
+  return null;
+}
+function outQty(r,slug){ const o=(r.outputs||[]).find(x=>x.slug===slug); return o?(+o.qty||1):1; }
+function fmtPower(ma){ ma=Math.round(ma); return ma>=1000?(ma/1000).toFixed(1)+' GW':ma+' MA'; }
+// Real capacity model: expand the recipe tree, sum workstation power/footprint, and build an item Δ/hr table.
+function computeCapacity(targetSlug, rate){
+  rate=rate||20;
+  const need={}, made={}, used={}; let power=0, foot=0, steps=0; const craftSeen=new Set();
+  (function expand(slug, perHour, depth){
+    need[slug]=(need[slug]||0)+perHour;
+    const r=recipeFor(slug); if(!r||depth>5) return;
+    const oq=outQty(r,slug)||1; const crafts=perHour/oq;
+    made[slug]=(made[slug]||0)+crafts*oq;
+    if(!craftSeen.has(slug)){ craftSeen.add(slug); steps++;
+      const b=wsBuilding(r.workstation);
+      if(b){ const pw=parseFloat(b.power); if(!isNaN(pw)&&pw<0) power+=Math.abs(pw); const fp=parseFloat(b.footprint); if(!isNaN(fp)) foot+=fp; }
+    }
+    for(const ing of r.ingredients){ const q=+ing.qty||1; const inNeed=crafts*q; used[ing.slug]=(used[ing.slug]||0)+inNeed; expand(ing.slug, inNeed, depth+1); }
+  })(targetSlug, rate, 0);
+  const supplied=corpSuppliesSet();
+  const slugs=[...new Set([...Object.keys(need),...Object.keys(made),...Object.keys(used)])];
+  const rows=slugs.map(s=>{ const m=made[s]||0, u=used[s]||0, net=Math.max(0,(u|| (s===targetSlug?rate:0))-m); const raw=!recipeFor(s);
+    return {item:itemName(s), slug:s, made:m, used:u, needed:net, raw, corp:supplied.has(s)}; })
+    .filter(x=>x.made||x.used)
+    .sort((a,b)=>(b.made+b.used)-(a.made+a.used));
+  return {power, foot:Math.round(foot), wsCount:steps, rows};
+}
+
 function pickTarget(){
   // a craftable item with a market price and a recipe, decent margin
   const p=profitRows(); if(p&&p.length){ const it=GAME.items.find(x=>x.name===p[0].name); if(it&&recipeFor(it.slug))return it.slug; }
@@ -153,8 +191,10 @@ function renderCommand(){
     {label:'Chain coverage',icon:'ph-flow-arrow',accent:'#5fe9ce',value:'82',unit:'%',delta:'4%',deltaIcon:'ph-arrow-up',deltaBg:'rgba(21,183,159,.14)',deltaFg:'#5fe9ce',note:'corp-supplied'},
     {label:'Corp balance',icon:'ph-coins',accent:'#ffd049',value:'1.8M',unit:'cr',delta:'3%',deltaIcon:'ph-arrow-down',deltaBg:'rgba(240,68,56,.14)',deltaFg:'#fdaaa4',note:'net 7d'},
   ];
-  const g=GAME?buildGraph(pickTarget(),20):null;
-  const gStats=[{k:'Workstations',v:g?String((g.mids.length+1)):'7',c:'#66e0fa'},{k:'Power draw',v:'2.4 GW',c:'#ffd049'},{k:'To build',v:(g?g.mids.length+1:3)+' items',c:'#ff7b66'},{k:'Corp-supplied',v:(g?g.raws.filter(r=>g.supplied.has(r.slug)).length:5)+' items',c:'#5fe9ce'}];
+  const _tgt=GAME?pickTarget():null;
+  const g=GAME?buildGraph(_tgt,20):null;
+  const _cap=GAME?computeCapacity(_tgt,20):null;
+  const gStats=[{k:'Workstations',v:_cap?String(_cap.wsCount):'7',c:'#66e0fa'},{k:'Power draw',v:_cap?fmtPower(_cap.power):'2.4 GW',c:'#ffd049'},{k:'To build',v:(_cap?_cap.rows.filter(r=>r.made>0).length:3)+' items',c:'#ff7b66'},{k:'Corp-supplied',v:(_cap?_cap.rows.filter(r=>r.corp).length:5)+' items',c:'#5fe9ce'}];
   const gName=g?itemName(g.target.slug):'Ion Thruster';
   return head('◍ FLEET COMMAND · SECTOR OVERVIEW','Corp operations at a glance',
     `Shared bases, mining assignments and capacity-aware production — live-synced across all ${pilots} pilots in ${esc(corpNm)}.`,
@@ -229,8 +269,12 @@ function renderChainScreen(){
   const gName=g?itemName(g.target.slug):'Ion Thruster';
   const buildings=(GAME?GAME.buildings.slice(0,6):[]).map(b=>({name:b.name,power:(b.power?Math.abs(+b.power)+' MW':'—'),icon:bIcon(b),fg:bColor(b)}));
   const bds=buildings.length?buildings:[{name:'Ore Extractor',icon:'ph-mountains',fg:'#66e0fa',power:'120 MW'},{name:'Smelter',icon:'ph-fire',fg:'#ff7b66',power:'340 MW'},{name:'Assembler',icon:'ph-stack',fg:'#66e0fa',power:'260 MW'},{name:'Circuit Lab',icon:'ph-cpu',fg:'#5fe9ce',power:'180 MW'},{name:'Refinery',icon:'ph-flask',fg:'#ffd049',power:'420 MW'},{name:'Shipyard',icon:'ph-rocket-launch',fg:'#ff7b66',power:'900 MW'}];
+  const cap=GAME?computeCapacity(CHAIN_TARGET,20):null;
   const raws=g?g.raws.map(r=>({n:r.name,q:'20/hr',corp:g.supplied.has(r.slug)})):[{n:'Iron ore',q:'40/hr',corp:true},{n:'Copper ore',q:'30/hr',corp:true},{n:'Silicon',q:'20/hr',corp:false}];
-  const summary=[{k:'Workstations',v:(g?g.mids.length+1:7)+'',c:'#66e0fa'},{k:'Total power',v:'2.4 GW',c:'#ffd049'},{k:'To build',v:(g?g.mids.length+1:3)+' items',c:'#ff7b66'},{k:'Corp-supplied',v:(g?g.raws.filter(r=>g.supplied.has(r.slug)).length:5)+' items',c:'#5fe9ce'}];
+  const toBuild=cap?cap.rows.filter(r=>r.made>0).length:3;
+  const corpN=cap?cap.rows.filter(r=>r.corp).length:5;
+  const summary=[{k:'Workstations',v:(cap?cap.wsCount:7)+'',c:'#66e0fa'},{k:'Power draw',v:cap?fmtPower(cap.power):'2.4 GW',c:'#ffd049'},{k:'Footprint',v:(cap?cap.foot:60)+' FP',c:'#ff9d8a'},{k:'To build',v:toBuild+' items',c:'#ff7b66'},{k:'Corp-supplied',v:corpN+' items',c:'#5fe9ce'}];
+  const deltaRows=cap?cap.rows.slice(0,10):[];
   return head('◍ CHAIN DESIGNER · CAPACITY-AWARE','Production chain planner','')
   +`<div class="panel" style="border-radius:14px;padding:14px 16px;margin-bottom:14px;display:flex;align-items:center;gap:12px;flex-wrap:wrap">
     <span class="mono" style="font-size:9px;letter-spacing:.14em;color:var(--dim)">TARGETS</span>
@@ -245,6 +289,12 @@ function renderChainScreen(){
       <div><div class="mono" style="font-size:9px;letter-spacing:.14em;color:var(--cyan);margin-bottom:10px">RAW MATERIALS</div><div style="display:flex;flex-direction:column;gap:8px">${raws.map(rw=>`<div style="display:flex;align-items:center;justify-content:space-between"><span style="font-size:12.5px;color:var(--txt)">${esc(rw.n)}</span><span style="display:flex;align-items:center;gap:8px"><span class="mono" style="font-size:11px;color:#c7d4e2">${rw.q}</span><span class="mono" style="font-size:9px;font-weight:600;padding:2px 7px;border-radius:5px;background:${rw.corp?'rgba(21,183,159,.14)':'rgba(255,208,73,.12)'};color:${rw.corp?'#5fe9ce':'#ffd049'}">${rw.corp?'CORP':'BUY'}</span></span></div>`).join('')}</div></div>
       <div style="height:1px;background:rgba(96,165,215,.12)"></div>
       <div style="display:flex;flex-direction:column;gap:10px">${summary.map(cs=>`<div style="display:flex;align-items:center;justify-content:space-between"><span class="mono" style="font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--dim)">${cs.k}</span><span style="font-family:var(--font-display);font-size:16px;font-weight:600;color:${cs.c}">${cs.v}</span></div>`).join('')}</div>
+      <div style="height:1px;background:rgba(96,165,215,.12)"></div>
+      <div><div class="mono" style="font-size:9px;letter-spacing:.14em;color:var(--cyan);margin-bottom:8px">ITEM Δ / HOUR</div>
+        <div style="display:grid;grid-template-columns:1fr auto auto auto;gap:4px 10px;font-family:var(--font-mono);font-size:10px;max-height:200px;overflow-y:auto">
+          <span style="color:var(--dim2);text-transform:uppercase;letter-spacing:.06em">Item</span><span style="color:var(--dim2);text-align:right">Made</span><span style="color:var(--dim2);text-align:right">Used</span><span style="color:var(--dim2);text-align:right">Need</span>
+          ${deltaRows.length?deltaRows.map(d=>`<span style="color:var(--txt);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:118px">${esc(d.item)}</span><span style="text-align:right;color:#5fe9ce">${d.made?Math.round(d.made):'·'}</span><span style="text-align:right;color:#9fb0c4">${d.used?Math.round(d.used):'·'}</span><span style="text-align:right;color:${d.needed>0?(d.corp?'#5fe9ce':'#ffd049'):'#566072'}">${d.needed>0?Math.round(d.needed):'✓'}</span>`).join(''):'<span style="grid-column:1/-1;color:var(--dim)">Compute a chain to see the balance.</span>'}
+        </div></div>
       <button class="btn btn-ghost" style="margin-top:auto;justify-content:center;padding:11px" onclick="location.href='./classic.html'"><i class="ph-fill ph-floppy-disk"></i>Save to corp</button>
     </section>
   </div>`;

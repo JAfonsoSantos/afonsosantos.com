@@ -207,7 +207,8 @@ function catOf(it){ const n=((it&&it.name)||'').toLowerCase()+' '+((it&&it.slug)
   return 'Item'; }
 let RECIPE_BY_OUT=null;
 function recipeFor(slug){ if(!RECIPE_BY_OUT){RECIPE_BY_OUT={};for(const r of GAME.recipes){if(r.recycling)continue;for(const o of (r.outputs||[])){if(!RECIPE_BY_OUT[o.slug])RECIPE_BY_OUT[o.slug]=r;}}} return RECIPE_BY_OUT[slug]||null; }
-function buildCost(slug){ const r=recipeFor(slug); if(!r)return null; let c=0,known=false; for(const ing of r.ingredients){ const p=priceOf(ing.slug); if(p!=null){c+=p*(+ing.qty||1);known=true;} } return known?c:null; }
+function buildCost(slug){ const r=recipeFor(slug); if(!r||!r.ingredients||!r.ingredients.length)return null; let c=0; for(const ing of r.ingredients){ const p=priceOf(ing.slug); if(p==null)return null; c+=p*(+ing.qty||1); } return c; }
+function priceInfo(slug){ if(!MARKET||!MARKET.quads)return null; const q=MARKET.quads[QUADKEY]||MARKET.quads[Object.keys(MARKET.quads)[0]]||{}; const p=q[slug]; return p?{price:+p[0],listings:+(p[3]||0),vol:+(p[4]||0)}:null; }
 async function boot(){
   try{
     const [g,m,ic,idx]=await Promise.all([
@@ -241,7 +242,15 @@ function applyIdentity(){
     el('corpAv').textContent=(CORP.tag||CORP.name||'C').slice(0,2).toUpperCase();
     if(USER){ const nm=(USER.email||'Pilot').split('@')[0]; el('pilotName').textContent=nm; el('pilotRole').textContent=(ROLE||'pilot').toUpperCase(); el('pilotAv').textContent=nm.slice(0,2).toUpperCase(); }
     el('syncLbl').textContent='LIVE SYNC';
-  } else { el('syncLbl').textContent='DEMO'; }
+  } else {
+    el('syncLbl').textContent='DEMO';
+    el('corpName').textContent='Demo corp';
+    el('corpMeta').textContent='Sign in to sync your corp →';
+    el('corpAv').textContent='DEMO';
+    el('pilotName').textContent='Guest pilot';
+    el('pilotRole').textContent='SAMPLE DATA';
+    el('pilotAv').textContent='GP';
+  }
 }
 const NAV=[['command','ph-squares-four','Command'],['bases','ph-planet','Bases'],['chain','ph-flow-arrow','Chains'],['map','ph-map-trifold','Map'],['finder','ph-magnifying-glass','Finder'],['corp','ph-users-three','Corp']];
 function buildNav(){ el('navlist').innerHTML=NAV.map(([k,ic,lb])=>`<a class="navitem${k===VIEW?' active':''}" data-k="${k}" onclick="go('${k}')"><i class="ph-fill ${ic}"></i><span>${lb}</span></a>`).join(''); }
