@@ -101,6 +101,7 @@ img.ico.sm{width:16px;height:16px;vertical-align:-3px;margin-right:3px}
 .bpghost{position:fixed;z-index:9999;pointer-events:none;opacity:.85}
 .cnode.manual{border-color:#a78bfa;border-style:dashed}
 .cnode.manual .mnnote{width:100%;margin-top:4px;font-size:11px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text)}
+.cnode.manual .mnsel{width:100%;margin-top:4px;font-size:11px;background:var(--panel2);border:1px solid var(--border);border-radius:6px;padding:3px 5px;color:var(--text)}
 #chainWrap.panning{cursor:grabbing}
 #chainSelRect{position:absolute;border:1px solid var(--accent);background:#5eb2ff22;pointer-events:none;z-index:60;display:none}
 .cnode select{width:100%;margin-top:5px;font-size:10.5px;padding:3px 5px}
@@ -1142,14 +1143,42 @@ function addManualNode(slug, x, y){
 function deleteManual(id){ CHAIN_MANUAL=CHAIN_MANUAL.filter(m=>m.id!==id); CHAIN_LINKS=CHAIN_LINKS.filter(l=>l.a!=='m:'+id&&l.b!=='m:'+id); renderChain(); }
 function startLink(key){ if(CHAIN_LINKING===key){ CHAIN_LINKING=null; } else if(CHAIN_LINKING){ if(CHAIN_LINKING!==key){ CHAIN_LINKS.push({a:CHAIN_LINKING,b:key}); } CHAIN_LINKING=null; } else { CHAIN_LINKING=key; } updateLinkHint(); chainRedrawEdges(); }
 function updateLinkHint(){ const h=document.getElementById('linkHint'); if(h) h.style.display=CHAIN_LINKING?'inline':'none'; }
+function buildingOptions(bslug){
+  // crafting buildings: recipes whose workstation is this building
+  const norm=id=>String(id).replace(/[-_]/g,'').toLowerCase();
+  let type=null, opts=[];
+  const recs=GAME.recipes.filter(r=>!r.recycling && r.workstation===bslug);
+  if(recs.length){ type='craft'; const seen=new Set(); recs.forEach(r=>r.outputs.forEach(o=>{ if(!seen.has(o.slug)){seen.add(o.slug); opts.push(o.slug);} })); }
+  else if(/extractor|gatherer|condenser/i.test(bslug)){ type='extract'; opts=GAME.resources.filter(r=>(r.drops||[]).length).map(r=>r.slug); }
+  if(!type) return null;
+  // corp-relevant on top
+  const corp=new Set();
+  for(const b of (STATE.bases||[])){
+    if(type==='craft'){ for(const pr of (b.production||[])) corp.add(pr.slug); }
+    else { for(const me of (b.mining||[])){ const id=typeof me==='string'?me:me.id; const res=GAME.resources.find(r=>norm(r.slug)===norm(id)); if(res) corp.add(res.slug); } for(const d of (b.deposits||[])) corp.add(d.slug); }
+  }
+  const label = type==='craft' ? (sl=>itemName(sl)) : (sl=>{ const r=RES[sl]; return r?r.name:sl; });
+  const top=opts.filter(o=>corp.has(o)), rest=opts.filter(o=>!corp.has(o));
+  return {type, top:top.map(o=>({slug:o,name:label(o)})).sort((a,b)=>a.name.localeCompare(b.name)), rest:rest.map(o=>({slug:o,name:label(o)})).sort((a,b)=>a.name.localeCompare(b.name))};
+}
+function manualSelect(m){
+  const o=buildingOptions(m.slug);
+  if(!o) return `<input class="mnnote" placeholder="note / count…" value="${esc(m.note||'')}" oninput="(CHAIN_MANUAL.find(x=>x.id==='${m.id}')||{}).note=this.value">`;
+  const opt=x=>`<option value="${x.slug}" ${m.sel===x.slug?'selected':''}>${esc(x.name)}</option>`;
+  return `<select class="mnsel" onchange="(CHAIN_MANUAL.find(x=>x.id==='${m.id}')||{}).sel=this.value; renderChain();">`
+    +`<option value="">${o.type==='craft'?'— what does it make? —':'— what does it extract? —'}</option>`
+    +(o.top.length?`<optgroup label="🏠 Your corp">${o.top.map(opt).join('')}</optgroup>`:'')
+    +`<optgroup label="${o.type==='craft'?'All recipes':'All resources'}">${o.rest.map(opt).join('')}</optgroup></select>`;
+}
 function renderManualNodes(cv){
   for(const m of CHAIN_MANUAL){
     const bd=BLD[m.slug];
     const el=document.createElement('div');
     el.className='cnode manual'; el.setAttribute('data-manual',m.id);
     el.style.left=m.x+'px'; el.style.top=m.y+'px';
+    const makes = m.sel? `<div class="meta" style="color:var(--accent2)">→ ${ico(m.sel,'sm')||''}${esc(itemName(m.sel))}</div>`:'';
     el.innerHTML=`<div class="nm">${tile(m.slug,'s')}${esc(bd?bd.name:m.slug)} <span class="pointer" style="float:right;color:var(--dim)" onclick="deleteManual('${m.id}')">✕</span></div>
-      <input class="mnnote" placeholder="note / count…" value="${esc(m.note||'')}" oninput="(CHAIN_MANUAL.find(x=>x.id==='${m.id}')||{}).note=this.value">
+      ${manualSelect(m)}${makes}
       <div class="meta"><span class="pointer" style="color:var(--accent)" onclick="startLink('m:${m.id}')">🔗 connect</span></div>`;
     cv.appendChild(el);
     window.__chainPos['m:'+m.id]={x:m.x, y:m.y, h:el.offsetHeight||70};
