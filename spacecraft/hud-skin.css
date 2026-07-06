@@ -1,10 +1,9 @@
 /* ============================================================
-   CorpHQ — Fleet-Command HUD skin (theme overlay for the real app)
-   Reskins colours, type, chrome & layout WITHOUT changing app logic.
+   CorpHQ — Fleet-Command HUD skin (theme + layout for the REAL app)
+   Restyles the app's real components to the HUD design. No logic touched.
    ============================================================ */
 @import url("https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700&family=Roboto+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700&display=swap");
 
-/* ---- palette override (the app reads these vars everywhere) ---- */
 :root, [data-theme="dark"], .dark{
   --bg:#04060b;
   --panel:#0b1a30; --panel2:#12233c; --panel3:#16304f;
@@ -12,62 +11,45 @@
   --text:#eaf3fb; --dim:#9fb0c4; --dim2:#7d8ba1;
   --accent:#66e0fa; --accent2:#ffd049;
   --good:#5fe9ce; --bad:#ff7a7a; --chip:#12233c;
-  --hud-cyan:#66e0fa; --hud-teal:#5fe9ce; --hud-orange:#fd563c;
+  --hud-cyan:#66e0fa; --hud-teal:#5fe9ce; --hud-orange:#fd563c; --hud-amber:#ffd049;
   --font-mono:"Roboto Mono",ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
   --font-display:"Poppins","Inter",sans-serif;
 }
 
-/* ---- global backdrop: radial + grid + scanline (pseudo-els, no DOM) ---- */
+/* ---------- backdrop ---------- */
 body.hud-skin{
   font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif !important;
   background:radial-gradient(1200px 700px at 78% -8%, #06305c 0%, #041428 42%, #04060b 78%) !important;
-  padding-left:88px;                 /* room for the fixed left rail */
+  padding-left:88px;
 }
-body.hud-skin::before{               /* grid overlay */
-  content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
+body.hud-skin::before{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;
   background-image:linear-gradient(rgba(96,180,240,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(96,180,240,.045) 1px,transparent 1px);
   background-size:52px 52px;
-  -webkit-mask-image:radial-gradient(1100px 800px at 70% 0%, #000 40%, transparent 92%);
-          mask-image:radial-gradient(1100px 800px at 70% 0%, #000 40%, transparent 92%);
-}
-body.hud-skin::after{                /* slow scanline */
-  content:"";position:fixed;left:88px;right:0;top:0;height:16%;pointer-events:none;z-index:0;
-  background:linear-gradient(180deg,transparent,rgba(102,224,250,.05),transparent);
-  animation:hud-scan 9s linear infinite;
-}
+  -webkit-mask-image:radial-gradient(1100px 800px at 70% 0%, #000 40%, transparent 92%);mask-image:radial-gradient(1100px 800px at 70% 0%, #000 40%, transparent 92%);}
+body.hud-skin::after{content:"";position:fixed;left:88px;right:0;top:0;height:16%;pointer-events:none;z-index:0;
+  background:linear-gradient(180deg,transparent,rgba(102,224,250,.05),transparent);animation:hud-scan 9s linear infinite;}
 @keyframes hud-scan{0%{transform:translateY(-120%)}100%{transform:translateY(640%)}}
 @keyframes hud-sweep{to{transform:rotate(360deg)}}
 @keyframes hud-blink{0%,100%{opacity:1}50%{opacity:.3}}
 body.hud-skin header, body.hud-skin main, body.hud-skin #landing{position:relative;z-index:1}
 
-/* ---- topbar (reuse existing <header>) ---- */
-body.hud-skin header{
-  background:rgba(6,13,24,.92) !important;border-bottom:1px solid rgba(96,165,215,.16) !important;
-  padding:0 22px !important;height:60px;gap:18px;backdrop-filter:blur(6px);
-}
+/* ---------- topbar ---------- */
+body.hud-skin header{background:rgba(6,13,24,.92) !important;border-bottom:1px solid rgba(96,165,215,.16) !important;padding:0 24px !important;height:60px;gap:16px;backdrop-filter:blur(6px)}
 body.hud-skin header h1{font-family:var(--font-display) !important;font-weight:700 !important;color:#fff !important;font-size:17px !important;letter-spacing:.02em}
 body.hud-skin .chq-logo{filter:drop-shadow(0 0 6px rgba(102,224,250,.5))}
 body.hud-skin header .ver{font-family:var(--font-mono);color:var(--dim2) !important;font-size:10px}
 body.hud-skin #hud-cmdpill{font-family:var(--font-mono);font-size:9px;letter-spacing:.14em;color:var(--hud-cyan);border:1px solid rgba(102,224,250,.3);border-radius:5px;padding:2px 6px;white-space:nowrap}
-body.hud-skin header nav#nav{display:none !important}   /* replaced by left rail */
-body.hud-skin header > a[href="map/"]{display:none !important} /* moved into rail */
-body.hud-skin #syncState{
-  margin-left:auto;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;color:var(--hud-teal) !important;
-  display:inline-flex;align-items:center;gap:7px;
-}
+body.hud-skin header nav#nav{display:none !important}
+body.hud-skin header > a[href="map/"]{display:none !important}
+body.hud-skin #syncState{margin-left:auto;font-family:var(--font-mono);font-size:10.5px;letter-spacing:.06em;color:var(--hud-teal) !important;display:inline-flex;align-items:center;gap:7px}
 body.hud-skin #syncState::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--hud-teal);box-shadow:0 0 8px var(--hud-teal);animation:hud-blink 2s ease-in-out infinite}
 
-/* ---- left rail ---- */
-#hudRail{
-  position:fixed;left:0;top:0;bottom:0;width:88px;z-index:20;
-  background:linear-gradient(180deg,rgba(6,16,30,.96),rgba(4,9,18,.96));
-  border-right:1px solid rgba(96,165,215,.16);
-  display:flex;flex-direction:column;align-items:center;padding:16px 0 18px;gap:18px;overflow-y:auto;
-}
-#hudRail .hud-logo{width:42px;height:42px;border-radius:12px;flex-shrink:0;background:linear-gradient(150deg,#fd563c,#c6280f);display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(253,86,60,.5)}
+/* ---------- left rail ---------- */
+#hudRail{position:fixed;left:0;top:0;bottom:0;width:88px;z-index:20;background:linear-gradient(180deg,rgba(6,16,30,.96),rgba(4,9,18,.96));border-right:1px solid rgba(96,165,215,.16);display:flex;flex-direction:column;align-items:center;padding:16px 0 18px;gap:16px;overflow-y:auto}
+#hudRail .hud-logo{width:42px;height:42px;border-radius:12px;flex-shrink:0;background:linear-gradient(150deg,#fd563c,#c6280f);display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(253,86,60,.5);cursor:pointer}
 #hudRail .hud-logo i{font-size:23px;color:#fff}
 #hudRail .hud-navlist{display:flex;flex-direction:column;gap:5px;width:100%;align-items:center}
-#hudRail .hud-navitem{width:70px;padding:9px 0 7px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:var(--dim2);border:1px solid transparent;text-decoration:none;transition:.15s}
+#hudRail .hud-navitem{width:72px;padding:9px 0 7px;border-radius:12px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;color:var(--dim2);border:1px solid transparent;text-decoration:none;transition:.15s}
 #hudRail .hud-navitem i{font-size:20px}
 #hudRail .hud-navitem span{font-family:var(--font-mono);font-size:8.5px;letter-spacing:.04em;text-transform:uppercase;text-align:center;line-height:1.1}
 #hudRail .hud-navitem:hover{background:rgba(102,224,250,.08);color:#cfeefb}
@@ -76,33 +58,65 @@ body.hud-skin #syncState::before{content:"";width:7px;height:7px;border-radius:5
 #hudRail .hud-radar::before{content:"";position:absolute;inset:-1px;border-radius:50%;border-top:1px solid var(--hud-cyan);animation:hud-sweep 3.5s linear infinite}
 #hudRail .hud-radar i{font-size:18px;color:var(--hud-cyan)}
 
-/* ---- cards / panels: glassy gradient + glow ---- */
-body.hud-skin .card{
-  background:linear-gradient(180deg,rgba(8,18,34,.9),rgba(4,9,18,.92)) !important;
-  border:1px solid rgba(96,165,215,.18) !important;border-radius:14px !important;
-  box-shadow:0 8px 30px rgba(0,0,0,.25);
-}
-body.hud-skin .card h3{font-family:var(--font-display);font-weight:600;color:#fff}
+/* ---------- main layout ---------- */
+body.hud-skin main{padding:24px 30px 64px !important;max-width:1560px}
+/* section headings become HUD panel titles with a glowing tick */
+body.hud-skin main > h2, body.hud-skin section.tab > h2{font-family:var(--font-display) !important;font-size:19px !important;font-weight:600 !important;color:#fff !important;margin:26px 0 12px !important;display:flex;align-items:center;gap:9px;letter-spacing:-.01em}
+body.hud-skin main > h2::before, body.hud-skin section.tab > h2::before{content:"";width:8px;height:8px;border-radius:2px;background:var(--hud-cyan);box-shadow:0 0 8px var(--hud-cyan);flex-shrink:0}
+body.hud-skin section.tab > h2:first-child, body.hud-skin section.tab > h1:first-child{margin-top:6px !important}
 
-/* ---- buttons ---- */
-body.hud-skin button.btn{
-  background:linear-gradient(150deg,#04aad6,#0d6d91) !important;color:#04121c !important;border:1px solid #66e0fa !important;
-  font-family:var(--font-mono);font-weight:600;letter-spacing:.04em;border-radius:9px;
-}
+/* ---------- panels / cards ---------- */
+body.hud-skin .card{background:linear-gradient(180deg,rgba(8,18,34,.92),rgba(4,9,18,.94)) !important;border:1px solid rgba(96,165,215,.18) !important;border-radius:14px !important;padding:16px 18px !important;box-shadow:0 8px 30px rgba(0,0,0,.28)}
+body.hud-skin .card h3{font-family:var(--font-display) !important;font-weight:600 !important;color:#fff !important;font-size:14.5px !important;margin:0 0 10px !important}
+body.hud-skin .grid{gap:14px !important}
+
+/* ---------- KPI telemetry strip ---------- */
+body.hud-skin #dashKpis{gap:14px !important}
+body.hud-skin #dashKpis .card{position:relative;overflow:hidden;padding:17px 18px 16px !important;background:linear-gradient(180deg,rgba(9,20,38,.85),rgba(5,11,22,.85)) !important}
+body.hud-skin #dashKpis .card::before{content:"";position:absolute;top:0;left:0;right:0;height:2px;background:linear-gradient(90deg,transparent,var(--hud-cyan),transparent);opacity:.7}
+body.hud-skin #dashKpis .card:nth-child(2)::before{background:linear-gradient(90deg,transparent,var(--hud-teal),transparent)}
+body.hud-skin #dashKpis .card:nth-child(3)::before{background:linear-gradient(90deg,transparent,var(--hud-amber),transparent)}
+body.hud-skin #dashKpis .muted{font-family:var(--font-mono) !important;font-size:10px !important;letter-spacing:.1em;text-transform:uppercase;color:var(--dim2) !important}
+body.hud-skin .kpi{font-family:var(--font-display) !important;font-size:30px !important;font-weight:700 !important;color:#fff !important;line-height:1.05 !important;margin-top:8px}
+body.hud-skin .kpi.good{color:var(--hud-teal) !important}
+
+/* ---------- chips / pills / tags ---------- */
+body.hud-skin .chip{font-family:var(--font-mono) !important;font-size:11px !important;background:rgba(96,165,215,.08) !important;border:1px solid rgba(96,165,215,.16) !important;border-radius:99px !important;padding:4px 11px !important;color:var(--text) !important}
+body.hud-skin .chip.ok{background:rgba(21,183,159,.12) !important;border-color:rgba(95,233,206,.3) !important;color:var(--hud-teal) !important}
+body.hud-skin .chip.warn{background:rgba(255,208,73,.1) !important;border-color:rgba(255,208,73,.3) !important;color:var(--hud-amber) !important}
+body.hud-skin .raw{font-family:var(--font-mono)}
+
+/* ---------- buttons ---------- */
+body.hud-skin button.btn{background:linear-gradient(150deg,#04aad6,#0d6d91) !important;color:#04121c !important;border:1px solid #66e0fa !important;font-family:var(--font-mono);font-weight:600;letter-spacing:.04em;border-radius:9px;padding:8px 14px}
+body.hud-skin button.btn:hover{filter:brightness(1.08)}
 body.hud-skin button.btn.sec{background:rgba(102,224,250,.06) !important;color:#cfeefb !important;border:1px solid rgba(102,224,250,.2) !important}
 body.hud-skin button.btn.sec.act{background:rgba(102,224,250,.16) !important;border-color:rgba(102,224,250,.5) !important}
 body.hud-skin button.btn.danger{background:transparent !important;color:var(--bad) !important;border:1px solid var(--bad) !important}
 
-/* mono numeric feel for chips/badges */
-body.hud-skin .chip,body.hud-skin .pill,body.hud-skin .badge{font-family:var(--font-mono)}
+/* ---------- inputs ---------- */
+body.hud-skin input,body.hud-skin select,body.hud-skin textarea{background:rgba(6,14,26,.7) !important;border:1px solid rgba(96,165,215,.18) !important;color:var(--text) !important;border-radius:9px !important;font-family:var(--font-mono);padding:7px 11px}
+body.hud-skin input:focus,body.hud-skin select:focus,body.hud-skin textarea:focus{outline:none;border-color:rgba(102,224,250,.5) !important}
+body.hud-skin input::placeholder{color:var(--dim2)}
 
-/* tables */
-body.hud-skin table th{font-family:var(--font-mono);text-transform:uppercase;letter-spacing:.08em;font-size:10px;color:var(--dim2)}
+/* ---------- tables ---------- */
+body.hud-skin table{border-collapse:collapse;width:100%}
+body.hud-skin th{font-family:var(--font-mono) !important;text-transform:uppercase;letter-spacing:.08em;font-size:10px !important;color:var(--dim2) !important;background:rgba(6,14,26,.55) !important;padding:10px 14px !important;border-bottom:1px solid rgba(96,165,215,.14) !important;text-align:left}
+body.hud-skin td{padding:11px 14px !important;border-bottom:1px solid rgba(96,165,215,.08) !important}
+body.hud-skin tbody tr{transition:.12s}
+body.hud-skin tbody tr:hover td{background:rgba(8,20,38,.5)}
 
-/* mobile: rail becomes a top strip */
+/* ---------- misc text ---------- */
+body.hud-skin .muted{color:var(--dim) !important}
+body.hud-skin .small{font-size:12px}
+body.hud-skin a{color:var(--hud-cyan)}
+/* keep chain designer building panel + nodes readable */
+body.hud-skin #bpanel{background:linear-gradient(180deg,rgba(8,18,34,.96),rgba(4,9,18,.97)) !important;border:1px solid rgba(96,165,215,.2) !important}
+
+/* ---------- mobile ---------- */
 @media(max-width:820px){
   body.hud-skin{padding-left:0}
   body.hud-skin::after{left:0}
+  body.hud-skin main{padding:16px 16px 48px !important}
   #hudRail{position:sticky;flex-direction:row;width:100%;height:auto;bottom:auto;padding:8px;gap:6px;overflow-x:auto}
   #hudRail .hud-navlist{flex-direction:row}
   #hudRail .hud-radar{display:none}
