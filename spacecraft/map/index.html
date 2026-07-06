@@ -69,6 +69,26 @@ button.btn:hover{filter:brightness(1.12)}
 .frow{display:flex;justify-content:space-between;gap:6px;padding:6px;border-radius:7px;cursor:pointer;border-bottom:1px solid #1e2637;font-size:12px}
 .frow:hover{background:var(--panel2)}
 </style>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@600;700&family=Roboto+Mono:wght@400;500;600&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style id="hud-map-skin">
+:root{
+  --bg:#04060b !important;--panel:#0b1a30 !important;--panel2:#12233c !important;--border:#1d3a5c !important;
+  --text:#eaf3fb !important;--dim:#9fb0c4 !important;--accent:#66e0fa !important;--accent2:#ffd049 !important;
+  --good:#5fe9ce !important;--bad:#ff7a7a !important;--chip:#12233c !important;--card:rgba(8,18,34,.96) !important;
+}
+body{font-family:"Inter",-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif !important;
+  background:radial-gradient(1200px 700px at 78% -8%, #06305c 0%, #041428 42%, #04060b 78%) !important;}
+#top{background:rgba(6,13,24,.92) !important;border-bottom:1px solid rgba(96,165,215,.16) !important;backdrop-filter:blur(6px)}
+#top h1{font-family:"Poppins","Inter",sans-serif !important;font-weight:700 !important;color:#fff !important;letter-spacing:.02em}
+#legend,#status,#routeBar,#resPanel,.finder,#modal .box{background:linear-gradient(180deg,rgba(8,18,34,.94),rgba(4,9,18,.96)) !important;border-color:rgba(96,165,215,.18) !important}
+button.btn{background:linear-gradient(150deg,#04aad6,#0d6d91) !important;color:#04121c !important;border:1px solid #66e0fa !important;font-family:"Roboto Mono",monospace;font-weight:600}
+button.btn.sec{background:rgba(102,224,250,.06) !important;color:#cfeefb !important;border:1px solid rgba(102,224,250,.2) !important}
+button.btn.warn{background:linear-gradient(150deg,#fd563c,#c6280f) !important;color:#fff !important;border:1px solid #ff7b66 !important}
+select,input{background:rgba(6,14,26,.7) !important;border:1px solid rgba(96,165,215,.18) !important;color:var(--text) !important;font-family:"Roboto Mono",monospace}
+.resitem.on{background:rgba(102,224,250,.12) !important;color:var(--accent) !important}
+#modal h3{color:var(--accent2) !important;font-family:"Poppins",sans-serif}
+</style>
 </head>
 <body>
 <div id="top">

@@ -121,3 +121,37 @@ body.hud-skin #bpanel{background:linear-gradient(180deg,rgba(8,18,34,.96),rgba(4
   #hudRail .hud-navlist{flex-direction:row}
   #hudRail .hud-radar{display:none}
 }
+
+/* ============================================================
+   Per-screen HUD polish (real components: chain, market, profit, database)
+   ============================================================ */
+/* data tables (Market, Profit, Database) */
+body.hud-skin .dtable thead th{background:rgba(6,14,26,.92) !important;color:var(--dim2) !important;border-bottom:1px solid rgba(96,165,215,.2) !important;letter-spacing:.08em;font-family:var(--font-mono)}
+body.hud-skin .dtable tbody td{border-bottom:1px solid rgba(96,165,215,.07) !important}
+body.hud-skin .dtable tbody tr:nth-child(even) td{background:rgba(8,18,34,.4) !important}
+body.hud-skin .dtable tbody tr:hover td{background:rgba(8,20,38,.62) !important}
+body.hud-skin .val-avg{color:var(--hud-amber) !important;font-family:var(--font-mono)}
+body.hud-skin .val-dim{color:var(--dim) !important;font-family:var(--font-mono)}
+body.hud-skin .pos{color:var(--hud-teal) !important}
+body.hud-skin .neg{color:var(--bad) !important}
+body.hud-skin .pill2{font-family:var(--font-mono);border-radius:99px;padding:2px 9px;font-size:11px;background:rgba(96,165,215,.1);color:var(--dim)}
+body.hud-skin .pill2.ok{background:rgba(21,183,159,.14);color:var(--hud-teal)}
+body.hud-skin .pill2.warn{background:rgba(255,208,73,.12);color:var(--hud-amber)}
+
+/* Chain Designer */
+body.hud-skin .csum{background:linear-gradient(180deg,rgba(9,20,38,.85),rgba(5,11,22,.85)) !important;border:1px solid rgba(96,165,215,.18) !important;border-radius:12px !important;padding:11px 16px !important;font-family:var(--font-mono);font-size:12px;gap:16px !important}
+body.hud-skin .csum b{color:#fff !important;font-family:var(--font-display)}
+body.hud-skin #chainWrap{border:1px solid rgba(96,165,215,.14) !important;border-radius:12px !important;background:radial-gradient(600px 340px at 40% 30%, rgba(6,48,92,.22), #070b12) !important}
+body.hud-skin .cnode{background:linear-gradient(180deg,rgba(10,24,44,.96),rgba(6,14,26,.96)) !important;border:1px solid rgba(96,165,215,.3) !important;border-radius:11px !important;box-shadow:0 6px 20px rgba(0,0,0,.4) !important}
+body.hud-skin .cnode .nm{color:var(--text) !important}
+body.hud-skin .cnode.cov{border-color:var(--hud-teal) !important;box-shadow:0 0 0 1px var(--hud-teal) inset,0 6px 20px rgba(0,0,0,.4) !important}
+body.hud-skin .cnode.raw{border-color:rgba(95,233,206,.45) !important}
+body.hud-skin .cnode.part{border-color:var(--hud-amber) !important}
+body.hud-skin .cnode.manual{border-color:#a78bfa !important}
+body.hud-skin #bpList .bpitem:hover{background:rgba(102,224,250,.08) !important}
+body.hud-skin .bpitem.own{background:rgba(102,224,250,.1) !important;border-color:rgba(102,224,250,.35) !important}
+body.hud-skin .searchbox{min-width:240px}
+
+/* item detail / misc pills */
+body.hud-skin .ok{color:var(--hud-teal)}
+body.hud-skin .big{font-weight:700}
