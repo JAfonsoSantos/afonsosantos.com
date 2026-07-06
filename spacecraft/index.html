@@ -307,6 +307,22 @@ body{font-size:14px;-webkit-font-smoothing:antialiased}
   <div id="chainWrap"><div id="chainCanvas"><svg id="chainSvg"></svg></div><div id="chainEmptyHint" style="position:absolute;top:50%;left:55%;transform:translate(-50%,-50%);color:var(--dim2);font-size:14px;pointer-events:none;text-align:center">Compute a chain above, or open <b>＋ Buildings</b> and click to drop machines here — free-form mode.</div><div id="chainSelRect"></div><div id="bpanel"><div class="bphd"><button onclick="closeBPanel()" title="close" style="position:absolute;top:6px;right:4px;background:none;border:0;color:var(--dim2);font-size:15px;cursor:pointer;line-height:1;padding:2px 4px;z-index:2">✕</button><div style="padding-right:22px"><b>Buildings</b> <span class="muted small">click or drag</span></div><input id="bpSearch" placeholder="search…" oninput="renderBPanel()" style="width:100%;margin-top:6px"></div><div id="bpList"></div></div></div>
 </section>
 
+<section class="tab" id="tab-calc">
+  <h2>Deposit yield calculator</h2>
+  <div class="card" style="max-width:660px">
+    <div class="row" style="gap:12px;flex-wrap:wrap;align-items:flex-end">
+      <label class="muted small" style="display:flex;flex-direction:column;gap:4px">Deposit / resource
+        <select id="calcRes" onchange="computeDeposit()" style="min-width:260px"></select></label>
+      <label class="muted small" style="display:flex;flex-direction:column;gap:4px">Extractors
+        <input id="calcCount" type="number" min="1" value="1" oninput="computeDeposit()" style="width:90px"></label>
+      <label class="muted small" style="display:flex;flex-direction:column;gap:4px">Uptime %
+        <input id="calcUptime" type="number" min="1" max="100" value="100" oninput="computeDeposit()" style="width:84px"></label>
+    </div>
+    <div id="calcOut" style="margin-top:14px"></div>
+    <p class="muted small" style="margin-top:12px">Yields use each deposit&#39;s real in-game extraction rates. Uptime models power/downtime.</p>
+  </div>
+</section>
+
 <section class="tab" id="tab-settings">
   <div class="grid cols2">
     <div class="card">
@@ -540,12 +556,12 @@ function basePower(b){
 }
 
 /* ============ UI ============ */
-const TABS = [['dashboard','Dashboard'],['bases','Bases'],['planner','Crafting Planner'],['chain','Chain Designer'],['profit','💰 Profit'],['market','Market'],['database','Database'],['settings','Settings']];
+const TABS = [['dashboard','Dashboard'],['bases','Bases'],['planner','Crafting Planner'],['chain','Chain Designer'],['profit','💰 Profit'],['market','Market'],['database','Database'],['calc','Calculators'],['settings','Settings']];
 let activeTab = 'dashboard';
 let editingBaseId = null, draftDeposits = [], draftBuildings = [], draftMining = [], draftProduction = [];
 
 const App = {
-  show(tab){ activeTab=tab; document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active', s.id==='tab-'+tab)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab)); if(tab==='chain'){ setTimeout(()=>{ const p=document.getElementById('bpanel'); if(p && p.style.display!=='block'){ p.style.display='block'; if(typeof renderBPanel==='function') renderBPanel(); if(typeof bindPalette==='function') bindPalette(); const btn=document.querySelector('button[onclick="toggleBPanel()"]'); if(btn) btn.classList.add('act'); } },80); } },
+  show(tab){ activeTab=tab; document.querySelectorAll('section.tab').forEach(s=>s.classList.toggle('active', s.id==='tab-'+tab)); document.querySelectorAll('nav button').forEach(b=>b.classList.toggle('active', b.dataset.tab===tab)); if(tab==='calc'&&window.initCalc)initCalc(); if(tab==='chain'){ setTimeout(()=>{ const p=document.getElementById('bpanel'); if(p && p.style.display!=='block'){ p.style.display='block'; if(typeof renderBPanel==='function') renderBPanel(); if(typeof bindPalette==='function') bindPalette(); const btn=document.querySelector('button[onclick="toggleBPanel()"]'); if(btn) btn.classList.add('act'); } },80); } },
 
   /* bases */
   editBase(id){
@@ -1561,7 +1577,12 @@ function timeAgo(iso){ const sec=(Date.now()-new Date(iso).getTime())/1000; if(s
 const ACT_ICON={base:'🏭',chain:'🔗',assign:'📦',join:'🚀',corp:'⭐'};
 function inviteLink(){ const c=window.CORP; return c?(location.origin+location.pathname+'?join='+encodeURIComponent(c.join_code)):''; }
 window.copyInvite=function(btn){ const l=inviteLink(); if(!l)return; if(navigator.clipboard)navigator.clipboard.writeText(l); if(btn){const t=btn.textContent;btn.textContent='✓ link copied';setTimeout(()=>btn.textContent=t,1600);} };
+function initCalc(){ const sel=document.getElementById('calcRes'); if(!sel||sel._done)return; const list=Object.values(RES).filter(r=>(r.drops||[]).length).sort((a,b)=>(a.name||'').localeCompare(b.name||'')); sel.innerHTML=list.map(r=>`<option value="${r.slug}">${esc(r.name||r.slug)}</option>`).join(''); sel._done=true; computeDeposit(); }
+window.initCalc=initCalc;
+function computeDeposit(){ const sel=document.getElementById('calcRes'), out=document.getElementById('calcOut'); if(!sel||!out)return; const r=RES[sel.value]; if(!r){out.innerHTML='';return;} const n=Math.max(1,parseInt((document.getElementById('calcCount')||{}).value)||1); const up=Math.max(1,Math.min(100,parseInt((document.getElementById('calcUptime')||{}).value)||100))/100; const drops=(r.drops||[]).map(d=>{ const base=parseFloat(String(d.rate))||0; return {slug:d.slug, base, total:base*n*up}; }); const tot=drops.reduce((a,d)=>a+d.total,0); out.innerHTML=`<div class="csum" style="margin-top:0"><span>⛏ <b>${n}</b> extractor${n>1?'s':''}</span><span>⏱ <b>${Math.round(up*100)}%</b> uptime</span><span>Σ <b>${fmt(tot)}</b>/h total</span></div><table class="dtable" style="margin-top:12px"><thead><tr><th>Drop</th><th class="right">Per extractor /h</th><th class="right">Total /h</th></tr></thead><tbody>`+drops.map(d=>`<tr><td>${itemCell(d.slug)}</td><td class="right val-dim">${fmt(d.base)}</td><td class="right val-avg big">${fmt(d.total)}</td></tr>`).join('')+`</tbody></table>`; }
+window.computeDeposit=computeDeposit;
 async function renderActivity(){ const el=document.getElementById('activityFeed'); if(!el)return; const rows=await fetchActivity(); el.innerHTML = rows.length? rows.map(a=>`<div class="actrow"><span class="acti">${ACT_ICON[a.action]||'•'}</span><div class="actbody"><b>${esc(a.actor||'pilot')}</b> ${esc(a.detail||a.action)}</div><span class="actwhen">${timeAgo(a.created_at)}</span></div>`).join('') : '<div class="muted small">No activity yet — add a base or plan a chain and your crew will see it here live.</div>'; }
+setInterval(function(){ try{ if(window.CORP){ var t=document.getElementById('tab-settings'); if(t&&t.classList.contains('active')&&document.getElementById('activityFeed')) renderActivity(); } }catch(e){} }, 8000);
 async function savePilotProfile(name){ if(!name||!USER)return; localStorage.setItem('corp:pilot', JSON.stringify({name:name})); await fetch(SYNC.url+'/rest/v1/profiles',{method:'POST',headers:authHeaders({Prefer:'resolution=merge-duplicates'}),body:JSON.stringify([{user_id:USER.id,pilot:name}])}); }
 async function afterAuth(){
   await loadCorpCtx();

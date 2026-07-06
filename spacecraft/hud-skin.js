@@ -1,7 +1,7 @@
 /* CorpHQ HUD skin — builds the left rail from the app's real nav, mirrors state.
    Pure overlay: never changes app logic; App.show() stays the source of truth. */
 (function(){
-  var ICON={dashboard:'squares-four',bases:'planet',planner:'flask',chain:'flow-arrow',profit:'trend-up',market:'currency-circle-dollar',database:'database',settings:'gear-six',admin:'shield-check',map:'map-trifold'};
+  var ICON={dashboard:'squares-four',bases:'planet',planner:'flask',chain:'flow-arrow',profit:'trend-up',market:'currency-circle-dollar',database:'database',settings:'gear-six',admin:'shield-check',map:'map-trifold',calc:'calculator'};
   function labelFor(btn){ return (btn.textContent||'').replace(/[^\x20-\x7E]/g,'').replace(/\s+/g,' ').trim()||btn.dataset.tab; }
   function buildRail(){
     var nav=document.getElementById('nav'); if(!nav) return false;
