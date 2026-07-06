@@ -1457,11 +1457,17 @@ function renderChain(){
   for(const n of list){ if(n.machines&&n.ws){ byWs[n.ws]=(byWs[n.ws]||0)+n.machines; totMach+=n.machines; totPower+=n.power||0; totFoot+=(num(BLD[n.ws]&&BLD[n.ws].footprint)||0)*n.machines; } }
   const raws=list.filter(n=>n.raw).sort((a,b)=>b.rate-a.rate);
   const covered=list.filter(n=>n.covered.length);
+  let corpGen=0; for(const _b of (STATE.bases||[])){ for(const _x of (_b.buildings||[])){ const _v=num(BLD[_x.slug]&&BLD[_x.slug].power); if(_v>0) corpGen+=_v*(_x.count||1); } }
+  const footCap=60*Math.max(1,(STATE.bases||[]).length);
+  const powPct=corpGen>0?Math.min(100,Math.round(totPower/corpGen*100)):(totPower>0?60:0);
+  const powOver=corpGen>0&&totPower>corpGen;
+  const footPct=Math.min(100,Math.round(totFoot/footCap*100)); const footOver=totFoot>footCap;
   document.getElementById('chainSummary').style.display='flex';
   document.getElementById('chainSummary').innerHTML =
     `<span>🏭 <b>${totMach}</b> machines</span>`+
     Object.entries(byWs).map(([w,c])=>`<span>${ico(w,'sm')}${esc(wsName(w))} <b>${c}</b></span>`).join('')+
-    `<span>⚡ <b>${fmt(totPower)}</b> power</span>`+`<span>▦ <b>${fmt(totFoot)}</b> FP</span>`+
+    `<span class="cgauge"><span class="gl">⚡ POWER DRAW</span><span class="gv"><b>${fmt(totPower)}</b>${corpGen>0?' / '+fmt(corpGen):''} MA</span><span class="gbar${powOver?' over':''}"><span style="width:${powPct}%"></span></span></span>`+
+    `<span class="cgauge"><span class="gl">▦ FOOTPRINT</span><span class="gv"><b>${fmt(totFoot)}</b> / ${fmt(footCap)} FP</span><span class="gbar${footOver?' over':''}"><span style="width:${footPct}%"></span></span></span>`+
     `<span>⛏ raw: ${raws.map(r=>`${ico(r.slug,'sm')}${fmt(r.rate)}/h`).join(' ')}</span>`+
     ((()=>{ const tot=list.reduce((a,n)=>a+(n.corpRate||0),0); const cnt=list.filter(n=>n.corpRate).length; return tot>0? `<span style="color:var(--good)">🏠 corp supplies ${fmt(tot)}/h across ${cnt} inputs (${list.filter(n=>n.supplied).length} fully)</span>` : (covered.length?`<span style="color:var(--good)">🏠 corp has sources for ${covered.length} inputs — set mining on your bases to use them</span>`:''); })())+
     (CHAIN_LOGI?(()=>{ const sl=window.__shuttleLinks||[]; const over=sl.filter(x=>!x.inRange).length; const cols=window.__baseColors||{}; const bl=Object.entries(cols).filter(([b])=>list.some(n=>nodeBase(n)===b)).map(([b,c])=>`<span style="color:${c}">🚀 ${esc(b)}</span>`).join(' '); return `<span style="border-left:1px solid var(--border);padding-left:12px">${bl||'<span class="muted">assign nodes to bases to see the logistics network</span>'}</span>`+(sl.length?`<span>🚀 <b>${sl.length}</b> shuttle transfers${over?` · <span style="color:var(--bad)">${over} beyond ${fmt(SHUTTLE_RANGE/1000)}k range — need cargo/FTL</span>`:` · <span style="color:var(--good)">all in range</span>`}</span>`:''); })():'');
