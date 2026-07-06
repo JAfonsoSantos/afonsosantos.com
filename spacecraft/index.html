@@ -437,13 +437,13 @@ async function assignProduction(baseId, slug, rate){
   const prod = (b.production||[]).filter(x=>x.slug!==slug);
   prod.push({slug, rate: Math.round(rate*100)/100});
   await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+baseId, {method:'PATCH', headers:sbHeaders(), body:JSON.stringify({production:prod, updated_at:new Date().toISOString()})});
-  await fetchBases();
+  await fetchBases(); logActivity('assign', itemName(slug)+' → '+(b.name||'base'));
 }
 async function unassignProduction(baseId, slug){
   const b = STATE.bases.find(x=>x.id===baseId); if(!b || !window.CORP) return;
   const prod = (b.production||[]).filter(x=>x.slug!==slug);
   await fetch(SYNC.url+'/rest/v1/bases?id=eq.'+baseId, {method:'PATCH', headers:sbHeaders(), body:JSON.stringify({production:prod, updated_at:new Date().toISOString()})});
-  await fetchBases(); render();
+  await fetchBases(); render(); logActivity('assign','unassigned '+itemName(slug)+' at '+(b.name||'base'));
 }
 window.chainAssign = async function(baseId, slug, rate){
   if(!baseId) return;
@@ -597,6 +597,7 @@ const App = {
   },
   saveBase(ev){
     ev.preventDefault();
+    const wasNew = !editingBaseId;
     const b = {
       id: editingBaseId || null,
       name: $('#bName').value.trim(), owner: $('#bOwner').value.trim(),
@@ -606,7 +607,7 @@ const App = {
     };
     $('#baseDialog').close();
     (async()=>{
-      if(window.CORP){ await saveBaseRow(b); await fetchBases(); }
+      if(window.CORP){ await saveBaseRow(b); await fetchBases(); logActivity('base',(wasNew?'registered base ':'updated base ')+(b.name||'')); }
       else { const i=STATE.bases.findIndex(x=>x.id===b.id); if(i>=0)STATE.bases[i]=b; else STATE.bases.push(b); }
       persist(false); render();
     })();
@@ -797,13 +798,17 @@ async function loadAdmin(){
 function renderCorpPanel(){
   const c=window.CORP; if(!c) return;
   document.getElementById('corpPanel').innerHTML =
-    `<div class="row"><b style="font-size:16px">[${esc(c.tag)}] ${esc(c.name)}</b><span class="chip">${esc(c.quadrant)}</span><span class="chip">${esc(window.ROLE||'member')}</span></div>
-     <div class="row"><span class="muted">Invite code:</span> <code style="font-size:15px;letter-spacing:2px">${esc(c.join_code)}</code>
-     <button class="btn sec" onclick="navigator.clipboard.writeText('${esc(c.join_code)}');this.textContent='copied!'">copy</button></div>
-     <p class="muted small">Share this code — anyone can join your corp with it at ${location.origin+location.pathname}</p>
-     <div class="grp muted" style="margin-top:8px;font-size:11px;letter-spacing:1px">MEMBERS (${window.MEMBERS.length})</div>
-     <div class="flexwrap">${window.MEMBERS.map(m=>`<span class="chip">${m.role==='owner'?'👑 ':''}${esc(m.pilot||'pilot')}</span>`).join('')}</div>
-     <div class="row" style="margin-top:10px"><button class="btn danger" onclick="App.leaveCorp()">Leave corp</button></div>`;
+    `<div class="row"><b style="font-size:16px">[${esc(c.tag)}] ${esc(c.name)}</b><span class="chip">${esc(c.quadrant)}</span><span class="chip">${window.ROLE==='owner'?'👑 ADMIN':esc((window.ROLE||'pilot').toUpperCase())}</span></div>
+     <div class="row" style="flex-wrap:wrap;gap:8px"><span class="muted">Invite code:</span> <code style="font-size:15px;letter-spacing:2px">${esc(c.join_code)}</code>
+       <button class="btn sec" onclick="navigator.clipboard.writeText('${esc(c.join_code)}');this.textContent='✓ copied'">copy code</button>
+       <button class="btn" onclick="copyInvite(this)">🔗 Copy invite link</button></div>
+     <p class="muted small">Send the link — new pilots land on the join screen with the code already filled in. One corp per pilot.</p>
+     <div class="grp muted" style="margin-top:10px;font-size:11px;letter-spacing:1px">CREW (${window.MEMBERS.length})</div>
+     <div class="flexwrap">${window.MEMBERS.map(m=>{const admin=m.role==='owner';return `<span class="chip crewchip"><span class="rolebadge ${admin?'admin':'pilot'}">${admin?'ADMIN':'PILOT'}</span>${esc(m.pilot||'pilot')}</span>`;}).join('')}</div>
+     <div class="grp muted" style="margin-top:14px;font-size:11px;letter-spacing:1px">◍ CORP ACTIVITY</div>
+     <div id="activityFeed" class="muted small">Loading…</div>
+     <div class="row" style="margin-top:12px"><button class="btn danger" onclick="App.leaveCorp()">Leave corp</button></div>`;
+  renderActivity();
 }
 App.leaveCorp = async function(){
   if(!confirm('Leave '+window.CORP.name+'? Your corp data stays with the corp.')) return;
@@ -1112,7 +1117,7 @@ function saveChainLayout(){
   if(!CHAIN_CUR) return;
   STATE.layouts = STATE.layouts||{};
   STATE.layouts[layoutKey()] = {pos:JSON.parse(JSON.stringify(CHAIN_LAYOUT)), manual:JSON.parse(JSON.stringify(CHAIN_MANUAL)), links:JSON.parse(JSON.stringify(CHAIN_LINKS))};
-  if(window.CORP) pushPlan();
+  if(window.CORP){ pushPlan(); logActivity('chain','saved a production chain'+(CHAIN_CUR?(' for '+itemName(CHAIN_CUR.slug)):'')); }
   const b=event&&event.target; if(b){ const t=b.textContent; b.textContent='✓ saved'; setTimeout(()=>b.textContent=t,1500); }
 }
 function resetChainLayout(){ CHAIN_LAYOUT={}; CHAIN_MANUAL=[]; CHAIN_LINKS=[]; CHAIN_LINKING=null; if(STATE.layouts) delete STATE.layouts[layoutKey()]; if(window.CORP) pushPlan(); renderChain(); chainFit(); }
@@ -1549,6 +1554,14 @@ function authBack(){ authShow('authStep1'); authMsg(''); }
 async function authVerify(){ const email=document.getElementById('authEmail').value.trim(); const code=document.getElementById('authCode').value.trim(); authMsg('Verifying…'); const {data,error}=await SBC.auth.verifyOtp({email,token:code,type:'email'}); if(error){authMsg(error.message,true);return;} TOKEN=data.session.access_token; USER=data.session.user; window.TOKEN=TOKEN; window.USER=USER; await afterAuth(); }
 async function loadCorpCtx(){ const info=await rpc('corp_info'); window.CORP=(info&&info.corp)||null; window.ROLE=(info&&info.role)||null; window.MEMBERS=(info&&info.members)||[]; }
 function pilotName(){ try{ const p=JSON.parse(localStorage.getItem('corp:pilot')||'null'); return p?p.name:''; }catch(e){ return ''; } }
+/* ---- Corp activity feed + invite loop (the collaboration moat) ---- */
+async function logActivity(action, detail){ if(!window.CORP)return; try{ await fetch(SYNC.url+'/rest/v1/corp_activity',{method:'POST',headers:authHeaders(),body:JSON.stringify([{corp_id:window.CORP.id, actor:(pilotName()||(USER&&USER.email&&USER.email.split('@')[0])||'pilot'), action:action, detail:(detail||'').slice(0,140)}])}); }catch(e){} }
+async function fetchActivity(){ if(!window.CORP)return []; try{ const r=await fetch(SYNC.url+'/rest/v1/corp_activity?select=actor,action,detail,created_at&order=created_at.desc&limit=25',{headers:authHeaders()}); if(r.ok)return await r.json(); }catch(e){} return []; }
+function timeAgo(iso){ const sec=(Date.now()-new Date(iso).getTime())/1000; if(sec<60)return 'now'; if(sec<3600)return Math.floor(sec/60)+'m'; if(sec<86400)return Math.floor(sec/3600)+'h'; return Math.floor(sec/86400)+'d'; }
+const ACT_ICON={base:'🏭',chain:'🔗',assign:'📦',join:'🚀',corp:'⭐'};
+function inviteLink(){ const c=window.CORP; return c?(location.origin+location.pathname+'?join='+encodeURIComponent(c.join_code)):''; }
+window.copyInvite=function(btn){ const l=inviteLink(); if(!l)return; if(navigator.clipboard)navigator.clipboard.writeText(l); if(btn){const t=btn.textContent;btn.textContent='✓ link copied';setTimeout(()=>btn.textContent=t,1600);} };
+async function renderActivity(){ const el=document.getElementById('activityFeed'); if(!el)return; const rows=await fetchActivity(); el.innerHTML = rows.length? rows.map(a=>`<div class="actrow"><span class="acti">${ACT_ICON[a.action]||'•'}</span><div class="actbody"><b>${esc(a.actor||'pilot')}</b> ${esc(a.detail||a.action)}</div><span class="actwhen">${timeAgo(a.created_at)}</span></div>`).join('') : '<div class="muted small">No activity yet — add a base or plan a chain and your crew will see it here live.</div>'; }
 async function savePilotProfile(name){ if(!name||!USER)return; localStorage.setItem('corp:pilot', JSON.stringify({name:name})); await fetch(SYNC.url+'/rest/v1/profiles',{method:'POST',headers:authHeaders({Prefer:'resolution=merge-duplicates'}),body:JSON.stringify([{user_id:USER.id,pilot:name}])}); }
 async function afterAuth(){
   await loadCorpCtx();
@@ -1556,13 +1569,14 @@ async function afterAuth(){
     openAuth(); authShow('authOnboard'); authMsg('');
     const p=pilotName(); if(p) document.getElementById('obPilot').value=p;
     if(window.QUADS){ const el=document.getElementById('obQuad'); if(el) el.innerHTML=window.QUADS; }
+    try{ const jc=new URLSearchParams(location.search).get('join'); if(jc){ const ji=document.getElementById('obJoin'); if(ji) ji.value=jc; authMsg('Invite detected — tap “Join with code” to enter the corp.'); } }catch(e){}
     return;
   }
   closeAuth();
   if(window.onCorpReady) window.onCorpReady();
 }
-async function obCreate(){ const n=document.getElementById('obCorpName').value.trim(); const t=document.getElementById('obCorpTag').value.trim(); if(!n){authMsg('Corp name required',true);return;} authMsg('Creating…'); await savePilotProfile(document.getElementById('obPilot').value.trim()||'Pilot'); const q=document.getElementById('obQuad')?document.getElementById('obQuad').value:'abuxey'; const res=await rpc('create_corp',{cname:n,ctag:t||n.slice(0,3).toUpperCase(),cquad:q||'abuxey'}); if(res&&res.ok){ await afterAuth(); } else authMsg((res&&res.error)||JSON.stringify(res)||'Failed',true); }
-async function obJoinFn(){ const c=document.getElementById('obJoin').value.trim(); if(!c){authMsg('Enter an invite code',true);return;} authMsg('Joining…'); await savePilotProfile(document.getElementById('obPilot').value.trim()||'Pilot'); const res=await rpc('join_corp',{code:c}); if(res&&res.ok){ await afterAuth(); } else authMsg((res&&res.error)||'Failed',true); }
+async function obCreate(){ const n=document.getElementById('obCorpName').value.trim(); const t=document.getElementById('obCorpTag').value.trim(); if(!n){authMsg('Corp name required',true);return;} authMsg('Creating…'); await savePilotProfile(document.getElementById('obPilot').value.trim()||'Pilot'); const q=document.getElementById('obQuad')?document.getElementById('obQuad').value:'abuxey'; const res=await rpc('create_corp',{cname:n,ctag:t||n.slice(0,3).toUpperCase(),cquad:q||'abuxey'}); if(res&&res.ok){ await afterAuth(); logActivity('corp','founded the corp'); } else authMsg((res&&res.error)||JSON.stringify(res)||'Failed',true); }
+async function obJoinFn(){ const c=document.getElementById('obJoin').value.trim(); if(!c){authMsg('Enter an invite code',true);return;} authMsg('Joining…'); await savePilotProfile(document.getElementById('obPilot').value.trim()||'Pilot'); const res=await rpc('join_corp',{code:c}); if(res&&res.ok){ await afterAuth(); logActivity('join','joined the corp'); } else authMsg((res&&res.error)||'Failed',true); }
 async function authLogout(){ await SBC.auth.signOut(); location.reload(); }
 async function authInit(){
   const m=location.hash.match(/error_description=([^&]+)/); if(m){ openAuth(); authMsg(decodeURIComponent(m[1].replace(/\+/g,' ')),true); history.replaceState(null,'',location.pathname); }
